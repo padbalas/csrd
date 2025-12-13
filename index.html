@@ -44,6 +44,72 @@
       font-size: 2rem;
       margin-bottom: 20px;
     }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+    .notice {
+      margin-top: 10px;
+      font-size: 0.95rem;
+      color: #155e4f;
+    }
+    .error {
+      color: #b91c1c;
+    }
+    .notify {
+      background: #0f766e;
+      color: #ffffff;
+      padding: 40px 24px;
+      border-radius: 10px;
+      margin: 0 20px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.08);
+    }
+    .notify h2 {
+      margin: 0 0 10px;
+      color: #ffffff;
+    }
+    .notify p {
+      margin: 0 0 16px;
+      color: #e8f6f4;
+    }
+    .notify form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .notify input[type="email"] {
+      flex: 1 1 260px;
+      padding: 14px 12px;
+      border: 1px solid #0a4f49;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    .notify button {
+      padding: 14px 20px;
+      background: #f9fafb;
+      color: #0f766e;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+    .notify button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    }
+    .notify small {
+      display: block;
+      color: #c0e6de;
+      margin-top: 6px;
+    }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -65,6 +131,20 @@
   <p>Carbon & ESG reporting, made simple. Upload your bills. We calculate your footprint and tell you what you need to report.</p>
   <a href="#" class="btn">Get Started</a>
 </header>
+
+<section class="notify">
+  <h2>Get notified when we launch</h2>
+  <p>Drop your email and we will ping you the moment CarbonWise is available.</p>
+  <form id="notify-form" data-endpoint="https://api.web3forms.com/submit" novalidate>
+    <label for="email" class="sr-only">Email</label>
+    <input type="hidden" name="access_key" value="b55e686b-10d4-4cef-b72a-dd3508e8528a" />
+    <input type="email" id="email" name="email" placeholder="you@example.com" required />
+    <input type="text" name="company" style="position:absolute;left:-5000px;" tabindex="-1" aria-hidden="true" />
+    <button type="submit">Notify me</button>
+  </form>
+  <small>Emails are sent via Web3Forms using your access key.</small>
+  <div id="notify-status" class="notice" role="status" aria-live="polite"></div>
+</section>
 
 <section>
   <h2>How It Works</h2>
@@ -104,6 +184,52 @@
   <p>Not legal, tax, or audit advice.</p>
 </footer>
 
+<script>
+  const form = document.getElementById('notify-form');
+  const statusEl = document.getElementById('notify-status');
+
+  const showMessage = (msg, isError = false) => {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle('error', isError);
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = form.email.value.trim();
+    const endpoint = form.dataset.endpoint || '';
+
+    const emailValid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+    const accessKey = (form.querySelector('input[name="access_key"]') || {}).value || '';
+    if (!emailValid) {
+      showMessage('Please enter a valid email address.', true);
+      return;
+    }
+
+    if (!endpoint) {
+      showMessage('Form endpoint missing.', true);
+      return;
+    }
+
+    if (!accessKey) {
+      showMessage('Add your Web3Forms access key to the hidden field.', true);
+      return;
+    }
+
+    const data = new FormData(form);
+    showMessage('Sending...', false);
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        body: data,
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) throw new Error('Request failed');
+      form.reset();
+      showMessage('Thanks! You are on the list.');
+    } catch (err) {
+      showMessage('Could not submit right now. Please try again soon.', true);
+    }
+  });
+</script>
 </body>
 </html>
-
