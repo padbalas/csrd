@@ -115,58 +115,6 @@
       color: #c0e6de;
       margin-top: 6px;
     }
-    .upload {
-      background: #f0fdf9;
-      border: 1px solid #ccf0e7;
-      border-radius: 10px;
-      padding: 36px 24px;
-      margin: 40px 20px 0;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
-    }
-    .upload h2 {
-      margin: 0 0 10px;
-      color: #0b3c35;
-    }
-    .upload p {
-      margin: 0 0 16px;
-      color: #0f4e46;
-    }
-    .upload form {
-      display: grid;
-      gap: 10px;
-      max-width: 560px;
-    }
-    .upload input[type="text"],
-    .upload input[type="email"],
-    .upload input[type="file"],
-    .upload textarea {
-      width: 100%;
-      padding: 14px 12px;
-      border: 1px solid #7ac5b5;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-family: inherit;
-      background: #ffffff;
-      min-height: 48px;
-      box-sizing: border-box;
-    }
-    .upload small {
-      color: #0f4e46;
-    }
-    .upload button {
-      padding: 14px 20px;
-      background: #0f766e;
-      color: #ffffff;
-      border: none;
-      border-radius: 6px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 120ms ease, box-shadow 120ms ease;
-    }
-    .upload button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
-    }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -186,33 +134,8 @@
 <header>
   <h1>CarbonWise</h1>
   <p>Carbon & ESG reporting, made simple. Upload your bills. We calculate your footprint and tell you what you need to report.</p>
-  <a href="#upload" class="btn">Upload a bill</a>
+  <a href="#" class="btn">Get Started</a>
 </header>
-
-<section class="upload" id="upload">
-  <h2>Upload a bill (PDF)</h2>
-  <p>Attach your latest electricity or gas bill (PDF, PNG, or JPG). We will review it and email you a quick footprint summary.</p>
-  <form id="bill-form" data-endpoint="https://api.web3forms.com/submit" enctype="multipart/form-data" novalidate>
-    <label for="bill-name" class="sr-only">Name</label>
-    <input type="text" id="bill-name" name="name" placeholder="Your name" required />
-
-    <label for="bill-email" class="sr-only">Email</label>
-    <input type="email" id="bill-email" name="email" placeholder="you@example.com" required />
-
-    <label for="bill-file" class="sr-only">Upload bill</label>
-    <input type="file" id="bill-file" name="file" accept=".pdf,.png,.jpg,.jpeg" required />
-
-    <label for="bill-notes" class="sr-only">Notes</label>
-    <textarea id="bill-notes" name="message" placeholder="Anything you want us to know? (optional)"></textarea>
-
-    <input type="hidden" name="access_key" value="b55e686b-10d4-4cef-b72a-dd3508e8528a" />
-    <input type="text" name="botcheck" style="position:absolute;left:-5000px;" tabindex="-1" aria-hidden="true" />
-
-    <button type="submit">Upload and send</button>
-  </form>
-  <small>Uploads are sent securely via Web3Forms using your access key.</small>
-  <div id="bill-status" class="notice" role="status" aria-live="polite"></div>
-</section>
 
 <section class="notify">
   <h2>Get notified when we launch</h2>
@@ -274,61 +197,51 @@
 </footer>
 
 <script>
-  const wireForm = (formId, statusId, successMessage = 'Thanks! We got it.') => {
-    const form = document.getElementById(formId);
-    const statusEl = document.getElementById(statusId);
-    if (!form || !statusEl) return;
+  const form = document.getElementById('notify-form');
+  const statusEl = document.getElementById('notify-status');
 
-    const showMessage = (msg, isError = false) => {
-      statusEl.textContent = msg;
-      statusEl.classList.toggle('error', isError);
-    };
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const endpoint = form.dataset.endpoint || '';
-      const accessKey = (form.querySelector('[name=\"access_key\"]') || {}).value || '';
-      const emailField = form.querySelector('input[type=\"email\"]');
-      const email = emailField ? emailField.value.trim() : '';
-      const fileInput = form.querySelector('input[type=\"file\"]');
-
-      const emailValid = email ? /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) : true;
-      if (!emailValid) {
-        showMessage('Please enter a valid email address.', true);
-        return;
-      }
-      if (!endpoint) {
-        showMessage('Form endpoint missing.', true);
-        return;
-      }
-      if (!accessKey) {
-        showMessage('Add your Web3Forms access key to the hidden field.', true);
-        return;
-      }
-      if (fileInput && fileInput.hasAttribute('required') && !fileInput.files.length) {
-        showMessage('Please attach a file (PDF/PNG/JPG).', true);
-        return;
-      }
-
-      const data = new FormData(form);
-      showMessage('Sending...', false);
-      try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          body: data,
-          headers: { Accept: 'application/json' },
-        });
-        if (!res.ok) throw new Error('Request failed');
-        form.reset();
-        showMessage(successMessage);
-      } catch (err) {
-        showMessage('Could not submit right now. Please try again soon.', true);
-      }
-    });
+  const showMessage = (msg, isError = false) => {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle('error', isError);
   };
 
-  wireForm('notify-form', 'notify-status', 'Thanks! You are on the list.');
-  wireForm('bill-form', 'bill-status', 'Thanks! Your bill has been sent.');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = form.email.value.trim();
+    const endpoint = form.dataset.endpoint || '';
+
+    const emailValid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+    const accessKey = (form.querySelector('input[name="access_key"]') || {}).value || '';
+    if (!emailValid) {
+      showMessage('Please enter a valid email address.', true);
+      return;
+    }
+
+    if (!endpoint) {
+      showMessage('Form endpoint missing.', true);
+      return;
+    }
+
+    if (!accessKey) {
+      showMessage('Add your Web3Forms access key to the hidden field.', true);
+      return;
+    }
+
+    const data = new FormData(form);
+    showMessage('Sending...', false);
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        body: data,
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) throw new Error('Request failed');
+      form.reset();
+      showMessage('Thanks! You are on the list.');
+    } catch (err) {
+      showMessage('Could not submit right now. Please try again soon.', true);
+    }
+  });
 </script>
 </body>
 </html>
