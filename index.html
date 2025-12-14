@@ -39,6 +39,19 @@
       text-decoration: none;
       border-radius: 6px;
       font-weight: 600;
+      border: 1px solid #0f766e;
+    }
+    .btn.secondary {
+      background: #ffffff;
+      color: #0f766e;
+    }
+    .hero-cta {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
     }
     section {
       padding: 60px 20px;
@@ -140,11 +153,14 @@
   <h1>CarbonWise</h1>
   <p>Carbon & ESG reporting, made simple.</p>
   <p>Upload your utility bills. We calculate your carbon footprint and tell you exactly what you are required to report.</p>
-  <a href="#" class="btn">Get Started</a>
+  <div class="hero-cta">
+    <a href="#notify" class="btn">Get Started</a>
+    <a href="#obligations" class="btn secondary">Check if you need to report</a>
+  </div>
   <div class="hero-note">Free Scope 2 estimate • No ESG expertise required</div>
 </header>
 
-<section class="notify">
+<section class="notify" id="notify">
   <h2>Get notified when we launch</h2>
   <p>Drop your email and we will ping you the moment CarbonWise is available.</p>
   <form id="notify-form" data-endpoint="https://api.web3forms.com/submit" novalidate>
@@ -166,18 +182,30 @@
 </section>
 
 <section>
+  <h2>Who CarbonWise Is For</h2>
+  <p>CarbonWise is built for small and mid-sized businesses that don’t have an ESG team.</p>
+  <ul>
+    <li>✔ Founders & operators</li>
+    <li>✔ Finance teams & accountants</li>
+    <li>✔ Fractional CFOs</li>
+    <li>✔ Growing companies facing new ESG rules</li>
+  </ul>
+  <p>If you’re not sure whether ESG rules apply to you — CarbonWise is exactly where to start.</p>
+</section>
+
+<section>
   <h2>How It Works</h2>
   <div class="grid">
     <div>
-      <h3>Upload your data</h3>
+      <h3>1. Upload your bills</h3>
       <p>Upload electricity, gas, or fuel bills — PDFs or images.</p>
     </div>
     <div>
-      <h3>We calculate emissions</h3>
-      <p>CarbonWise converts usage into emissions using verified emission factors.</p>
+      <h3>2. We calculate emissions</h3>
+      <p>We convert usage into emissions using EPA &amp; DEFRA factors.</p>
     </div>
     <div>
-      <h3>Know your obligations</h3>
+      <h3>3. Know what you must report</h3>
       <p>We tell you whether regulations apply and what to do next.</p>
     </div>
   </div>
@@ -193,14 +221,22 @@
   </ul>
 </section>
 
+<section id="obligations">
+  <h2>Know Your Reporting Obligations — Without the Stress</h2>
+  <p>CarbonWise helps you understand whether regulations like California SB-253, SB-261, or EU CSRD apply to you.</p>
+  <p>No legal jargon. No scare tactics. Just clear answers and prepared data.</p>
+</section>
+
 <section>
   <h2>Why CarbonWise</h2>
-  <p>Plain language. Fast setup. Audit-ready data. No ESG jargon.</p>
+  <p>Enterprise ESG platforms are built for companies with large teams, long timelines, and big budgets.</p>
+  <p>CarbonWise is built for businesses that want answers now.</p>
 </section>
 
 <footer>
+  <p>CarbonWise provides carbon calculations and ESG data preparation tools.</p>
+  <p>Not legal, tax, or audit advice. Aligned with GHG Protocol methodologies.</p>
   <p>CarbonWise © 2025</p>
-  <p>Not legal, tax, or audit advice.</p>
 </footer>
 
 <script>
