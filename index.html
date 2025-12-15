@@ -165,10 +165,10 @@
   <header>
     <h1>CarbonWise</h1>
     <p>TurboTax for carbon reporting. Simple, private, plain-English.</p>
-    <p>No bill uploads required. You enter only what matters.</p>
+    <p>Enter your electricity usage — no uploads required. Get your carbon footprint in minutes.</p>
     <div class="hero-cta">
-      <a href="#calculator" class="btn primary">Get Started</a>
-      <a href="#obligations" class="btn secondary">Check if you need to report</a>
+      <a href="#calculator" class="btn primary">Estimate My Carbon Footprint</a>
+      <a href="#calculator" class="btn secondary">Enter Your Usage</a>
     </div>
     <div class="hero-note">Free Scope 2 estimate • Privacy-first • No login required to see results</div>
   </header>
@@ -208,8 +208,8 @@
             </select>
           </div>
           <div>
-            <label for="region">State / region (optional)</label>
-            <input type="text" id="region" name="region" placeholder="e.g., California" />
+            <label for="region">State / region</label>
+            <input type="text" id="region" name="region" required placeholder="e.g., California" />
           </div>
           <div>
             <label for="company">Company name (optional)</label>
@@ -217,7 +217,7 @@
           </div>
         </div>
         <div class="notice small">
-          We ask only for kWh, month/year, and region to protect your privacy. No addresses, account numbers, or uploads.
+          No bill uploads required. To protect your privacy, CarbonWise only asks for usage data (kWh, month/year, country, state/region). No addresses, account numbers, or logins.
         </div>
         <div class="hero-cta" style="justify-content:flex-start;margin-top:14px;">
           <button type="submit" class="btn primary">Calculate my footprint</button>
@@ -263,22 +263,27 @@
         <p class="muted">High-level indicators only. This does not file, certify, or guarantee compliance.</p>
         <ul id="compliance-list"></ul>
       </div>
+
+      <div class="card" style="margin-top:12px;text-align:center;">
+        <p class="muted" style="margin:0 0 10px;">Save this estimate and track future months.</p>
+        <a href="#calculator" class="btn primary">Recalculate for another month</a>
+      </div>
     </section>
 
     <section class="card">
       <h2>How it works</h2>
       <div class="list-grid">
         <div>
-          <strong>1) You enter kWh</strong>
-          <p class="muted">Electricity use for a billing month. No uploads, no account numbers.</p>
+          <strong>1) Enter your electricity usage</strong>
+          <p class="muted">kWh for the billing month. No uploads, no account numbers.</p>
         </div>
         <div>
-          <strong>2) We calculate</strong>
-          <p class="muted">Location-based Scope 2 using configurable emission factors (EPA/DEFRA).</p>
+          <strong>2) We calculate emissions</strong>
+          <p class="muted">Location-based Scope 2 using verified emission factors (EPA/DEFRA).</p>
         </div>
         <div>
-          <strong>3) You get answers</strong>
-          <p class="muted">Carbon estimate, plain-English explanation, and a simple compliance snapshot.</p>
+          <strong>3) See your footprint and guidance</strong>
+          <p class="muted">Carbon footprint plus plain-English reporting guidance in minutes.</p>
         </div>
       </div>
     </section>
@@ -364,8 +369,8 @@
       const region = form.region.value.trim();
       const company = form.company.value.trim();
 
-      if (!kwh || kwh <= 0 || !month || !year || !country) {
-        alert('Please enter kWh, month, year, and country to calculate.');
+      if (!kwh || kwh <= 0 || !month || !year || !country || !region) {
+        alert('Please enter kWh, month, year, country, and state/region to calculate.');
         return;
       }
 
@@ -378,7 +383,7 @@
         const miles = tons * CAR_MILES_PER_TON;
         const homes = kwh / AVG_HOME_KWH_MONTH;
 
-        subtitleEl.textContent = `${formatNumber(tons, 3)} metric tons CO₂e for ${month} ${year}${company ? ` — ${company}` : ''}${region ? ` (${region})` : ''}`;
+        subtitleEl.textContent = `${formatNumber(tons, 3)} metric tons CO₂e for ${month} ${year}${company ? ` — ${company}` : ''} (${region})`;
         tonsEl.textContent = `${formatNumber(tons, 3)} t CO₂e`;
         milesEl.textContent = `${formatNumber(miles, 0)} miles driven`;
         homesEl.textContent = `${formatNumber(homes, 1)} homes for a month`;
