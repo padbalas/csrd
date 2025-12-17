@@ -254,6 +254,8 @@
               <option value="">Select country</option>
               <option value="US">United States</option>
               <option value="CA">Canada</option>
+              <option value="UK">United Kingdom</option>
+              <option value="AU">Australia</option>
             </select>
             <div class="hint">We match public grid factors; you can adjust later.</div>
           </div>
@@ -271,8 +273,8 @@
           </div>
           <div>
             <label for="year">Billing year</label>
-            <input type="number" id="year" name="year" min="2000" max="2100" required placeholder="e.g., 2025" />
-            <div class="hint">Use the year on your bill; we don’t validate accounts.</div>
+            <input type="number" id="year" name="year" min="2024" max="2100" required placeholder="e.g., 2025" />
+            <div class="hint">Use the year on your bill (2024 or later); we don’t validate accounts.</div>
           </div>
         </div>
         <div class="two-col">
@@ -283,8 +285,10 @@
           </div>
           <div>
             <label for="region">State / region</label>
-            <input type="text" id="region" name="region" required placeholder="e.g., California" />
-            <div class="hint">Used only to contextualize results. Not stored.</div>
+            <select id="region" name="region" required>
+              <option value="">Select state / province</option>
+            </select>
+            <div class="hint">Choose your state (US) or province/territory (Canada). Used only to contextualize results.</div>
           </div>
         </div>
         <div class="notice">
@@ -373,12 +377,38 @@
     const EMISSION_FACTORS = {
       US: 0.00038,   // example average US grid factor
       CA: 0.00012,   // illustrative Canada grid average
+      UK: 0.00020,   // illustrative UK average
+      AU: 0.00075,   // illustrative Australia grid average
       OTHER: 0.00045 // fallback (unused for now but kept for safety)
+    };
+    // Valid regions for US and Canada to keep entries clean and trusted
+    const REGION_OPTIONS = {
+      US: [
+        "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","District of Columbia",
+        "Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine",
+        "Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada",
+        "New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma",
+        "Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont",
+        "Virginia","Washington","West Virginia","Wisconsin","Wyoming"
+      ],
+      CA: [
+        "Alberta","British Columbia","Manitoba","New Brunswick","Newfoundland and Labrador","Northwest Territories",
+        "Nova Scotia","Nunavut","Ontario","Prince Edward Island","Quebec","Saskatchewan","Yukon"
+      ],
+      UK: [
+        "England","Northern Ireland","Scotland","Wales"
+      ],
+      AU: [
+        "New South Wales","Victoria","Queensland","Western Australia","South Australia",
+        "Tasmania","Australian Capital Territory","Northern Territory"
+      ]
     };
     const CAR_MILES_PER_TON = 1 / 0.000404; // ~0.404 kg CO2e per mile
     const AVG_HOME_KWH_MONTH = 877; // US average monthly kWh per home
 
     const form = document.getElementById('carbon-form');
+    const countryEl = document.getElementById('country');
+    const regionEl = document.getElementById('region');
     const resultContainer = document.getElementById('result-container');
     const placeholder = document.getElementById('placeholder');
     const tonsEl = document.getElementById('result-tons');
@@ -388,6 +418,24 @@
     const interpretationEl = document.getElementById('interpretation');
 
     const formatNumber = (n, digits = 2) => Number(n).toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
+
+    const setRegionOptions = (country) => {
+      const opts = REGION_OPTIONS[country] || [];
+      regionEl.innerHTML = '<option value="">Select state / province</option>';
+      opts.forEach((name) => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        regionEl.appendChild(opt);
+      });
+    };
+
+    countryEl.addEventListener('change', (e) => {
+      setRegionOptions(e.target.value);
+    });
+
+    // Initialize empty list until a country is chosen
+    setRegionOptions('');
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
