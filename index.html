@@ -253,10 +253,7 @@
             <select id="country" name="country" required>
               <option value="">Select country</option>
               <option value="US">United States</option>
-              <option value="UK">United Kingdom</option>
-              <option value="EU">European Union (avg)</option>
-              <option value="IN">India</option>
-              <option value="OTHER">Other</option>
+              <option value="CA">Canada</option>
             </select>
             <div class="hint">We match public grid factors; you can adjust later.</div>
           </div>
@@ -375,10 +372,8 @@
     // Configurable emission factors (metric tons CO2e per kWh)
     const EMISSION_FACTORS = {
       US: 0.00038,   // example average US grid factor
-      UK: 0.00020,   // illustrative UK average
-      EU: 0.00025,   // illustrative EU average
-      IN: 0.00071,   // illustrative India grid average
-      OTHER: 0.00045 // fallback
+      CA: 0.00012,   // illustrative Canada grid average
+      OTHER: 0.00045 // fallback (unused for now but kept for safety)
     };
     const CAR_MILES_PER_TON = 1 / 0.000404; // ~0.404 kg CO2e per mile
     const AVG_HOME_KWH_MONTH = 877; // US average monthly kWh per home
