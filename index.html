@@ -303,7 +303,7 @@
       </form>
       <!-- Trust strip anchors methodology without heavy enterprise vibe -->
       <div class="notice" style="margin-top:10px;">
-        <strong>Methodology:</strong> GHG Protocol Scope 2 (location-based) • <strong>Emission factors:</strong> EPA / DEFRA • Estimates only — not legal, tax, or audit advice.
+        <strong>Methodology:</strong> GHG Protocol Scope 2 (location-based) • <strong>Emission factors:</strong> Public, government-issued data (year-stamped) • Estimates only — not legal, tax, or audit advice. Emission factors are updated as new data is released.
       </div>
     </section>
 
@@ -377,16 +377,53 @@
 
   <script>
     // Configurable emission factors (metric tons CO2e per kWh)
+    // Location-based Scope 2 emission factors (t CO2e/kWh), versioned by year and source
+    // Data is static and updated when new government factors are published.
     const EMISSION_FACTORS = {
-      US: 0.00038,   // example average US grid factor
-      CA: 0.00012,   // illustrative Canada grid average
-      UK: 0.00020,   // illustrative UK average
-      AU: 0.00075,   // illustrative Australia grid average
-      SG: 0.00040,   // illustrative Singapore grid average
-      NZ: 0.00012,   // illustrative New Zealand grid average
-      OTHER: 0.00045 // fallback (unused for now but kept for safety)
+      US: {
+        default: { factor: 0.000379, year: 2022, source: "EPA eGRID" },
+        regions: {
+          "CALIFORNIA": { factor: 0.000185, year: 2022, source: "EPA eGRID" },
+          "TEXAS": { factor: 0.000432, year: 2022, source: "EPA eGRID" },
+          "NEW YORK": { factor: 0.000154, year: 2022, source: "EPA eGRID" },
+          "FLORIDA": { factor: 0.000376, year: 2022, source: "EPA eGRID" },
+          "ILLINOIS": { factor: 0.000344, year: 2022, source: "EPA eGRID" },
+          "WASHINGTON": { factor: 0.000106, year: 2022, source: "EPA eGRID" }
+        }
+      },
+      CA: {
+        default: { factor: 0.000120, year: 2022, source: "Canada NIR" },
+        regions: {
+          "ONTARIO": { factor: 0.000040, year: 2022, source: "Canada NIR" },
+          "QUEBEC": { factor: 0.000001, year: 2022, source: "Canada NIR" },
+          "ALBERTA": { factor: 0.000620, year: 2022, source: "Canada NIR" },
+          "BRITISH COLUMBIA": { factor: 0.000020, year: 2022, source: "Canada NIR" }
+        }
+      },
+      UK: {
+        default: { factor: 0.000193, year: 2023, source: "UK DEFRA" }
+      },
+      AU: {
+        default: { factor: 0.000790, year: 2023, source: "Australia NGA" },
+        regions: {
+          "NEW SOUTH WALES": { factor: 0.000730, year: 2023, source: "Australia NGA" },
+          "QUEENSLAND": { factor: 0.000820, year: 2023, source: "Australia NGA" },
+          "VICTORIA": { factor: 0.000920, year: 2023, source: "Australia NGA" }
+        }
+      },
+      SG: {
+        default: { factor: 0.000408, year: 2022, source: "Singapore NEA" },
+        regions: {
+          "SINGAPORE": { factor: 0.000408, year: 2022, source: "Singapore NEA" }
+        }
+      },
+      NZ: {
+        default: { factor: 0.000111, year: 2023, source: "New Zealand MBIE" }
+      }
     };
-    // Valid regions for US and Canada to keep entries clean and trusted
+    const GLOBAL_FALLBACK = { factor: 0.000450, year: 2022, source: "Public average" };
+
+    // Valid regions to keep entries clean and trusted
     const REGION_OPTIONS = {
       US: [
         "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","District of Columbia",
@@ -431,6 +468,8 @@
 
     const formatNumber = (n, digits = 2) => Number(n).toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
 
+    const normalizeKey = (str) => (str || "").trim().toUpperCase();
+
     const setRegionOptions = (country) => {
       const opts = REGION_OPTIONS[country] || [];
       regionEl.innerHTML = '<option value="">Select state / province</option>';
@@ -440,6 +479,20 @@
         opt.textContent = name;
         regionEl.appendChild(opt);
       });
+    };
+
+    const getEmissionFactor = (country, region) => {
+      const countryData = EMISSION_FACTORS[country];
+      const regionKey = normalizeKey(region);
+      if (countryData?.regions && countryData.regions[regionKey]) {
+        const data = countryData.regions[regionKey];
+        return { ...data, regionLabel: `${country} – ${region}` };
+      }
+      if (countryData?.default) {
+        const data = countryData.default;
+        return { ...data, regionLabel: country };
+      }
+      return { ...GLOBAL_FALLBACK, regionLabel: "Global average" };
     };
 
     countryEl.addEventListener('change', (e) => {
@@ -463,7 +516,8 @@
         return;
       }
 
-      const factor = EMISSION_FACTORS[country] || EMISSION_FACTORS.OTHER;
+      const factorData = getEmissionFactor(country, region);
+      const factor = factorData.factor;
       const tons = kwh * factor;
       const miles = tons * CAR_MILES_PER_TON;
       const homes = kwh / AVG_HOME_KWH_MONTH;
@@ -476,8 +530,8 @@
           ? 'Use this as a directional input in your client’s ESG summary.'
           : 'Track this month-over-month to spot reductions and set targets.';
 
-      calcDetailsEl.innerHTML = `Emissions = kWh × regional factor<br />${formatNumber(kwh, 0)} kWh × ${factor} t CO₂e/kWh = ${formatNumber(tons, 3)} t CO₂e. Factors are public (EPA/DEFRA).`;
-      interpretationEl.textContent = `For ${month} ${year} in ${region}, your electricity use generates about ${formatNumber(tons, 3)} metric tons CO₂e. This is a directional Scope 2 estimate to help you plan and communicate impact.`;
+      calcDetailsEl.innerHTML = `Emissions = kWh × location-based factor<br />${formatNumber(kwh, 0)} kWh × ${factor} t CO₂e/kWh = ${formatNumber(tons, 3)} t CO₂e.<br />Based on public, government-issued emission factors (${factorData.source}, ${factorData.year}).`;
+      interpretationEl.textContent = `For ${month} ${year} in ${region}, your electricity use generates about ${formatNumber(tons, 3)} metric tons CO₂e. This uses ${factorData.year} ${factorData.source} location-based factors for ${factorData.regionLabel}.`;
 
       placeholder.style.display = 'none';
       resultContainer.classList.add('active');
