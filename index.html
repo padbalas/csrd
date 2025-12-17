@@ -300,6 +300,39 @@
         <div class="cta-row" style="justify-content:flex-start;">
           <button type="submit" class="btn primary">See my emissions in minutes</button>
         </div>
+        <div class="notice" style="margin-top:10px;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
+            <input type="checkbox" id="market-toggle" style="width:auto;" />
+            Include market-based Scope 2 (RECs / PPAs)
+          </label>
+          <div class="hint" style="margin-top:6px;">Market-based emissions reflect purchased renewable energy instruments such as RECs or PPAs. Optional and off by default.</div>
+          <div id="market-fields" class="stack" style="margin-top:10px; display:none;">
+            <div class="two-col">
+              <div>
+                <label for="market-type">Instrument type</label>
+                <select id="market-type" name="market-type">
+                  <option value="">Select instrument</option>
+                  <option value="REC">REC</option>
+                  <option value="PPA">PPA</option>
+                  <option value="Green tariff">Green tariff</option>
+                </select>
+                <div class="hint">We do not verify certificates or contracts; this is user-declared.</div>
+              </div>
+              <div>
+                <label for="market-kwh">Covered electricity (kWh)</label>
+                <input type="number" id="market-kwh" name="market-kwh" min="0" step="any" placeholder="e.g., 500" />
+                <div class="hint">Portion of your kWh covered by RECs/PPAs. Uncovered kWh uses location-based factors.</div>
+              </div>
+            </div>
+            <div class="two-col">
+              <div>
+                <label for="market-year">Reporting year (market-based)</label>
+                <select id="market-year" name="market-year"></select>
+                <div class="hint">Must be current or past years only.</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </form>
       <!-- Trust strip anchors methodology without heavy enterprise vibe -->
       <div class="notice" style="margin-top:10px;">
@@ -317,7 +350,7 @@
         <div class="grid-3">
           <div class="stat-box">
             <strong id="result-tons">—</strong><br />
-            <span class="muted">Metric tons CO₂e (Scope 2, location-based)</span>
+            <span class="muted">Location-based (GHG Protocol)</span>
           </div>
           <div class="stat-box">
             <strong id="result-compare">—</strong><br />
@@ -327,11 +360,19 @@
             <strong id="result-next">—</strong><br />
             <span class="muted">What to do next</span>
           </div>
+          <div class="stat-box">
+            <strong id="result-market">—</strong><br />
+            <span class="muted">Market-based (GHG Protocol)</span>
+          </div>
         </div>
         <div class="notice" id="calc-details"></div>
         <p class="muted" id="factor-mismatch" style="display:none;"></p>
         <p class="muted" id="interpretation"></p>
         <p class="muted" id="disclaimer"><strong>Disclaimer:</strong> CarbonWise provides informational estimates only. This is not legal, audit, or tax advice.</p>
+        <div class="notice" id="market-disclaimer" style="display:none;">
+          <strong>Market-based note:</strong> Market-based emissions depend on contractual instruments and are reported separately from location-based emissions. This estimate is based on user-declared renewable energy instruments. CarbonWise does not verify certificates or contracts and does not provide legal, tax, or audit advice.
+          <div id="market-details" class="muted" style="margin-top:6px;"></div>
+        </div>
         <div class="notice" id="compliance-helper">
           <strong>Compliance context (plain English):</strong><br />
           California SB-253 / SB-261 and EU CSRD apply to certain larger companies or those operating in those regions. Many small businesses are not required to report yet. This is high-level guidance only — not legal or audit advice.
@@ -507,6 +548,11 @@
     const regionEl = document.getElementById('region');
     const yearEl = document.getElementById('year');
     const monthEl = document.getElementById('month');
+    const marketToggleEl = document.getElementById('market-toggle');
+    const marketFields = document.getElementById('market-fields');
+    const marketTypeEl = document.getElementById('market-type');
+    const marketKwhEl = document.getElementById('market-kwh');
+    const marketYearEl = document.getElementById('market-year');
     const resultContainer = document.getElementById('result-container');
     const placeholder = document.getElementById('placeholder');
     const tonsEl = document.getElementById('result-tons');
@@ -515,6 +561,9 @@
     const calcDetailsEl = document.getElementById('calc-details');
     const interpretationEl = document.getElementById('interpretation');
     const factorMismatchEl = document.getElementById('factor-mismatch');
+    const resultMarketEl = document.getElementById('result-market');
+    const marketDisclaimer = document.getElementById('market-disclaimer');
+    const marketDetails = document.getElementById('market-details');
 
     const TODAY = new Date();
     const CURRENT_YEAR = TODAY.getFullYear();
@@ -526,13 +575,13 @@
     const normalizeKey = (str) => (str || "").trim().toUpperCase();
 
     // Populate year dropdown with current year and past years only
-    const populateYears = () => {
-      yearEl.innerHTML = '';
+    const populateYears = (el) => {
+      el.innerHTML = '';
       for (let y = CURRENT_YEAR; y >= 2024; y -= 1) {
         const opt = document.createElement('option');
         opt.value = y;
         opt.textContent = y;
-        yearEl.appendChild(opt);
+        el.appendChild(opt);
       }
     };
 
@@ -597,9 +646,13 @@
     });
 
     yearEl.addEventListener('change', syncMonthOptions);
+    marketToggleEl.addEventListener('change', (e) => {
+      marketFields.style.display = e.target.checked ? 'grid' : 'none';
+    });
 
     // Initialize dropdowns
-    populateYears();
+    populateYears(yearEl);
+    populateYears(marketYearEl);
     syncMonthOptions();
     setRegionOptions('');
 
@@ -611,6 +664,10 @@
       const year = parseInt(form.year.value, 10);
       const kwh = parseFloat(form.kwh.value || '0');
       const region = form.region.value.trim();
+      const marketEnabled = marketToggleEl.checked;
+      const marketType = marketTypeEl.value;
+      const marketKwh = parseFloat(marketKwhEl.value || '0');
+      const marketYear = parseInt(marketYearEl.value || `${CURRENT_YEAR}`, 10);
 
       if (!persona || !country || !month || !year || !kwh || kwh <= 0 || !region) {
         alert('Please complete all fields to calculate.');
@@ -628,34 +685,64 @@
         return;
       }
 
+      if (marketEnabled) {
+        if (!marketType || Number.isNaN(marketKwh) || marketKwh < 0 || !marketYear) {
+          alert('Please provide market-based instrument type, covered kWh, and reporting year.');
+          return;
+        }
+        if (marketYear > CURRENT_YEAR) {
+          alert('Carbon emissions can only be calculated for past or current periods.');
+          return;
+        }
+        if (marketKwh > kwh) {
+          alert('Covered electricity (kWh) cannot exceed total electricity used.');
+          return;
+        }
+      }
+
       const factorData = getEmissionFactor(country, region);
       const factor = factorData.factor;
-      const tons = kwh * factor;
-      const miles = tons * CAR_MILES_PER_TON;
+      const tonsLocation = kwh * factor;
+      const coveredKwh = marketEnabled ? Math.min(marketKwh, kwh) : 0;
+      const uncoveredKwh = Math.max(kwh - coveredKwh, 0);
+      const tonsMarket = marketEnabled ? uncoveredKwh * factor : tonsLocation;
+      // Keep location-based and market-based as separate values for downstream export/reporting
+      const miles = tonsLocation * CAR_MILES_PER_TON;
       const homes = kwh / AVG_HOME_KWH_MONTH;
 
-      tonsEl.textContent = `${formatNumber(tons, 3)} t CO₂e`;
-      compareEl.textContent = `${formatNumber(miles, 0)} car miles or ${formatNumber(homes, 1)} homes for a month`;
+      tonsEl.textContent = `${formatNumber(tonsLocation, 3)} t CO₂e`;
+      compareEl.textContent = `${formatNumber(tonsLocation * CAR_MILES_PER_TON, 0)} car miles or ${formatNumber(homes, 1)} homes for a month`;
       nextEl.textContent = persona === 'finance'
         ? 'Save this number for your monthly close and share with leadership.'
         : persona === 'advisor'
           ? 'Use this as a directional input in your client’s ESG summary.'
           : 'Track this month-over-month to spot reductions and set targets.';
+      resultMarketEl.textContent = marketEnabled
+        ? `${formatNumber(tonsMarket, 3)} t CO₂e`
+        : 'Not provided';
 
       const factorSentence = `This estimate uses ${factorData.year} ${factorData.source} location-based electricity emission factors for ${factorData.regionLabel} (${formatNumber(factor, 6)} t CO₂e/kWh, version ${factorData.version}).`;
       calcDetailsEl.textContent = factorSentence;
 
       const isPartialCurrent = year === CURRENT_YEAR && monthNumber === CURRENT_MONTH;
       const partialNote = isPartialCurrent ? ' Partial period estimate: This calculation is based on usage entered for the current month and may change once the billing period is complete.' : '';
-      interpretationEl.textContent = `For ${month} ${year} in ${region}, your electricity use generates about ${formatNumber(tons, 3)} metric tons CO₂e.${partialNote}`;
+      interpretationEl.textContent = `For ${month} ${year} in ${region}, your electricity use generates about ${formatNumber(tonsLocation, 3)} metric tons CO₂e (location-based).${partialNote}`;
 
       // Show data currency disclaimer when billing year exceeds factor year
-      if (year > factorData.year) {
+      if (year > factorData.year || (marketEnabled && marketYear > factorData.year)) {
         factorMismatchEl.style.display = 'block';
         factorMismatchEl.textContent = 'Emission factors are published with a delay. This calculation uses the most recent available data.';
       } else {
         factorMismatchEl.style.display = 'none';
         factorMismatchEl.textContent = '';
+      }
+
+      if (marketEnabled) {
+        marketDisclaimer.style.display = 'block';
+        marketDetails.textContent = `Instrument: ${marketType} • Covered kWh: ${formatNumber(coveredKwh, 0)} • Reporting year: ${marketYear}. Market-based emissions depend on contractual instruments and are reported separately from location-based emissions.`;
+      } else {
+        marketDisclaimer.style.display = 'none';
+        marketDetails.textContent = '';
       }
 
       placeholder.style.display = 'none';
