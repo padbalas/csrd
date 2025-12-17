@@ -193,6 +193,7 @@
 <body>
   <header>
     <div class="shell">
+      <div class="tag">CarbonWise</div>
       <h1>Carbon reporting, made simple.</h1>
       <p class="subhead">Calculate your electricity emissions in minutes — no uploads, no accounts, no personal data.</p>
       <p class="subhead">A self-service, plain-English experience — similar to TurboTax, but built for carbon.</p>
@@ -256,6 +257,8 @@
               <option value="CA">Canada</option>
               <option value="UK">United Kingdom</option>
               <option value="AU">Australia</option>
+              <option value="SG">Singapore</option>
+              <option value="NZ">New Zealand</option>
             </select>
             <div class="hint">We match public grid factors; you can adjust later.</div>
           </div>
@@ -379,6 +382,8 @@
       CA: 0.00012,   // illustrative Canada grid average
       UK: 0.00020,   // illustrative UK average
       AU: 0.00075,   // illustrative Australia grid average
+      SG: 0.00040,   // illustrative Singapore grid average
+      NZ: 0.00012,   // illustrative New Zealand grid average
       OTHER: 0.00045 // fallback (unused for now but kept for safety)
     };
     // Valid regions for US and Canada to keep entries clean and trusted
@@ -401,6 +406,13 @@
       AU: [
         "New South Wales","Victoria","Queensland","Western Australia","South Australia",
         "Tasmania","Australian Capital Territory","Northern Territory"
+      ],
+      SG: [
+        "Singapore"
+      ],
+      NZ: [
+        "Auckland","Bay of Plenty","Canterbury","Gisborne","Hawke's Bay","Manawatu-Whanganui","Marlborough",
+        "Nelson","Northland","Otago","Southland","Taranaki","Tasman","Waikato","Wellington","West Coast"
       ]
     };
     const CAR_MILES_PER_TON = 1 / 0.000404; // ~0.404 kg CO2e per mile
