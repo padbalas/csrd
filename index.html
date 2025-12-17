@@ -30,7 +30,7 @@
     }
     header {
       padding: 70px 20px 40px;
-      background: radial-gradient(circle at 15% 20%, #e0f2f1, transparent 35%), #0f172a;
+      background: radial-gradient(circle at 20% 25%, rgba(224, 242, 241, 0.35), transparent 28%), #0f172a; /* soften highlight for mobile comfort */
       color: #f8fafc;
       text-align: left;
     }
@@ -276,8 +276,8 @@
           </div>
           <div>
             <label for="year">Billing year</label>
-            <input type="number" id="year" name="year" min="2024" max="2100" required placeholder="e.g., 2025" />
-            <div class="hint">Use the year on your bill (2024 or later); we don’t validate accounts.</div>
+            <select id="year" name="year" required></select>
+            <div class="hint">We show only years up to the current year; future periods are blocked.</div>
           </div>
         </div>
         <div class="two-col">
@@ -458,6 +458,8 @@
     const form = document.getElementById('carbon-form');
     const countryEl = document.getElementById('country');
     const regionEl = document.getElementById('region');
+    const yearEl = document.getElementById('year');
+    const monthEl = document.getElementById('month');
     const resultContainer = document.getElementById('result-container');
     const placeholder = document.getElementById('placeholder');
     const tonsEl = document.getElementById('result-tons');
@@ -466,9 +468,42 @@
     const calcDetailsEl = document.getElementById('calc-details');
     const interpretationEl = document.getElementById('interpretation');
 
+    const TODAY = new Date();
+    const CURRENT_YEAR = TODAY.getFullYear();
+    const CURRENT_MONTH = TODAY.getMonth() + 1; // 1-12
+
     const formatNumber = (n, digits = 2) => Number(n).toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
 
     const normalizeKey = (str) => (str || "").trim().toUpperCase();
+
+    // Populate year dropdown with current year and past years only
+    const populateYears = () => {
+      yearEl.innerHTML = '';
+      for (let y = CURRENT_YEAR; y >= 2024; y -= 1) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearEl.appendChild(opt);
+      }
+    };
+
+    // Disable future months when current year is selected
+    const syncMonthOptions = () => {
+      const selectedYear = parseInt(yearEl.value, 10);
+      const monthOptions = Array.from(monthEl.options).filter((o) => o.value);
+      monthOptions.forEach((opt, idx) => {
+        const monthNumber = idx + 1;
+        opt.disabled = selectedYear === CURRENT_YEAR && monthNumber > CURRENT_MONTH;
+      });
+      // If current selection becomes invalid, reset to blank
+      if (selectedYear === CURRENT_YEAR) {
+        const selMonthIndex = monthEl.selectedIndex;
+        const monthNumber = selMonthIndex > 0 ? selMonthIndex : 0;
+        if (monthNumber > CURRENT_MONTH) {
+          monthEl.value = '';
+        }
+      }
+    };
 
     const setRegionOptions = (country) => {
       const opts = REGION_OPTIONS[country] || [];
@@ -499,7 +534,11 @@
       setRegionOptions(e.target.value);
     });
 
-    // Initialize empty list until a country is chosen
+    yearEl.addEventListener('change', syncMonthOptions);
+
+    // Initialize dropdowns
+    populateYears();
+    syncMonthOptions();
     setRegionOptions('');
 
     form.addEventListener('submit', (e) => {
@@ -507,12 +546,23 @@
       const persona = form.persona.value;
       const country = form.country.value || 'OTHER';
       const month = form.month.value;
-      const year = form.year.value;
+      const year = parseInt(form.year.value, 10);
       const kwh = parseFloat(form.kwh.value || '0');
       const region = form.region.value.trim();
 
       if (!persona || !country || !month || !year || !kwh || kwh <= 0 || !region) {
         alert('Please complete all fields to calculate.');
+        return;
+      }
+
+      // Validation to block future periods and distinguish current partial periods
+      if (year > CURRENT_YEAR) {
+        alert('Carbon emissions can only be calculated for past or current periods.');
+        return;
+      }
+      const monthNumber = monthEl.selectedIndex; // Jan=1 in our options sequence
+      if (year === CURRENT_YEAR && monthNumber > CURRENT_MONTH) {
+        alert('Future months are not supported. Please select a completed or current billing period.');
         return;
       }
 
@@ -531,7 +581,9 @@
           : 'Track this month-over-month to spot reductions and set targets.';
 
       calcDetailsEl.innerHTML = `Emissions = kWh × location-based factor<br />${formatNumber(kwh, 0)} kWh × ${factor} t CO₂e/kWh = ${formatNumber(tons, 3)} t CO₂e.<br />Based on public, government-issued emission factors (${factorData.source}, ${factorData.year}).`;
-      interpretationEl.textContent = `For ${month} ${year} in ${region}, your electricity use generates about ${formatNumber(tons, 3)} metric tons CO₂e. This uses ${factorData.year} ${factorData.source} location-based factors for ${factorData.regionLabel}.`;
+      const isPartialCurrent = year === CURRENT_YEAR && monthNumber === CURRENT_MONTH;
+      const partialNote = isPartialCurrent ? ' Partial period estimate: This calculation is based on usage entered for the current month and may change once the billing period is complete.' : '';
+      interpretationEl.textContent = `For ${month} ${year} in ${region}, your electricity use generates about ${formatNumber(tons, 3)} metric tons CO₂e. This uses ${factorData.year} ${factorData.source} location-based factors for ${factorData.regionLabel}.${partialNote}`;
 
       placeholder.style.display = 'none';
       resultContainer.classList.add('active');
