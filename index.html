@@ -8,12 +8,12 @@
     :root {
       --ink: #0f172a;
       --muted: #4b5563;
+      --line: #e5e7eb;
       --card: #ffffff;
-      --bg: #f6f7fb;
       --accent: #0f766e;
       --accent-soft: #e0f2f1;
-      --border: #e5e7eb;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --bg: #f7f8fb;
+      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--ink);
     }
     * { box-sizing: border-box; }
@@ -21,42 +21,44 @@
       margin: 0;
       background: var(--bg);
       line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
     }
     header {
-      padding: 72px 20px 54px;
-      text-align: center;
-      background: linear-gradient(135deg, #0f172a, #0b2136);
+      padding: 70px 20px 40px;
+      background: radial-gradient(circle at 15% 20%, #e0f2f1, transparent 35%), #0f172a;
       color: #f8fafc;
+      text-align: left;
     }
-    header h1 {
-      margin: 0 0 10px;
-      font-size: clamp(32px, 5vw, 42px);
-      letter-spacing: -0.01em;
+    header .shell { padding-bottom: 30px; }
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(34px, 4vw, 46px);
+      letter-spacing: -0.015em;
+      line-height: 1.2;
     }
-    header p {
-      margin: 0 0 12px;
-      font-size: 1.1rem;
-      color: #e5e7eb;
+    .subhead {
+      font-size: 1.15rem;
+      color: #dbeafe;
+      max-width: 680px;
+      margin: 0 0 18px;
     }
-    .hero-note {
-      color: #c7d2fe;
-      font-size: 1rem;
-      margin-top: 10px;
-    }
-    .hero-cta {
+    .cta-row {
       display: flex;
-      gap: 10px;
-      justify-content: center;
-      align-items: center;
       flex-wrap: wrap;
-      margin-top: 16px;
+      gap: 12px;
+      align-items: center;
     }
     .btn {
       display: inline-flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       padding: 14px 18px;
-      border-radius: 10px;
+      border-radius: 12px;
       border: 1px solid transparent;
       font-weight: 700;
       text-decoration: none;
@@ -64,50 +66,21 @@
     }
     .btn.primary {
       background: #22c55e;
-      color: #0b1a2f;
+      color: #0f172a;
     }
     .btn.secondary {
-      border-color: #cbd5e1;
-      color: #0f172a;
-      background: #f8fafc;
+      background: transparent;
+      border-color: #93c5fd;
+      color: #e0f2fe;
     }
-    main {
-      max-width: 1040px;
-      margin: -40px auto 60px;
-      padding: 0 20px;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
-      padding: 22px;
-      margin-bottom: 18px;
-    }
-    h2 {
-      margin: 0 0 10px;
-      font-size: 1.5rem;
-    }
-    label {
-      display: block;
-      margin: 10px 0 6px;
-      font-weight: 600;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      font-size: 1rem;
-      font-family: inherit;
-      background: #fff;
-    }
-    .two-col {
-      display: grid;
+    .meta-line {
+      display: flex;
       gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      flex-wrap: wrap;
+      margin-top: 12px;
+      color: #cbd5e1;
+      font-size: 0.98rem;
     }
-    .muted { color: var(--muted); }
     .pill {
       display: inline-flex;
       align-items: center;
@@ -118,86 +91,148 @@
       border-radius: 999px;
       font-weight: 700;
       font-size: 0.95rem;
-      margin: 6px 0;
     }
-    ul { padding-left: 18px; }
-    .list-grid {
-      display: grid;
-      gap: 10px;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    h2 {
+      margin: 0 0 10px;
+      font-size: 1.6rem;
+      letter-spacing: -0.01em;
     }
-    .state {
-      display: none;
+    p { margin: 0 0 12px; color: var(--muted); }
+    section {
+      margin-top: 26px;
+      padding: 22px 20px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 16px 44px rgba(15, 23, 42, 0.08);
     }
-    .state.active {
-      display: block;
-    }
-    .notice {
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      padding: 12px;
-      margin-top: 10px;
-      color: #0f172a;
-    }
-    .results-grid {
+    .stack { display: grid; gap: 12px; }
+    .grid-3 {
       display: grid;
       gap: 14px;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     }
-    .stat {
+    ul { padding-left: 18px; margin: 0; color: var(--muted); }
+    .muted { color: var(--muted); }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 6px;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      font-size: 1rem;
+      font-family: inherit;
+      background: #fff;
+    }
+    .hint {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .two-col {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    .notice {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 12px;
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .result {
+      display: none;
+    }
+    .result.active {
+      display: grid;
+      gap: 14px;
+    }
+    .stat-box {
       background: #f8fafc;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       padding: 14px;
     }
     footer {
+      margin-top: 24px;
       text-align: center;
-      padding: 26px 16px 40px;
       color: var(--muted);
       font-size: 0.95rem;
       line-height: 1.5;
     }
-    .small { font-size: 0.95rem; }
+    @media (max-width: 640px) {
+      header { padding-top: 54px; }
+      h1 { font-size: 32px; }
+      section { padding: 18px 16px; }
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>CarbonWise</h1>
-    <p>TurboTax for carbon reporting. Simple, private, plain-English.</p>
-    <p>Enter your electricity usage — no uploads required. Get your carbon footprint in minutes.</p>
-    <div class="hero-cta">
-      <a href="#calculator" class="btn primary">Estimate My Carbon Footprint</a>
-      <a href="#calculator" class="btn secondary">Enter Your Usage</a>
+    <div class="shell">
+      <h1>Carbon reporting, made simple.</h1>
+      <p class="subhead">Calculate your electricity emissions in minutes — no uploads, no accounts, no personal data.</p>
+      <p class="subhead">A self-service, plain-English experience — similar to TurboTax, but built for carbon.</p>
+      <div class="cta-row">
+        <a class="btn primary" href="#calculator">Calculate my carbon impact</a>
+        <a class="btn secondary" href="#how">See how it works</a>
+      </div>
+      <div class="meta-line">
+        <span>Privacy-first • No logins • No bill uploads</span>
+        <span>Aligned with GHG Protocol Scope 2 (location-based)</span>
+      </div>
     </div>
-    <div class="hero-note">Free Scope 2 estimate • Privacy-first • No login required to see results</div>
   </header>
 
-  <main>
-    <section class="card" id="calculator">
-      <h2>Calculate your monthly Scope 2 emissions (electricity only)</h2>
-      <div class="pill">No bill uploads required — manual entry protects your privacy</div>
-      <form id="carbon-form">
+  <div class="shell">
+    <section id="problem">
+      <h2>Carbon reporting is confusing by design.</h2>
+      <p>Endless portals, vague emission factors, and compliance jargon make small teams stall. CarbonWise removes the noise so you can move.</p>
+      <p>We ask only what’s necessary, use public factors (EPA/DEFRA), and explain results in plain English.</p>
+    </section>
+
+    <section id="how">
+      <h2>How CarbonWise works</h2>
+      <div class="grid-3">
+        <div>
+          <strong>1) Enter electricity usage</strong>
+          <p class="muted">Country/region, billing month, and kWh. Nothing personal.</p>
+        </div>
+        <div>
+          <strong>2) Apply public emission factors</strong>
+          <p class="muted">Transparent factors from EPA/DEFRA — no black boxes.</p>
+        </div>
+        <div>
+          <strong>3) Get a clear estimate</strong>
+          <p class="muted">See emissions plus human comparisons and what to do next.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="calculator">
+      <h2>Calculate your monthly Scope 2 emissions</h2>
+      <p class="muted" style="margin-bottom:8px;">Start by telling us who you are so we can speak your language.</p>
+      <form id="carbon-form" class="stack">
         <div class="two-col">
           <div>
-            <label for="kwh">Electricity used (kWh)</label>
-            <input type="number" id="kwh" name="kwh" min="1" step="any" required placeholder="e.g., 1200" />
-          </div>
-          <div>
-            <label for="month">Billing month</label>
-            <select id="month" name="month" required>
-              <option value="">Select month</option>
-              <option>January</option><option>February</option><option>March</option><option>April</option>
-              <option>May</option><option>June</option><option>July</option><option>August</option>
-              <option>September</option><option>October</option><option>November</option><option>December</option>
+            <label for="persona">Who are you?</label>
+            <select id="persona" name="persona" required>
+              <option value="">Select one</option>
+              <option value="founder">Founder / operator</option>
+              <option value="finance">Finance / accounting</option>
+              <option value="advisor">Fractional CFO / advisor</option>
+              <option value="other">Other</option>
             </select>
+            <div class="hint">We tailor the explanation tone. No personal data stored.</div>
           </div>
           <div>
-            <label for="year">Billing year</label>
-            <input type="number" id="year" name="year" min="2000" max="2100" required placeholder="e.g., 2025" />
-          </div>
-          <div>
-            <label for="country">Country</label>
+            <label for="country">Country / region</label>
             <select id="country" name="country" required>
               <option value="">Select country</option>
               <option value="US">United States</option>
@@ -206,205 +241,163 @@
               <option value="IN">India</option>
               <option value="OTHER">Other</option>
             </select>
+            <div class="hint">We match public grid factors; you can adjust later.</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div>
+            <label for="month">Billing month</label>
+            <select id="month" name="month" required>
+              <option value="">Select month</option>
+              <option>January</option><option>February</option><option>March</option><option>April</option>
+              <option>May</option><option>June</option><option>July</option><option>August</option>
+              <option>September</option><option>October</option><option>November</option><option>December</option>
+            </select>
+            <div class="hint">We calculate one month at a time for clarity.</div>
+          </div>
+          <div>
+            <label for="year">Billing year</label>
+            <input type="number" id="year" name="year" min="2000" max="2100" required placeholder="e.g., 2025" />
+            <div class="hint">Use the year on your bill; we don’t validate accounts.</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div>
+            <label for="kwh">Electricity used (kWh)</label>
+            <input type="number" id="kwh" name="kwh" min="1" step="any" required placeholder="e.g., 1200" />
+            <div class="hint">Found on your statement as total kWh for the month.</div>
           </div>
           <div>
             <label for="region">State / region</label>
             <input type="text" id="region" name="region" required placeholder="e.g., California" />
-          </div>
-          <div>
-            <label for="company">Company name (optional)</label>
-            <input type="text" id="company" name="company" placeholder="e.g., Acme Co." />
+            <div class="hint">Used only to contextualize results. Not stored.</div>
           </div>
         </div>
-        <div class="notice small">
-          No bill uploads required. To protect your privacy, CarbonWise only asks for usage data (kWh, month/year, country, state/region). No addresses, account numbers, or logins.
+        <div class="notice">
+          No uploads. No accounts. We only use the fields above to calculate a Scope 2 (location-based) estimate with EPA/DEFRA factors. This is informational, not a filing.
         </div>
-        <div class="hero-cta" style="justify-content:flex-start;margin-top:14px;">
-          <button type="submit" class="btn primary">Calculate my footprint</button>
+        <div class="cta-row" style="justify-content:flex-start;">
+          <button type="submit" class="btn primary">Calculate now</button>
         </div>
       </form>
     </section>
 
-    <section class="card state" id="state-calculating">
-      <h2>Calculating…</h2>
-      <p class="muted">Crunching your kWh against regional emission factors.</p>
+    <section id="results">
+      <h2>Your estimate</h2>
+      <div id="result-container" class="result">
+        <div class="grid-3">
+          <div class="stat-box">
+            <strong id="result-tons">—</strong><br />
+            <span class="muted">Metric tons CO₂e (Scope 2, location-based)</span>
+          </div>
+          <div class="stat-box">
+            <strong id="result-compare">—</strong><br />
+            <span class="muted">Real-world comparison</span>
+          </div>
+          <div class="stat-box">
+            <strong id="result-next">—</strong><br />
+            <span class="muted">What to do next</span>
+          </div>
+        </div>
+        <div class="notice" id="calc-details"></div>
+        <p class="muted" id="interpretation"></p>
+        <p class="muted" id="disclaimer"><strong>Disclaimer:</strong> CarbonWise provides informational estimates only. This is not legal, audit, or tax advice.</p>
+      </div>
+      <div id="placeholder" class="muted">Your results will appear here after you calculate.</div>
     </section>
 
-    <section class="card state" id="results">
-      <h2>Your monthly carbon footprint (Scope 2, electricity)</h2>
-      <p class="muted" id="result-subtitle"></p>
-      <div class="results-grid">
-        <div class="stat">
-          <strong id="result-tons">—</strong><br />
-          <span class="muted">Metric tons CO₂e</span>
-        </div>
-        <div class="stat">
-          <strong id="result-miles">—</strong><br />
-          <span class="muted">Passenger car miles (approx.)</span>
-        </div>
-        <div class="stat">
-          <strong id="result-homes">—</strong><br />
-          <span class="muted">Avg. homes powered for a month (approx.)</span>
-        </div>
-      </div>
-
-      <div class="notice">
-        <strong>How we calculated this:</strong>
-        <div id="calc-details" class="muted small"></div>
-      </div>
-
-      <div class="card" style="margin-top:12px;border:1px dashed #cbd5e1;background:#f8fafc;">
-        <h3>What this means</h3>
-        <p id="what-this-means" class="muted"></p>
-      </div>
-
-      <div class="card" style="margin-top:12px;">
-        <h3>Compliance snapshot (not legal advice)</h3>
-        <p class="muted">High-level indicators only. This does not file, certify, or guarantee compliance.</p>
-        <ul id="compliance-list"></ul>
-      </div>
-
-      <div class="card" style="margin-top:12px;text-align:center;">
-        <p class="muted" style="margin:0 0 10px;">Save this estimate and track future months.</p>
-        <a href="#calculator" class="btn primary">Recalculate for another month</a>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>How it works</h2>
-      <div class="list-grid">
-        <div>
-          <strong>1) Enter your electricity usage</strong>
-          <p class="muted">kWh for the billing month. No uploads, no account numbers.</p>
-        </div>
-        <div>
-          <strong>2) We calculate emissions</strong>
-          <p class="muted">Location-based Scope 2 using verified emission factors (EPA/DEFRA).</p>
-        </div>
-        <div>
-          <strong>3) See your footprint and guidance</strong>
-          <p class="muted">Carbon footprint plus plain-English reporting guidance in minutes.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Who CarbonWise is for</h2>
-      <p class="muted">Built for small and mid-sized businesses without an ESG team.</p>
+    <section id="privacy">
+      <h2>Privacy & trust</h2>
       <ul>
-        <li>Founders & operators</li>
-        <li>Finance teams & accountants</li>
-        <li>Fractional CFOs</li>
-        <li>Growing companies facing new ESG rules</li>
-      </ul>
-      <p class="muted">If you’re not sure whether rules apply to you — CarbonWise is a safe place to start.</p>
-    </section>
-
-    <section class="card" id="obligations">
-      <h2>Know your reporting obligations — without the stress</h2>
-      <p>CarbonWise helps you understand whether regulations like California SB-253, SB-261, or EU CSRD may apply.</p>
-      <p>No legal jargon. No scare tactics. Just clear answers and prepared data.</p>
-    </section>
-
-    <section class="card">
-      <h2>Trust & standards</h2>
-      <ul>
-        <li>Aligned with GHG Protocol Scope 2 (location-based)</li>
-        <li>Configurable emission factors (EPA / DEFRA)</li>
-        <li>Trusted methodology — we help you prepare data, not file official reports</li>
+        <li>No uploads. We never ask for bills or PDFs.</li>
+        <li>No accounts or logins required to see results.</li>
+        <li>No stored personal data. Inputs stay on your device.</li>
+        <li>Emission factors from EPA / DEFRA — transparent and explainable.</li>
       </ul>
     </section>
 
-    <section class="card">
-      <h2>Why CarbonWise</h2>
-      <p>Enterprise ESG platforms are built for large teams, long timelines, and big budgets.</p>
-      <p>CarbonWise is built for businesses that want answers now.</p>
+    <section id="vision">
+      <h2>CarbonWise is just getting started</h2>
+      <p class="muted">We’re building the calm, obvious path to carbon reporting.</p>
+      <div class="grid-3">
+        <div>
+          <strong>Monthly tracking</strong>
+          <p class="muted">See trends over time and surface anomalies automatically.</p>
+        </div>
+        <div>
+          <strong>Scope 1 & 2 coverage</strong>
+          <p class="muted">Measure direct fuel use and electricity emissions — clearly and simply.</p>
+        </div>
+        <div>
+          <strong>Exportable ESG summaries</strong>
+          <p class="muted">Share clean, audit-friendly summaries with stakeholders.</p>
+        </div>
+      </div>
     </section>
-  </main>
 
-  <footer>
-    <p>CarbonWise provides carbon calculations and data preparation tools.</p>
-    <p>Calculations aligned with GHG Protocol and public emission factors (EPA, DEFRA).</p>
-    <p>We help you prepare data — we do not file official reports for you. This is an estimate for informational purposes only. Not legal, tax, or audit advice.</p>
-    <p>CarbonWise © 2025</p>
-  </footer>
+    <footer>
+      <p>CarbonWise exists to make carbon reporting obvious, private, and fast.</p>
+      <p>Aligned with GHG Protocol Scope 2 (location-based). Factors: EPA / DEFRA.</p>
+      <p><a href="mailto:hello@esgrise.com">Contact / feedback</a></p>
+    </footer>
+  </div>
 
   <script>
     // Configurable emission factors (metric tons CO2e per kWh)
     const EMISSION_FACTORS = {
       US: 0.00038,   // example average US grid factor
-      UK: 0.00020,   // illustrative
+      UK: 0.00020,   // illustrative UK average
       EU: 0.00025,   // illustrative EU average
       IN: 0.00071,   // illustrative India grid average
       OTHER: 0.00045 // fallback
     };
-    // Context assumptions
     const CAR_MILES_PER_TON = 1 / 0.000404; // ~0.404 kg CO2e per mile
     const AVG_HOME_KWH_MONTH = 877; // US average monthly kWh per home
 
     const form = document.getElementById('carbon-form');
-    const stateCalculating = document.getElementById('state-calculating');
-    const stateResults = document.getElementById('results');
-    const subtitleEl = document.getElementById('result-subtitle');
+    const resultContainer = document.getElementById('result-container');
+    const placeholder = document.getElementById('placeholder');
     const tonsEl = document.getElementById('result-tons');
-    const milesEl = document.getElementById('result-miles');
-    const homesEl = document.getElementById('result-homes');
+    const compareEl = document.getElementById('result-compare');
+    const nextEl = document.getElementById('result-next');
     const calcDetailsEl = document.getElementById('calc-details');
-    const whatMeansEl = document.getElementById('what-this-means');
-    const complianceList = document.getElementById('compliance-list');
+    const interpretationEl = document.getElementById('interpretation');
 
     const formatNumber = (n, digits = 2) => Number(n).toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
 
-    const showState = (el) => {
-      [stateCalculating, stateResults].forEach((node) => node.classList.remove('active'));
-      if (el) el.classList.add('active');
-    };
-
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const kwh = parseFloat(form.kwh.value || '0');
+      const persona = form.persona.value;
+      const country = form.country.value || 'OTHER';
       const month = form.month.value;
       const year = form.year.value;
-      const country = form.country.value || 'OTHER';
+      const kwh = parseFloat(form.kwh.value || '0');
       const region = form.region.value.trim();
-      const company = form.company.value.trim();
 
-      if (!kwh || kwh <= 0 || !month || !year || !country || !region) {
-        alert('Please enter kWh, month, year, country, and state/region to calculate.');
+      if (!persona || !country || !month || !year || !kwh || kwh <= 0 || !region) {
+        alert('Please complete all fields to calculate.');
         return;
       }
 
-      showState(stateCalculating);
+      const factor = EMISSION_FACTORS[country] || EMISSION_FACTORS.OTHER;
+      const tons = kwh * factor;
+      const miles = tons * CAR_MILES_PER_TON;
+      const homes = kwh / AVG_HOME_KWH_MONTH;
 
-      // Simulate a brief calculation delay for UX
-      setTimeout(() => {
-        const factor = EMISSION_FACTORS[country] || EMISSION_FACTORS.OTHER;
-        const tons = kwh * factor;
-        const miles = tons * CAR_MILES_PER_TON;
-        const homes = kwh / AVG_HOME_KWH_MONTH;
+      tonsEl.textContent = `${formatNumber(tons, 3)} t CO₂e`;
+      compareEl.textContent = `${formatNumber(miles, 0)} car miles or ${formatNumber(homes, 1)} homes for a month`;
+      nextEl.textContent = persona === 'finance'
+        ? 'Save this number for your monthly close and share with leadership.'
+        : persona === 'advisor'
+          ? 'Use this as a directional input in your client’s ESG summary.'
+          : 'Track this month-over-month to spot reductions and set targets.';
 
-        subtitleEl.textContent = `${formatNumber(tons, 3)} metric tons CO₂e for ${month} ${year}${company ? ` — ${company}` : ''} (${region})`;
-        tonsEl.textContent = `${formatNumber(tons, 3)} t CO₂e`;
-        milesEl.textContent = `${formatNumber(miles, 0)} miles driven`;
-        homesEl.textContent = `${formatNumber(homes, 1)} homes for a month`;
+      calcDetailsEl.innerHTML = `Emissions = kWh × regional factor<br />${formatNumber(kwh, 0)} kWh × ${factor} t CO₂e/kWh = ${formatNumber(tons, 3)} t CO₂e. Factors are public (EPA/DEFRA).`;
+      interpretationEl.textContent = `For ${month} ${year} in ${region}, your electricity use generates about ${formatNumber(tons, 3)} metric tons CO₂e. This is a directional Scope 2 estimate to help you plan and communicate impact.`;
 
-        calcDetailsEl.innerHTML = `
-          Emissions = kWh × regional emission factor<br />
-          ${formatNumber(kwh, 0)} kWh × ${factor} t CO₂e/kWh = ${formatNumber(tons, 3)} t CO₂e.<br />
-          Factors are configurable (EPA/DEFRA). This is a Scope 2, location-based estimate.
-        `;
-
-        whatMeansEl.textContent = `Your electricity use for ${month} ${year} generates about ${formatNumber(tons, 3)} metric tons CO₂e. This is a directional estimate to help you understand carbon reporting needs.`;
-
-        complianceList.innerHTML = `
-          <li>California SB-253 / SB-261: May apply if your revenue or operations meet state thresholds.</li>
-          <li>EU CSRD: May apply if you have EU operations or meet size thresholds.</li>
-          <li>This is high-level guidance, not legal or filing advice.</li>
-        `;
-
-        showState(stateResults);
-        stateResults.scrollIntoView({ behavior: 'smooth' });
-      }, 300);
+      placeholder.style.display = 'none';
+      resultContainer.classList.add('active');
+      resultContainer.scrollIntoView({ behavior: 'smooth' });
     });
   </script>
 </body>
