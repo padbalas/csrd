@@ -106,6 +106,15 @@
       border-radius: 16px;
       box-shadow: 0 16px 44px rgba(15, 23, 42, 0.08);
     }
+    .tag {
+      display: inline-block;
+      padding: 6px 10px;
+      background: #e0f2f1;
+      color: #0f766e;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
     .stack { display: grid; gap: 12px; }
     .grid-3 {
       display: grid;
@@ -153,6 +162,14 @@
       display: grid;
       gap: 14px;
     }
+    .example {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      color: var(--muted);
+    }
     .stat-box {
       background: #f8fafc;
       border: 1px solid #e5e7eb;
@@ -180,7 +197,7 @@
       <p class="subhead">Calculate your electricity emissions in minutes — no uploads, no accounts, no personal data.</p>
       <p class="subhead">A self-service, plain-English experience — similar to TurboTax, but built for carbon.</p>
       <div class="cta-row">
-        <a class="btn primary" href="#calculator">Calculate my carbon impact</a>
+        <a class="btn primary" href="#calculator">Calculate my carbon footprint</a>
         <a class="btn secondary" href="#how">See how it works</a>
       </div>
       <div class="meta-line">
@@ -277,13 +294,21 @@
           No uploads. No accounts. We only use the fields above to calculate a Scope 2 (location-based) estimate with EPA/DEFRA factors. This is informational, not a filing.
         </div>
         <div class="cta-row" style="justify-content:flex-start;">
-          <button type="submit" class="btn primary">Calculate now</button>
+          <button type="submit" class="btn primary">See my emissions in minutes</button>
         </div>
       </form>
+      <!-- Trust strip anchors methodology without heavy enterprise vibe -->
+      <div class="notice" style="margin-top:10px;">
+        <strong>Methodology:</strong> GHG Protocol Scope 2 (location-based) • <strong>Emission factors:</strong> EPA / DEFRA • Estimates only — not legal, tax, or audit advice.
+      </div>
     </section>
 
     <section id="results">
       <h2>Your estimate</h2>
+      <!-- Pre-calculated example builds trust before interaction -->
+      <div class="example">
+        <strong>Example:</strong> 1,850 kWh → 1.42 metric tons CO₂e ≈ driving ~3,500 miles. Check your own month below.
+      </div>
       <div id="result-container" class="result">
         <div class="grid-3">
           <div class="stat-box">
@@ -302,6 +327,10 @@
         <div class="notice" id="calc-details"></div>
         <p class="muted" id="interpretation"></p>
         <p class="muted" id="disclaimer"><strong>Disclaimer:</strong> CarbonWise provides informational estimates only. This is not legal, audit, or tax advice.</p>
+        <div class="notice" id="compliance-helper">
+          <strong>Compliance context (plain English):</strong><br />
+          California SB-253 / SB-261 and EU CSRD apply to certain larger companies or those operating in those regions. Many small businesses are not required to report yet. This is high-level guidance only — not legal or audit advice.
+        </div>
       </div>
       <div id="placeholder" class="muted">Your results will appear here after you calculate.</div>
     </section>
