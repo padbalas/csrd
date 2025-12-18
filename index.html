@@ -219,16 +219,16 @@
       <h2>How CarbonWise works</h2>
       <div class="grid-3">
         <div>
-          <strong>1) Enter electricity usage</strong>
+          <strong>1) You enter electricity usage</strong>
           <p class="muted">Country/region, billing month, and kWh. Nothing personal.</p>
         </div>
         <div>
-          <strong>2) Apply public emission factors</strong>
-          <p class="muted">Transparent factors from EPA/DEFRA — no black boxes.</p>
+          <strong>2) CarbonWise applies public emission factors</strong>
+          <p class="muted">Transparent, government-issued factors (EPA/DEFRA) — no black boxes.</p>
         </div>
         <div>
-          <strong>3) Get a clear estimate</strong>
-          <p class="muted">See emissions plus human comparisons and what to do next.</p>
+          <strong>3) You get a clear estimate</strong>
+          <p class="muted">Location-based by default, with optional market-based if you opt in.</p>
         </div>
       </div>
     </section>
@@ -417,99 +417,10 @@
     </footer>
   </div>
 
-  <script>
+  <script type="module">
+    import { EMISSION_FACTORS, GLOBAL_FALLBACK } from './data/emission-factors.js';
     // Configurable emission factors (metric tons CO2e per kWh)
-    /* Location-based Scope 2 emission factors (t CO2e/kWh), versioned and immutable per publication.
-       Governance:
-       - Only FINAL, government-issued datasets are used (no provisional/forecasted data).
-       - New data is appended as new versions; prior versions are never overwritten to preserve historical stability.
-       - Factor selection prefers a billing-year match; otherwise uses the most recent FINAL year.
-       - Historical calculations should reference the factor version used at time of calculation. */
-    const EMISSION_FACTORS = {
-      US: {
-        default: [
-          { factor: 0.000379, year: 2022, source: "EPA eGRID", published_date: "2024-01-15", status: "final", version: "v2022.1" }
-        ],
-        regions: {
-          "CALIFORNIA": [
-            { factor: 0.000185, year: 2022, source: "EPA eGRID", published_date: "2024-01-15", status: "final", version: "v2022.1" }
-          ],
-          "TEXAS": [
-            { factor: 0.000432, year: 2022, source: "EPA eGRID", published_date: "2024-01-15", status: "final", version: "v2022.1" }
-          ],
-          "NEW YORK": [
-            { factor: 0.000154, year: 2022, source: "EPA eGRID", published_date: "2024-01-15", status: "final", version: "v2022.1" }
-          ],
-          "FLORIDA": [
-            { factor: 0.000376, year: 2022, source: "EPA eGRID", published_date: "2024-01-15", status: "final", version: "v2022.1" }
-          ],
-          "ILLINOIS": [
-            { factor: 0.000344, year: 2022, source: "EPA eGRID", published_date: "2024-01-15", status: "final", version: "v2022.1" }
-          ],
-          "WASHINGTON": [
-            { factor: 0.000106, year: 2022, source: "EPA eGRID", published_date: "2024-01-15", status: "final", version: "v2022.1" }
-          ]
-        }
-      },
-      CA: {
-        default: [
-          { factor: 0.000120, year: 2022, source: "Canada NIR", published_date: "2023-10-01", status: "final", version: "v2022.1" }
-        ],
-        regions: {
-          "ONTARIO": [
-            { factor: 0.000040, year: 2022, source: "Canada NIR", published_date: "2023-10-01", status: "final", version: "v2022.1" }
-          ],
-          "QUEBEC": [
-            { factor: 0.000001, year: 2022, source: "Canada NIR", published_date: "2023-10-01", status: "final", version: "v2022.1" }
-          ],
-          "ALBERTA": [
-            { factor: 0.000620, year: 2022, source: "Canada NIR", published_date: "2023-10-01", status: "final", version: "v2022.1" }
-          ],
-          "BRITISH COLUMBIA": [
-            { factor: 0.000020, year: 2022, source: "Canada NIR", published_date: "2023-10-01", status: "final", version: "v2022.1" }
-          ]
-        }
-      },
-      UK: {
-        default: [
-          { factor: 0.000193, year: 2023, source: "UK DEFRA", published_date: "2024-05-01", status: "final", version: "v2023.1" }
-        ]
-      },
-      AU: {
-        default: [
-          { factor: 0.000790, year: 2023, source: "Australia NGA", published_date: "2024-02-01", status: "final", version: "v2023.1" }
-        ],
-        regions: {
-          "NEW SOUTH WALES": [
-            { factor: 0.000730, year: 2023, source: "Australia NGA", published_date: "2024-02-01", status: "final", version: "v2023.1" }
-          ],
-          "QUEENSLAND": [
-            { factor: 0.000820, year: 2023, source: "Australia NGA", published_date: "2024-02-01", status: "final", version: "v2023.1" }
-          ],
-          "VICTORIA": [
-            { factor: 0.000920, year: 2023, source: "Australia NGA", published_date: "2024-02-01", status: "final", version: "v2023.1" }
-          ]
-        }
-      },
-      SG: {
-        default: [
-          { factor: 0.000408, year: 2022, source: "Singapore NEA", published_date: "2023-08-01", status: "final", version: "v2022.1" }
-        ],
-        regions: {
-          "SINGAPORE": [
-            { factor: 0.000408, year: 2022, source: "Singapore NEA", published_date: "2023-08-01", status: "final", version: "v2022.1" }
-          ]
-        }
-      },
-      NZ: {
-        default: [
-          { factor: 0.000111, year: 2023, source: "New Zealand MBIE", published_date: "2024-03-01", status: "final", version: "v2023.1" }
-        ]
-      }
-    };
-    const GLOBAL_FALLBACK = [
-      { factor: 0.000450, year: 2022, source: "Public average", published_date: "2023-01-01", status: "final", version: "v2022.1" }
-    ];
+    // Emission factors imported from a versioned, append-only dataset for easy updates without touching UI/logic.
 
     // Valid regions to keep entries clean and trusted
     const REGION_OPTIONS = {
