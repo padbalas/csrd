@@ -517,7 +517,6 @@
 
   <script type="module">
     import { EMISSION_FACTORS, GLOBAL_FALLBACK } from './data/emission-factors.js';
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     // Configurable emission factors (metric tons CO2e per kWh)
     // Emission factors imported from a versioned, append-only dataset for easy updates without touching UI/logic.
 
@@ -604,7 +603,15 @@
     // Supabase client config (replace placeholders or set window.SUPABASE_URL / window.SUPABASE_ANON_KEY)
     const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
     const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let supabase = null;
+    const initSupabaseClient = async () => {
+      try {
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+        supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      } catch (err) {
+        console.warn('Supabase client failed to load; save/history disabled until online.', err);
+      }
+    };
 
     const TODAY = new Date();
     const CURRENT_YEAR = TODAY.getFullYear();
@@ -733,6 +740,10 @@
     };
 
     const loadHistory = async () => {
+      if (!supabase) {
+        alert('History unavailable while offline.');
+        return;
+      }
       if (!appState.session) return;
       const { data, error } = await supabase
         .from('scope2_records')
@@ -759,6 +770,7 @@
     });
 
     const initAuth = async () => {
+      if (!supabase) return;
       const { data } = await supabase.auth.getSession();
       setSessionUI(data?.session || null);
       supabase.auth.onAuthStateChange((_event, session) => {
@@ -777,6 +789,10 @@
         return;
       }
       authStatus.textContent = 'Sending magic link...';
+      if (!supabase) {
+        authStatus.textContent = 'Supabase unavailable. Please retry when online.';
+        return;
+      }
       const { error } = await supabase.auth.signInWithOtp({ email: authEmail.value, options: { emailRedirectTo: window.location.href } });
       if (error) {
         authStatus.textContent = 'Could not send magic link. Please try again.';
@@ -790,7 +806,9 @@
     });
 
     signoutBtn.addEventListener('click', async () => {
-      await supabase.auth.signOut();
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
       appState.companyId = null;
       alert('Signed out.');
     });
@@ -823,6 +841,10 @@
 
     const getOrCreateCompany = async () => {
       // Try existing company
+      if (!supabase) {
+        alert('Saving unavailable while offline.');
+        return null;
+      }
       const { data, error } = await supabase.from('companies').select('id').limit(1);
       if (error) {
         alert('Unable to fetch company.');
@@ -875,6 +897,10 @@
         return;
       }
       const calc = appState.lastCalculation;
+      if (!supabase) {
+        alert('Saving unavailable while offline.');
+        return;
+      }
       const { data: existing } = await supabase
         .from('scope2_records')
         .select('id')
@@ -1053,8 +1079,8 @@
     resultContainer.scrollIntoView({ behavior: 'smooth' });
     });
 
-    // Kick off auth session detection on load
-    initAuth();
+    // Kick off auth session detection on load (safe if supabase fails to load)
+    initSupabaseClient().then(() => initAuth());
   </script>
 </body>
 </html>
