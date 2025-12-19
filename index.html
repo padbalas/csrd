@@ -864,11 +864,13 @@
             return;
           }
           const { data: inserted, error: insertErr } = await supabase.from('companies').insert({
+            user_id: appState.session?.user?.id,
             company_name: companyName.value.trim(),
             country: companyCountry.value,
             region: companyRegion.value.trim() || null
           }).select('id').single();
           if (insertErr) {
+            console.error('Company save error', insertErr);
             alert('Could not save company.');
             return;
           }
