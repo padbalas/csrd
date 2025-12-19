@@ -799,6 +799,9 @@
         return;
       }
       authStatus.textContent = 'Magic link sent. Check your email and return to continue.';
+      setTimeout(() => {
+        closeAuthModal();
+      }, 800);
     });
 
     authCancel.addEventListener('click', () => {
