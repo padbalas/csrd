@@ -123,6 +123,7 @@
     }
     ul { padding-left: 18px; margin: 0; color: var(--muted); }
     .muted { color: var(--muted); }
+    .small { font-size: 0.95rem; }
     label {
       font-weight: 600;
       display: block;
@@ -188,6 +189,42 @@
       h1 { font-size: 32px; }
       section { padding: 18px 16px; }
     }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 999;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: #fff;
+      border-radius: 12px;
+      padding: 18px;
+      width: min(520px, 100%);
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 16px 44px rgba(15, 23, 42, 0.15);
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+    .history-list {
+      display: grid;
+      gap: 12px;
+    }
+    .history-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+    details summary { cursor: pointer; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -377,8 +414,20 @@
           <strong>Compliance context (plain English):</strong><br />
           California SB-253 / SB-261 and EU CSRD apply to certain larger companies or those operating in those regions. Many small businesses are not required to report yet. This is high-level guidance only — not legal or audit advice.
         </div>
+        <div class="cta-row" style="margin-top:12px; justify-content:flex-start;">
+          <button type="button" class="btn primary" id="save-btn">Save & track history</button>
+          <button type="button" class="btn secondary" id="history-btn">My history</button>
+          <button type="button" class="btn secondary" id="signout-btn" style="display:none;">Sign out</button>
+        </div>
       </div>
       <div id="placeholder" class="muted">Your results will appear here after you calculate.</div>
+    </section>
+
+    <section id="history-section" style="display:none;">
+      <h2>My history</h2>
+      <p class="muted">Signed-in users can see saved periods. Data is private to your account via RLS.</p>
+      <div id="history-list" class="history-list"></div>
+      <div id="history-empty" class="muted" style="display:none;">No saved records yet.</div>
     </section>
 
     <section id="privacy">
@@ -417,8 +466,58 @@
     </footer>
   </div>
 
+  <!-- Auth + company modal -->
+  <div class="modal" id="auth-modal">
+    <div class="modal-content">
+      <h3 id="auth-modal-title">Sign in to save & track history</h3>
+      <p class="muted" id="auth-modal-desc">Sign in to save results and track your history. Calculations work without an account.</p>
+      <form id="auth-form" class="stack">
+        <div>
+          <label for="auth-email">Work email</label>
+          <input type="email" id="auth-email" name="auth-email" required placeholder="you@example.com" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn secondary" id="auth-cancel">Cancel</button>
+          <button type="submit" class="btn primary" id="auth-submit">Send magic link</button>
+        </div>
+        <p class="muted small" id="auth-status"></p>
+      </form>
+
+      <form id="company-form" class="stack" style="display:none;">
+        <div>
+          <label for="company-name">Company name</label>
+          <input type="text" id="company-name" required placeholder="Acme Co." />
+        </div>
+        <div class="two-col">
+          <div>
+            <label for="company-country">Company country</label>
+            <select id="company-country" required>
+              <option value="">Select country</option>
+              <option value="US">United States</option>
+              <option value="CA">Canada</option>
+              <option value="UK">United Kingdom</option>
+              <option value="AU">Australia</option>
+              <option value="SG">Singapore</option>
+              <option value="NZ">New Zealand</option>
+            </select>
+          </div>
+          <div>
+            <label for="company-region">Region / state (optional)</label>
+            <input type="text" id="company-region" placeholder="e.g., California" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn secondary" id="company-back">Back</button>
+          <button type="submit" class="btn primary" id="company-submit">Save company</button>
+        </div>
+        <p class="muted small">No bill uploads required. We only store the usage values you enter.</p>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
     import { EMISSION_FACTORS, GLOBAL_FALLBACK } from './data/emission-factors.js';
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     // Configurable emission factors (metric tons CO2e per kWh)
     // Emission factors imported from a versioned, append-only dataset for easy updates without touching UI/logic.
 
@@ -475,6 +574,37 @@
     const resultMarketEl = document.getElementById('result-market');
     const marketDisclaimer = document.getElementById('market-disclaimer');
     const marketDetails = document.getElementById('market-details');
+    const saveBtn = document.getElementById('save-btn');
+    const historyBtn = document.getElementById('history-btn');
+    const signoutBtn = document.getElementById('signout-btn');
+    const historySection = document.getElementById('history-section');
+    const historyList = document.getElementById('history-list');
+    const historyEmpty = document.getElementById('history-empty');
+    const authModal = document.getElementById('auth-modal');
+    const authForm = document.getElementById('auth-form');
+    const authEmail = document.getElementById('auth-email');
+    const authCancel = document.getElementById('auth-cancel');
+    const authStatus = document.getElementById('auth-status');
+    const companyForm = document.getElementById('company-form');
+    const companyName = document.getElementById('company-name');
+    const companyCountry = document.getElementById('company-country');
+    const companyRegion = document.getElementById('company-region');
+    const companyBack = document.getElementById('company-back');
+    const authModalTitle = document.getElementById('auth-modal-title');
+    const authModalDesc = document.getElementById('auth-modal-desc');
+    const marketYearEl = document.getElementById('market-year');
+
+    const appState = {
+      session: null,
+      companyId: null,
+      lastCalculation: null,
+      saving: false
+    };
+
+    // Supabase client config (replace placeholders or set window.SUPABASE_URL / window.SUPABASE_ANON_KEY)
+    const SUPABASE_URL = window.SUPABASE_URL || 'https://YOUR_PROJECT.supabase.co';
+    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const TODAY = new Date();
     const CURRENT_YEAR = TODAY.getFullYear();
@@ -535,6 +665,250 @@
         if (!latest) return rec;
         return rec.year > latest.year ? rec : latest;
       }, null);
+    };
+
+    const setSessionUI = (session) => {
+      appState.session = session;
+      signoutBtn.style.display = session ? 'inline-flex' : 'none';
+      if (!session) {
+        historySection.style.display = 'none';
+        historyList.innerHTML = '';
+        historyEmpty.style.display = 'none';
+        appState.companyId = null;
+      } else if (historySection.style.display !== 'none') {
+        loadHistory();
+      }
+    };
+
+    const openAuthModal = (showAuth = true) => {
+      authForm.style.display = showAuth ? 'block' : 'none';
+      companyForm.style.display = showAuth ? 'none' : 'block';
+      authModal.classList.add('active');
+      authStatus.textContent = '';
+    };
+    const closeAuthModal = () => {
+      authModal.classList.remove('active');
+      authStatus.textContent = '';
+      authForm.reset();
+    };
+
+    const showHistorySection = () => {
+      if (!appState.session) {
+        alert('Sign in to view saved history.');
+        openAuthModal(true);
+        return;
+      }
+      historySection.style.display = 'block';
+      loadHistory();
+    };
+
+    const renderHistory = (rows) => {
+      historyList.innerHTML = '';
+      if (!rows.length) {
+        historyEmpty.style.display = 'block';
+        return;
+      }
+      historyEmpty.style.display = 'none';
+      rows.forEach((row) => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        const period = `${row.period_year}-${String(row.period_month).padStart(2, '0')}`;
+        const marketVal = row.market_based_emissions != null ? `${formatNumber(row.market_based_emissions, 3)} t` : '—';
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div><strong>${period}</strong> • ${formatNumber(row.kwh, 0)} kWh</div>
+            <div class="muted">Factor: ${row.emission_factor_source} ${row.emission_factor_year}</div>
+          </div>
+          <div class="muted">Location-based: ${formatNumber(row.location_based_emissions, 3)} t CO₂e • Market-based: ${marketVal}</div>
+          <details style="margin-top:6px;">
+            <summary>View details</summary>
+            <p class="muted">Region: ${row.companies?.country || '—'}${row.companies?.region ? ' / ' + row.companies.region : ''}</p>
+            <p class="muted">Factor value: ${formatNumber(row.emission_factor_value, 6)} t CO₂e/kWh • ${row.emission_factor_source} ${row.emission_factor_year}</p>
+            <p class="muted">Location-based Scope 2 (GHG Protocol)</p>
+            <button class="btn secondary" data-delete="${row.id}" style="margin-top:6px;">Delete record</button>
+          </details>
+        `;
+        historyList.appendChild(div);
+      });
+    };
+
+    const loadHistory = async () => {
+      if (!appState.session) return;
+      const { data, error } = await supabase
+        .from('scope2_records')
+        .select('id,period_year,period_month,kwh,location_based_emissions,market_based_emissions,emission_factor_source,emission_factor_year,emission_factor_value,companies(country,region)')
+        .order('created_at', { ascending: false });
+      if (error) {
+        alert('Could not load history right now.');
+        return;
+      }
+      renderHistory(data || []);
+    };
+
+    historyList.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-delete]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-delete');
+      if (!confirm('Delete this record?')) return;
+      const { error } = await supabase.from('scope2_records').delete().eq('id', id);
+      if (error) {
+        alert('Delete failed. Please try again.');
+        return;
+      }
+      loadHistory();
+    });
+
+    const initAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      setSessionUI(data?.session || null);
+      supabase.auth.onAuthStateChange((_event, session) => {
+        setSessionUI(session);
+        if (session && appState.saving) {
+          // Continue save flow after magic link
+          handleSaveFlow();
+        }
+      });
+    };
+
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!authEmail.value) {
+        authStatus.textContent = 'Email is required.';
+        return;
+      }
+      authStatus.textContent = 'Sending magic link...';
+      const { error } = await supabase.auth.signInWithOtp({ email: authEmail.value, options: { emailRedirectTo: window.location.href } });
+      if (error) {
+        authStatus.textContent = 'Could not send magic link. Please try again.';
+        return;
+      }
+      authStatus.textContent = 'Magic link sent. Check your email and return to continue.';
+    });
+
+    authCancel.addEventListener('click', () => {
+      closeAuthModal();
+    });
+
+    signoutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      appState.companyId = null;
+      alert('Signed out.');
+    });
+
+    const handleSaveFlow = async () => {
+      if (!appState.session) {
+        authModalTitle.textContent = 'Sign in to save & track history';
+        authModalDesc.textContent = 'Sign in to save results and track your history. Calculations work without an account.';
+        openAuthModal(true);
+        appState.saving = true;
+        return;
+      }
+      appState.saving = false;
+      if (!appState.companyId) {
+        appState.companyId = await getOrCreateCompany();
+        if (!appState.companyId) return;
+      }
+      await upsertRecord(appState.companyId);
+    };
+
+    saveBtn.addEventListener('click', () => {
+      if (!appState.lastCalculation) {
+        alert('Calculate before saving.');
+        return;
+      }
+      handleSaveFlow();
+    });
+
+    historyBtn.addEventListener('click', showHistorySection);
+
+    const getOrCreateCompany = async () => {
+      // Try existing company
+      const { data, error } = await supabase.from('companies').select('id').limit(1);
+      if (error) {
+        alert('Unable to fetch company.');
+        return null;
+      }
+      if (data && data.length) return data[0].id;
+      // Otherwise show company form
+      authModalTitle.textContent = 'Add your company';
+      authModalDesc.textContent = 'Provide company details to save results. No bill uploads required.';
+      authForm.style.display = 'none';
+      companyForm.style.display = 'block';
+      authModal.classList.add('active');
+      return new Promise((resolve) => {
+        const onSubmit = async (ev) => {
+          ev.preventDefault();
+          if (!companyName.value || !companyCountry.value) {
+            alert('Company name and country are required.');
+            return;
+          }
+          const { data: inserted, error: insertErr } = await supabase.from('companies').insert({
+            company_name: companyName.value.trim(),
+            country: companyCountry.value,
+            region: companyRegion.value.trim() || null
+          }).select('id').single();
+          if (insertErr) {
+            alert('Could not save company.');
+            return;
+          }
+          companyForm.removeEventListener('submit', onSubmit);
+          companyBack.removeEventListener('click', onCancel);
+          companyForm.style.display = 'none';
+          authModal.classList.remove('active');
+          resolve(inserted.id);
+        };
+        const onCancel = () => {
+          companyForm.removeEventListener('submit', onSubmit);
+          companyBack.removeEventListener('click', onCancel);
+          companyForm.style.display = 'none';
+          authModal.classList.remove('active');
+          resolve(null);
+        };
+        companyForm.addEventListener('submit', onSubmit);
+        companyBack.addEventListener('click', onCancel, { once: true });
+      });
+    };
+
+    const upsertRecord = async (companyId) => {
+      if (!appState.lastCalculation) {
+        alert('Calculate before saving.');
+        return;
+      }
+      const calc = appState.lastCalculation;
+      const { data: existing } = await supabase
+        .from('scope2_records')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('period_year', calc.year)
+        .eq('period_month', calc.month)
+        .limit(1);
+      if (existing && existing.length) {
+        const confirmReplace = confirm('A record for this period already exists. Replace it?');
+        if (!confirmReplace) return;
+      }
+      const payload = {
+        user_id: appState.session.user.id,
+        company_id: companyId,
+        period_year: calc.year,
+        period_month: calc.month,
+        kwh: calc.kwh,
+        location_based_emissions: calc.tonsLocation,
+        market_based_emissions: calc.marketEnabled ? calc.tonsMarket : null,
+        market_instrument_type: calc.marketEnabled ? calc.marketType : null,
+        covered_kwh: calc.marketEnabled ? calc.coveredKwh : null,
+        emission_factor_value: calc.factorValue,
+        emission_factor_year: calc.factorYear,
+        emission_factor_source: calc.factorSource
+      };
+      const { error } = await supabase
+        .from('scope2_records')
+        .upsert([payload], { onConflict: 'user_id,company_id,period_year,period_month' });
+      if (error) {
+        alert('Save failed. Please try again.');
+        return;
+      }
+      alert('Saved.');
+      loadHistory();
     };
 
     const getEmissionFactor = (country, region) => {
@@ -656,10 +1030,31 @@
         marketDetails.textContent = '';
       }
 
-      placeholder.style.display = 'none';
-      resultContainer.classList.add('active');
-      resultContainer.scrollIntoView({ behavior: 'smooth' });
+    appState.lastCalculation = {
+      year,
+      month: monthNumber,
+      monthName: month,
+      kwh,
+        country,
+        region,
+        factorValue: factor,
+        factorYear: factorData.year,
+        factorSource: factorData.source,
+        factorVersion: factorData.version,
+        tonsLocation,
+        tonsMarket,
+        marketEnabled,
+        marketType: marketEnabled ? marketType : null,
+      coveredKwh: marketEnabled ? coveredKwh : null
+    };
+
+    placeholder.style.display = 'none';
+    resultContainer.classList.add('active');
+    resultContainer.scrollIntoView({ behavior: 'smooth' });
     });
+
+    // Kick off auth session detection on load
+    initAuth();
   </script>
 </body>
 </html>
