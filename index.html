@@ -470,7 +470,10 @@
   <!-- Auth + company modal -->
   <div class="modal" id="auth-modal">
     <div class="modal-content">
-      <h3 id="auth-modal-title">Sign in to save & track history</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <h3 id="auth-modal-title" style="margin:0;">Sign in to save & track history</h3>
+        <button type="button" class="btn secondary" id="auth-close" aria-label="Close auth modal" style="padding:8px 10px;">×</button>
+      </div>
       <p class="muted" id="auth-modal-desc">Sign in to save results and track your history. Calculations work without an account.</p>
 
       <div class="stack">
@@ -646,6 +649,7 @@
     const companyBack = document.getElementById('company-back');
     const authModalTitle = document.getElementById('auth-modal-title');
     const authModalDesc = document.getElementById('auth-modal-desc');
+    const authClose = document.getElementById('auth-close');
     const authTabSignin = document.getElementById('auth-tab-signin');
     const authTabSignup = document.getElementById('auth-tab-signup');
     const authTabMagic = document.getElementById('auth-tab-magic');
@@ -939,6 +943,9 @@
     });
 
     authCancel.addEventListener('click', () => {
+      closeAuthModal();
+    });
+    authClose.addEventListener('click', () => {
       closeAuthModal();
     });
 
