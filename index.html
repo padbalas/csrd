@@ -74,6 +74,13 @@
       border-color: #cbd5e1;
       color: #0f172a;
     }
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
     .meta-line {
       display: flex;
       gap: 12px;
@@ -231,7 +238,10 @@
 <body>
   <header>
     <div class="shell">
-      <div class="tag">CarbonWise</div>
+      <div class="top-row">
+        <div class="tag">CarbonWise</div>
+        <button class="btn secondary" id="header-signin">Sign in</button>
+      </div>
       <h1>Carbon reporting, made simple.</h1>
       <p class="subhead">Calculate your electricity emissions in minutes — no uploads, no accounts, no personal data.</p>
       <p class="subhead">A self-service, plain-English experience — similar to TurboTax, but built for carbon.</p>
@@ -953,6 +963,11 @@
     authTabSignup.addEventListener('click', () => setAuthView('signup'));
     authTabMagic.addEventListener('click', () => setAuthView('magic'));
     authForgot.addEventListener('click', () => setAuthView('reset'));
+    headerSignIn.addEventListener('click', () => {
+      authModalTitle.textContent = 'Sign in to save & track history';
+      authModalDesc.textContent = 'Sign in to save results and track your history. Calculations work without an account.';
+      openAuthModal('signin');
+    });
 
     signoutBtn.addEventListener('click', async () => {
       if (supabase) {
