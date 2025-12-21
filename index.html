@@ -472,47 +472,101 @@
     <div class="modal-content">
       <h3 id="auth-modal-title">Sign in to save & track history</h3>
       <p class="muted" id="auth-modal-desc">Sign in to save results and track your history. Calculations work without an account.</p>
-      <form id="auth-form" class="stack">
-        <div>
-          <label for="auth-email">Work email</label>
-          <input type="email" id="auth-email" name="auth-email" required placeholder="you@example.com" />
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn secondary" id="auth-cancel">Cancel</button>
-          <button type="submit" class="btn primary" id="auth-submit">Send magic link</button>
-        </div>
-        <p class="muted small" id="auth-status"></p>
-      </form>
 
-      <form id="company-form" class="stack" style="display:none;">
-        <div>
-          <label for="company-name">Company name</label>
-          <input type="text" id="company-name" required placeholder="Acme Co." />
+      <div class="stack">
+        <div class="cta-row" style="justify-content:flex-start;gap:8px;">
+          <button type="button" class="btn secondary" id="auth-tab-signin">Sign in</button>
+          <button type="button" class="btn secondary" id="auth-tab-signup">Create account</button>
+          <button type="button" class="btn secondary" id="auth-tab-magic">Email me a sign-in link</button>
         </div>
-        <div class="two-col">
+
+        <form id="auth-form-signin" class="stack">
           <div>
-            <label for="company-country">Company country</label>
-            <select id="company-country" required>
-              <option value="">Select country</option>
-              <option value="US">United States</option>
-              <option value="CA">Canada</option>
-              <option value="UK">United Kingdom</option>
-              <option value="AU">Australia</option>
-              <option value="SG">Singapore</option>
-              <option value="NZ">New Zealand</option>
-            </select>
+            <label for="auth-email">Email</label>
+            <input type="email" id="auth-email" required placeholder="you@example.com" />
           </div>
           <div>
-            <label for="company-region">Region / state (optional)</label>
-            <input type="text" id="company-region" placeholder="e.g., California" />
+            <label for="auth-password">Password</label>
+            <input type="password" id="auth-password" required placeholder="••••••••" />
           </div>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn secondary" id="company-back">Back</button>
-          <button type="submit" class="btn primary" id="company-submit">Save company</button>
-        </div>
-        <p class="muted small">No bill uploads required. We only store the usage values you enter.</p>
-      </form>
+          <div class="modal-actions" style="justify-content:space-between;">
+            <button type="button" class="btn secondary" id="auth-cancel">Cancel</button>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button type="button" class="btn secondary" id="auth-forgot">Forgot password?</button>
+              <button type="submit" class="btn primary" id="auth-submit">Sign in</button>
+            </div>
+          </div>
+          <p class="muted small" id="auth-status"></p>
+        </form>
+
+        <form id="auth-form-signup" class="stack" style="display:none;">
+          <div>
+            <label for="auth-email-signup">Email</label>
+            <input type="email" id="auth-email-signup" required placeholder="you@example.com" />
+          </div>
+          <div>
+            <label for="auth-password-signup">Password</label>
+            <input type="password" id="auth-password-signup" required placeholder="••••••••" />
+          </div>
+          <div class="modal-actions" style="justify-content:flex-end;">
+            <button type="submit" class="btn primary" id="auth-submit-signup">Create account</button>
+          </div>
+          <p class="muted small" id="auth-status-signup"></p>
+          <p class="muted small">Check your email to confirm your account before signing in.</p>
+        </form>
+
+        <form id="auth-form-magic" class="stack" style="display:none;">
+          <div>
+            <label for="auth-email-magic">Email</label>
+            <input type="email" id="auth-email-magic" required placeholder="you@example.com" />
+          </div>
+          <div class="modal-actions" style="justify-content:flex-end;">
+            <button type="submit" class="btn primary" id="auth-submit-magic">Email me a sign-in link</button>
+          </div>
+          <p class="muted small" id="auth-status-magic">We’ll email you a secure sign-in link.</p>
+        </form>
+
+        <form id="auth-form-reset" class="stack" style="display:none;">
+          <div>
+            <label for="auth-email-reset">Email</label>
+            <input type="email" id="auth-email-reset" required placeholder="you@example.com" />
+          </div>
+          <div class="modal-actions" style="justify-content:flex-end;">
+            <button type="submit" class="btn primary" id="auth-submit-reset">Send reset link</button>
+          </div>
+          <p class="muted small" id="auth-status-reset">We’ve sent you a password reset link.</p>
+        </form>
+
+        <form id="company-form" class="stack" style="display:none;">
+          <div>
+            <label for="company-name">Company name</label>
+            <input type="text" id="company-name" required placeholder="Acme Co." />
+          </div>
+          <div class="two-col">
+            <div>
+              <label for="company-country">Company country</label>
+              <select id="company-country" required>
+                <option value="">Select country</option>
+                <option value="US">United States</option>
+                <option value="CA">Canada</option>
+                <option value="UK">United Kingdom</option>
+                <option value="AU">Australia</option>
+                <option value="SG">Singapore</option>
+                <option value="NZ">New Zealand</option>
+              </select>
+            </div>
+            <div>
+              <label for="company-region">Region / state (optional)</label>
+              <input type="text" id="company-region" placeholder="e.g., California" />
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary" id="company-back">Back</button>
+            <button type="submit" class="btn primary" id="company-submit">Save company</button>
+          </div>
+          <p class="muted small">No bill uploads required. We only store the usage values you enter.</p>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -592,12 +646,33 @@
     const companyBack = document.getElementById('company-back');
     const authModalTitle = document.getElementById('auth-modal-title');
     const authModalDesc = document.getElementById('auth-modal-desc');
+    const authTabSignin = document.getElementById('auth-tab-signin');
+    const authTabSignup = document.getElementById('auth-tab-signup');
+    const authTabMagic = document.getElementById('auth-tab-magic');
+    const authFormSignin = document.getElementById('auth-form-signin');
+    const authFormSignup = document.getElementById('auth-form-signup');
+    const authFormMagic = document.getElementById('auth-form-magic');
+    const authFormReset = document.getElementById('auth-form-reset');
+    const authPassword = document.getElementById('auth-password');
+    const authEmailSignup = document.getElementById('auth-email-signup');
+    const authPasswordSignup = document.getElementById('auth-password-signup');
+    const authEmailMagic = document.getElementById('auth-email-magic');
+    const authEmailReset = document.getElementById('auth-email-reset');
+    const authStatusSignup = document.getElementById('auth-status-signup');
+    const authStatusMagic = document.getElementById('auth-status-magic');
+    const authStatusReset = document.getElementById('auth-status-reset');
+    const authSubmitSignup = document.getElementById('auth-submit-signup');
+    const authSubmitMagic = document.getElementById('auth-submit-magic');
+    const authSubmitReset = document.getElementById('auth-submit-reset');
+    const authForgot = document.getElementById('auth-forgot');
 
     const appState = {
       session: null,
       companyId: null,
       lastCalculation: null,
-      saving: false
+      saving: false,
+      authView: 'signin',
+      authLoading: false
     };
 
     // Supabase client config (replace placeholders or set window.SUPABASE_URL / window.SUPABASE_ANON_KEY)
@@ -687,16 +762,29 @@
       }
     };
 
-    const openAuthModal = (showAuth = true) => {
-      authForm.style.display = showAuth ? 'block' : 'none';
-      companyForm.style.display = showAuth ? 'none' : 'block';
-      authModal.classList.add('active');
+    const setAuthView = (view) => {
+      appState.authView = view;
+      authFormSignin.style.display = view === 'signin' ? 'block' : 'none';
+      authFormSignup.style.display = view === 'signup' ? 'block' : 'none';
+      authFormMagic.style.display = view === 'magic' ? 'block' : 'none';
+      authFormReset.style.display = view === 'reset' ? 'block' : 'none';
+      companyForm.style.display = view === 'company' ? 'block' : 'none';
       authStatus.textContent = '';
+      authStatusSignup.textContent = '';
+      authStatusMagic.textContent = 'We’ll email you a secure sign-in link.';
+      authStatusReset.textContent = 'We’ve sent you a password reset link.';
+    };
+
+    const openAuthModal = (view = 'signin') => {
+      setAuthView(view);
+      authModal.classList.add('active');
     };
     const closeAuthModal = () => {
       authModal.classList.remove('active');
-      authStatus.textContent = '';
-      authForm.reset();
+      authFormSignin.reset();
+      authFormSignup.reset();
+      authFormMagic.reset();
+      authFormReset.reset();
     };
 
     const showHistorySection = () => {
@@ -782,28 +870,82 @@
       });
     };
 
-    authForm.addEventListener('submit', async (e) => {
+    authFormSignin.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!authEmail.value) {
-        authStatus.textContent = 'Email is required.';
-        return;
-      }
-      authStatus.textContent = 'Sending magic link...';
       if (!supabase) {
         authStatus.textContent = 'Supabase unavailable. Please retry when online.';
         return;
       }
-      const { error } = await supabase.auth.signInWithOtp({ email: authEmail.value, options: { emailRedirectTo: window.location.href } });
+      authStatus.textContent = 'Signing in...';
+      const { error } = await supabase.auth.signInWithPassword({
+        email: authEmail.value,
+        password: authPassword.value
+      });
       if (error) {
-        authStatus.textContent = 'Could not send magic link. Please try again.';
+        authStatus.textContent = 'Could not sign in. Check your email or password, or confirm your account.';
         return;
       }
-      authStatus.textContent = 'Magic link sent. Check your email and return to continue.';
+      authStatus.textContent = '';
+      closeAuthModal();
+      if (appState.saving) handleSaveFlow();
+    });
+
+    authFormSignup.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!supabase) {
+        authStatusSignup.textContent = 'Supabase unavailable. Please retry when online.';
+        return;
+      }
+      authStatusSignup.textContent = 'Creating account...';
+      const { error } = await supabase.auth.signUp({
+        email: authEmailSignup.value,
+        password: authPasswordSignup.value
+      });
+      if (error) {
+        authStatusSignup.textContent = 'Could not create account. Try a different email or check your password.';
+        return;
+      }
+      authStatusSignup.textContent = 'Check your email to confirm your account before signing in.';
+    });
+
+    authFormMagic.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!supabase) {
+        authStatusMagic.textContent = 'Supabase unavailable. Please retry when online.';
+        return;
+      }
+      authStatusMagic.textContent = 'Sending link...';
+      const { error } = await supabase.auth.signInWithOtp({ email: authEmailMagic.value, options: { emailRedirectTo: window.location.href } });
+      if (error) {
+        authStatusMagic.textContent = 'Could not send magic link. Please try again.';
+        return;
+      }
+      authStatusMagic.textContent = 'Magic link sent. Check your email and return to continue.';
+    });
+
+    authFormReset.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!supabase) {
+        authStatusReset.textContent = 'Supabase unavailable. Please retry when online.';
+        return;
+      }
+      authStatusReset.textContent = 'Sending reset link...';
+      const { error } = await supabase.auth.resetPasswordForEmail(authEmailReset.value, { redirectTo: window.location.href });
+      if (error) {
+        authStatusReset.textContent = 'Could not send reset link. Please try again.';
+        return;
+      }
+      authStatusReset.textContent = 'We’ve sent you a password reset link.';
     });
 
     authCancel.addEventListener('click', () => {
       closeAuthModal();
     });
+
+    authTabSignin.addEventListener('click', () => setAuthView('signin'));
+    authTabSignup.addEventListener('click', () => setAuthView('signup'));
+    authTabMagic.addEventListener('click', () => setAuthView('magic'));
+    authForgot.addEventListener('click', () => setAuthView('reset'));
 
     signoutBtn.addEventListener('click', async () => {
       if (supabase) {
