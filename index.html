@@ -795,13 +795,14 @@
       }
       const { error } = await supabase.auth.signInWithOtp({ email: authEmail.value, options: { emailRedirectTo: window.location.href } });
       if (error) {
+        console.error('Magic link error', error);
         authStatus.textContent = 'Could not send magic link. Please try again.';
         return;
       }
       authStatus.textContent = 'Magic link sent. Check your email and return to continue.';
       setTimeout(() => {
         closeAuthModal();
-      }, 800);
+      }, 1200);
     });
 
     authCancel.addEventListener('click', () => {
