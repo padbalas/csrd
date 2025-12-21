@@ -70,9 +70,9 @@
       color: #0f172a;
     }
     .btn.secondary {
-      background: transparent;
-      border-color: #93c5fd;
-      color: #e0f2fe;
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      color: #0f172a;
     }
     .meta-line {
       display: flex;
@@ -795,14 +795,10 @@
       }
       const { error } = await supabase.auth.signInWithOtp({ email: authEmail.value, options: { emailRedirectTo: window.location.href } });
       if (error) {
-        console.error('Magic link error', error);
         authStatus.textContent = 'Could not send magic link. Please try again.';
         return;
       }
       authStatus.textContent = 'Magic link sent. Check your email and return to continue.';
-      setTimeout(() => {
-        closeAuthModal();
-      }, 1200);
     });
 
     authCancel.addEventListener('click', () => {
