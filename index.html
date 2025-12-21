@@ -550,6 +550,17 @@
           <p class="muted small" id="auth-status-reset">We’ve sent you a password reset link.</p>
         </form>
 
+        <form id="auth-form-update-password" class="stack" style="display:none;">
+          <div>
+            <label for="auth-password-new">New password</label>
+            <input type="password" id="auth-password-new" required placeholder="Set a new password" />
+          </div>
+          <div class="modal-actions" style="justify-content:flex-end;">
+            <button type="submit" class="btn primary" id="auth-submit-update">Update password</button>
+          </div>
+          <p class="muted small" id="auth-status-update">Enter a new password to complete reset.</p>
+        </form>
+
         <form id="company-form" class="stack" style="display:none;">
           <div>
             <label for="company-name">Company name</label>
@@ -680,6 +691,10 @@
     const authSubmitReset = document.getElementById('auth-submit-reset');
     const authForgot = document.getElementById('auth-forgot');
     const headerSignIn = document.getElementById('header-signin');
+    const authFormUpdatePassword = document.getElementById('auth-form-update-password');
+    const authPasswordNew = document.getElementById('auth-password-new');
+    const authSubmitUpdate = document.getElementById('auth-submit-update');
+    const authStatusUpdate = document.getElementById('auth-status-update');
 
     const appState = {
       session: null,
@@ -783,11 +798,13 @@
       authFormSignup.style.display = view === 'signup' ? 'block' : 'none';
       authFormMagic.style.display = view === 'magic' ? 'block' : 'none';
       authFormReset.style.display = view === 'reset' ? 'block' : 'none';
+      authFormUpdatePassword.style.display = view === 'update' ? 'block' : 'none';
       companyForm.style.display = view === 'company' ? 'block' : 'none';
       authStatus.textContent = '';
       authStatusSignup.textContent = '';
       authStatusMagic.textContent = 'We’ll email you a secure sign-in link.';
       authStatusReset.textContent = 'We’ve sent you a password reset link.';
+      authStatusUpdate.textContent = 'Enter a new password to complete reset.';
     };
 
     const openAuthModal = (view = 'signin') => {
@@ -872,6 +889,32 @@
       loadHistory();
     });
 
+    const parseRecoveryParams = () => {
+      const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
+      const queryParams = new URLSearchParams(window.location.search);
+      const type = hashParams.get('type') || queryParams.get('type');
+      const code = hashParams.get('code') || queryParams.get('code');
+      const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
+      return { type, code, accessToken };
+    };
+
+    const handleRecoveryFromUrl = async () => {
+      if (!supabase) return;
+      const { type, code } = parseRecoveryParams();
+      if (type === 'recovery' && code) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          console.warn('Recovery exchange failed', error);
+          return;
+        }
+        setSessionUI(data?.session || null);
+        setAuthView('update');
+        authModalTitle.textContent = 'Set a new password';
+        authModalDesc.textContent = 'Complete your password reset to continue.';
+        authModal.classList.add('active');
+      }
+    };
+
     const initAuth = async () => {
       if (!supabase) return;
       const { data } = await supabase.auth.getSession();
@@ -883,6 +926,7 @@
           handleSaveFlow();
         }
       });
+      await handleRecoveryFromUrl();
     };
 
     authFormSignin.addEventListener('submit', async (e) => {
@@ -968,6 +1012,25 @@
       authModalTitle.textContent = 'Sign in to save & track history';
       authModalDesc.textContent = 'Sign in to save results and track your history. Calculations work without an account.';
       openAuthModal('signin');
+    });
+    authSubmitUpdate.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (!supabase) {
+        authStatusUpdate.textContent = 'Supabase unavailable. Please retry when online.';
+        return;
+      }
+      if (!authPasswordNew.value) {
+        authStatusUpdate.textContent = 'Enter a new password.';
+        return;
+      }
+      authStatusUpdate.textContent = 'Updating password...';
+      const { error } = await supabase.auth.updateUser({ password: authPasswordNew.value });
+      if (error) {
+        authStatusUpdate.textContent = 'Could not update password. Please try again.';
+        return;
+      }
+      authStatusUpdate.textContent = 'Password updated. Please sign in with your new password.';
+      setAuthView('signin');
     });
 
     signoutBtn.addEventListener('click', async () => {
