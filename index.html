@@ -541,7 +541,9 @@
             </div>
             <div>
               <label for="signup-company-region">State / region (optional)</label>
-              <input type="text" id="signup-company-region" placeholder="e.g., California" />
+              <select id="signup-company-region">
+                <option value="">Select state / province (optional)</option>
+              </select>
             </div>
           </div>
           <div class="modal-actions" style="justify-content:flex-end;">
@@ -778,6 +780,16 @@
         regionEl.appendChild(opt);
       });
     };
+    const setSignupRegionOptions = (country) => {
+      const opts = REGION_OPTIONS[country] || [];
+      signupCompanyRegion.innerHTML = '<option value="">Select state / province (optional)</option>';
+      opts.forEach((name) => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        signupCompanyRegion.appendChild(opt);
+      });
+    };
 
     // Select a FINAL factor version: prefer billing-year match, else most recent final year. Never overwrite historical records.
     const selectFinalFactor = (records, billingYear) => {
@@ -811,12 +823,18 @@
       authFormReset.style.display = view === 'reset' ? 'block' : 'none';
       authFormUpdatePassword.style.display = view === 'update' ? 'block' : 'none';
       companyForm.style.display = view === 'company' ? 'block' : 'none';
+      // Tab highlighting
+      authTabSignin.classList.toggle('tab-active', view === 'signin');
+      authTabSignup.classList.toggle('tab-active', view === 'signup');
       authStatus.textContent = '';
       authStatusSignup.textContent = '';
       authStatusReset.textContent = 'We’ve sent you a password reset link.';
       authStatusUpdate.textContent = 'Enter a new password to complete reset.';
       authStatusPasscode.style.display = 'none';
       authStatusPasscode.textContent = '';
+      if (view === 'signup') {
+        setSignupRegionOptions(signupCompanyCountry.value);
+      }
     };
 
     const openAuthModal = (view = 'signin') => {
@@ -998,7 +1016,7 @@
           user_id: data.session.user.id,
           company_name: signupCompanyName.value.trim(),
           country: signupCompanyCountry.value,
-          region: signupCompanyRegion.value.trim() || null
+          region: signupCompanyRegion.value || null
         });
         if (companyErr) {
           authStatusSignup.textContent = 'Account created. Check your email to confirm, then sign in. We will ask for company info after sign-in.';
@@ -1231,6 +1249,9 @@
     countryEl.addEventListener('change', (e) => {
       setRegionOptions(e.target.value);
     });
+    signupCompanyCountry.addEventListener('change', (e) => {
+      setSignupRegionOptions(e.target.value);
+    });
 
     yearEl.addEventListener('change', syncMonthOptions);
     marketToggleEl.addEventListener('change', (e) => {
@@ -1242,6 +1263,7 @@
     populateYears(marketYearEl);
     syncMonthOptions();
     setRegionOptions('');
+    setSignupRegionOptions('');
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -1360,3 +1382,8 @@
   </script>
 </body>
 </html>
+    .btn.tab-active {
+      border-color: #22c55e;
+      color: #0f172a;
+      background: #ecfdf3;
+    }
