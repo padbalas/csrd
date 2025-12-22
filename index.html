@@ -490,10 +490,9 @@
         <div class="cta-row" style="justify-content:flex-start;gap:8px;">
           <button type="button" class="btn secondary" id="auth-tab-signin">Sign in</button>
           <button type="button" class="btn secondary" id="auth-tab-signup">Create account</button>
-          <button type="button" class="btn secondary" id="auth-tab-magic">Email me a sign-in link</button>
         </div>
 
-        <form id="auth-form-signin" class="stack">
+        <form id="auth-form-signin" class="stack" style="display:block;">
           <div>
             <label for="auth-email">Email</label>
             <input type="email" id="auth-email" required placeholder="you@example.com" />
@@ -502,14 +501,16 @@
             <label for="auth-password">Password</label>
             <input type="password" id="auth-password" required placeholder="••••••••" />
           </div>
-          <div class="modal-actions" style="justify-content:space-between;">
-            <button type="button" class="btn secondary" id="auth-cancel">Cancel</button>
+          <div class="modal-actions" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
             <div style="display:flex;gap:8px;align-items:center;">
+              <button type="button" class="btn secondary" id="auth-cancel">Cancel</button>
               <button type="button" class="btn secondary" id="auth-forgot">Forgot password?</button>
-              <button type="submit" class="btn primary" id="auth-submit">Sign in</button>
             </div>
+            <button type="submit" class="btn primary" id="auth-submit">Sign in</button>
           </div>
+          <button type="button" class="btn secondary" id="auth-passcode" style="width:auto;">Use email passcode instead</button>
           <p class="muted small" id="auth-status"></p>
+          <p class="muted small" id="auth-status-passcode" style="display:none;"></p>
         </form>
 
         <form id="auth-form-signup" class="stack" style="display:none;">
@@ -521,22 +522,33 @@
             <label for="auth-password-signup">Password</label>
             <input type="password" id="auth-password-signup" required placeholder="••••••••" />
           </div>
+          <div>
+            <label for="signup-company-name">Company name</label>
+            <input type="text" id="signup-company-name" required placeholder="Acme Co." />
+          </div>
+          <div class="two-col">
+            <div>
+              <label for="signup-company-country">Company country / region</label>
+              <select id="signup-company-country" required>
+                <option value="">Select country</option>
+                <option value="US">United States</option>
+                <option value="CA">Canada</option>
+                <option value="UK">United Kingdom</option>
+                <option value="AU">Australia</option>
+                <option value="SG">Singapore</option>
+                <option value="NZ">New Zealand</option>
+              </select>
+            </div>
+            <div>
+              <label for="signup-company-region">State / region (optional)</label>
+              <input type="text" id="signup-company-region" placeholder="e.g., California" />
+            </div>
+          </div>
           <div class="modal-actions" style="justify-content:flex-end;">
             <button type="submit" class="btn primary" id="auth-submit-signup">Create account</button>
           </div>
           <p class="muted small" id="auth-status-signup"></p>
           <p class="muted small">Check your email to confirm your account before signing in.</p>
-        </form>
-
-        <form id="auth-form-magic" class="stack" style="display:none;">
-          <div>
-            <label for="auth-email-magic">Email</label>
-            <input type="email" id="auth-email-magic" required placeholder="you@example.com" />
-          </div>
-          <div class="modal-actions" style="justify-content:flex-end;">
-            <button type="submit" class="btn primary" id="auth-submit-magic">Email me a sign-in link</button>
-          </div>
-          <p class="muted small" id="auth-status-magic">We’ll email you a secure sign-in link.</p>
         </form>
 
         <form id="auth-form-reset" class="stack" style="display:none;">
@@ -659,10 +671,11 @@
     const historyList = document.getElementById('history-list');
     const historyEmpty = document.getElementById('history-empty');
     const authModal = document.getElementById('auth-modal');
-    const authForm = document.getElementById('auth-form');
     const authEmail = document.getElementById('auth-email');
     const authCancel = document.getElementById('auth-cancel');
     const authStatus = document.getElementById('auth-status');
+    const authStatusPasscode = document.getElementById('auth-status-passcode');
+    const authPasscodeBtn = document.getElementById('auth-passcode');
     const companyForm = document.getElementById('company-form');
     const companyName = document.getElementById('company-name');
     const companyCountry = document.getElementById('company-country');
@@ -673,21 +686,16 @@
     const authClose = document.getElementById('auth-close');
     const authTabSignin = document.getElementById('auth-tab-signin');
     const authTabSignup = document.getElementById('auth-tab-signup');
-    const authTabMagic = document.getElementById('auth-tab-magic');
     const authFormSignin = document.getElementById('auth-form-signin');
     const authFormSignup = document.getElementById('auth-form-signup');
-    const authFormMagic = document.getElementById('auth-form-magic');
     const authFormReset = document.getElementById('auth-form-reset');
     const authPassword = document.getElementById('auth-password');
     const authEmailSignup = document.getElementById('auth-email-signup');
     const authPasswordSignup = document.getElementById('auth-password-signup');
-    const authEmailMagic = document.getElementById('auth-email-magic');
     const authEmailReset = document.getElementById('auth-email-reset');
     const authStatusSignup = document.getElementById('auth-status-signup');
-    const authStatusMagic = document.getElementById('auth-status-magic');
     const authStatusReset = document.getElementById('auth-status-reset');
     const authSubmitSignup = document.getElementById('auth-submit-signup');
-    const authSubmitMagic = document.getElementById('auth-submit-magic');
     const authSubmitReset = document.getElementById('auth-submit-reset');
     const authForgot = document.getElementById('auth-forgot');
     const headerSignIn = document.getElementById('header-signin');
@@ -695,6 +703,11 @@
     const authPasswordNew = document.getElementById('auth-password-new');
     const authSubmitUpdate = document.getElementById('auth-submit-update');
     const authStatusUpdate = document.getElementById('auth-status-update');
+    const authStatusPasscode = document.getElementById('auth-status-passcode');
+    const authPasscodeBtn = document.getElementById('auth-passcode');
+    const signupCompanyName = document.getElementById('signup-company-name');
+    const signupCompanyCountry = document.getElementById('signup-company-country');
+    const signupCompanyRegion = document.getElementById('signup-company-region');
 
     const appState = {
       session: null,
@@ -797,15 +810,15 @@
       appState.authView = view;
       authFormSignin.style.display = view === 'signin' ? 'block' : 'none';
       authFormSignup.style.display = view === 'signup' ? 'block' : 'none';
-      authFormMagic.style.display = view === 'magic' ? 'block' : 'none';
       authFormReset.style.display = view === 'reset' ? 'block' : 'none';
       authFormUpdatePassword.style.display = view === 'update' ? 'block' : 'none';
       companyForm.style.display = view === 'company' ? 'block' : 'none';
       authStatus.textContent = '';
       authStatusSignup.textContent = '';
-      authStatusMagic.textContent = 'We’ll email you a secure sign-in link.';
       authStatusReset.textContent = 'We’ve sent you a password reset link.';
       authStatusUpdate.textContent = 'Enter a new password to complete reset.';
+      authStatusPasscode.style.display = 'none';
+      authStatusPasscode.textContent = '';
     };
 
     const openAuthModal = (view = 'signin') => {
@@ -816,14 +829,16 @@
       authModal.classList.remove('active');
       authFormSignin.reset();
       authFormSignup.reset();
-      authFormMagic.reset();
       authFormReset.reset();
+      authStatusPasscode.style.display = 'none';
+      authStatusPasscode.textContent = '';
     };
 
     const showHistorySection = () => {
       if (!appState.session) {
-        alert('Sign in to view saved history.');
-        openAuthModal(true);
+        authModalTitle.textContent = 'Sign in to view history';
+        authModalDesc.textContent = 'Sign in to view saved records. Calculations work without an account.';
+        openAuthModal('signin');
         return;
       }
       historySection.style.display = 'block';
@@ -972,7 +987,7 @@
         return;
       }
       authStatusSignup.textContent = 'Creating account...';
-      const { error } = await supabase.auth.signUp({
+      const { error, data } = await supabase.auth.signUp({
         email: authEmailSignup.value,
         password: authPasswordSignup.value
       });
@@ -980,22 +995,19 @@
         authStatusSignup.textContent = 'Could not create account. Try a different email or check your password.';
         return;
       }
+      if (data?.session?.user?.id) {
+        const { error: companyErr } = await supabase.from('companies').insert({
+          user_id: data.session.user.id,
+          company_name: signupCompanyName.value.trim(),
+          country: signupCompanyCountry.value,
+          region: signupCompanyRegion.value.trim() || null
+        });
+        if (companyErr) {
+          authStatusSignup.textContent = 'Account created. Check your email to confirm, then sign in. We will ask for company info after sign-in.';
+          return;
+        }
+      }
       authStatusSignup.textContent = 'Check your email to confirm your account before signing in.';
-    });
-
-    authFormMagic.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!supabase) {
-        authStatusMagic.textContent = 'Supabase unavailable. Please retry when online.';
-        return;
-      }
-      authStatusMagic.textContent = 'Sending link...';
-      const { error } = await supabase.auth.signInWithOtp({ email: authEmailMagic.value, options: { emailRedirectTo: window.location.href } });
-      if (error) {
-        authStatusMagic.textContent = 'Could not send magic link. Please try again.';
-        return;
-      }
-      authStatusMagic.textContent = 'Magic link sent. Check your email and return to continue.';
     });
 
     authFormReset.addEventListener('submit', async (e) => {
@@ -1022,8 +1034,27 @@
 
     authTabSignin.addEventListener('click', () => setAuthView('signin'));
     authTabSignup.addEventListener('click', () => setAuthView('signup'));
-    authTabMagic.addEventListener('click', () => setAuthView('magic'));
     authForgot.addEventListener('click', () => setAuthView('reset'));
+    authPasscodeBtn.addEventListener('click', async () => {
+      if (!supabase) {
+        authStatusPasscode.style.display = 'block';
+        authStatusPasscode.textContent = 'Supabase unavailable. Please retry when online.';
+        return;
+      }
+      if (!authEmail.value) {
+        authStatusPasscode.style.display = 'block';
+        authStatusPasscode.textContent = 'Enter your email to receive a passcode link.';
+        return;
+      }
+      authStatusPasscode.style.display = 'block';
+      authStatusPasscode.textContent = 'Sending email passcode...';
+      const { error } = await supabase.auth.signInWithOtp({ email: authEmail.value, options: { emailRedirectTo: window.location.href } });
+      if (error) {
+        authStatusPasscode.textContent = 'We couldn’t send the email. Try again or use your password.';
+        return;
+      }
+      authStatusPasscode.textContent = 'We’ll email you a secure one-time sign-in link.';
+    });
     headerSignIn.addEventListener('click', () => {
       authModalTitle.textContent = 'Sign in to save & track history';
       authModalDesc.textContent = 'Sign in to save results and track your history. Calculations work without an account.';
@@ -1061,7 +1092,7 @@
       if (!appState.session) {
         authModalTitle.textContent = 'Sign in to save & track history';
         authModalDesc.textContent = 'Sign in to save results and track your history. Calculations work without an account.';
-        openAuthModal(true);
+        openAuthModal('signin');
         appState.saving = true;
         return;
       }
