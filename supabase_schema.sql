@@ -37,6 +37,8 @@ create table if not exists public.scope2_records (
   emission_factor_value numeric not null,
   emission_factor_year int not null,
   emission_factor_source text not null,
+  calc_country text not null,
+  calc_region text not null,
   created_at timestamptz not null default now(),
   constraint scope2_period_not_future check (
     (period_year < date_part('year', now())::int)
