@@ -510,7 +510,8 @@
           </div>
           <button type="button" class="btn secondary" id="auth-passcode" style="width:auto;">Use email passcode instead</button>
           <p class="muted small" id="auth-status"></p>
-          <p class="muted small" id="auth-status-passcode" style="display:none;"></p>
+          <p class="muted small" id="auth-status-passcode" style="display:none;">We’ll email you a secure one-time sign-in link.</p>
+          <p class="muted small" id="auth-status-passcode-hint" style="display:none;">After clicking the email link, continue in that tab. Refresh here if needed.</p>
         </form>
 
         <form id="auth-form-signup" class="stack" style="display:none;">
@@ -1055,21 +1056,26 @@
       if (!supabase) {
         authStatusPasscode.style.display = 'block';
         authStatusPasscode.textContent = 'Supabase unavailable. Please retry when online.';
+        authStatusPasscodeHint.style.display = 'none';
         return;
       }
       if (!authEmail.value) {
         authStatusPasscode.style.display = 'block';
         authStatusPasscode.textContent = 'Enter your email to receive a passcode link.';
+        authStatusPasscodeHint.style.display = 'none';
         return;
       }
       authStatusPasscode.style.display = 'block';
       authStatusPasscode.textContent = 'Sending email passcode...';
+      authStatusPasscodeHint.style.display = 'none';
       const { error } = await supabase.auth.signInWithOtp({ email: authEmail.value, options: { emailRedirectTo: window.location.href } });
       if (error) {
         authStatusPasscode.textContent = 'We couldn’t send the email. Try again or use your password.';
+        authStatusPasscodeHint.style.display = 'none';
         return;
       }
       authStatusPasscode.textContent = 'We’ll email you a secure one-time sign-in link.';
+      authStatusPasscodeHint.style.display = 'block';
     });
     headerSignIn.addEventListener('click', () => {
       authModalTitle.textContent = 'Sign in to save & track history';
