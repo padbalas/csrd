@@ -1097,8 +1097,7 @@
       // Otherwise show company form
       authModalTitle.textContent = 'Add your company';
       authModalDesc.textContent = 'Provide company details to save results. No bill uploads required.';
-      authForm.style.display = 'none';
-      companyForm.style.display = 'block';
+      setAuthView('company');
       authModal.classList.add('active');
       return new Promise((resolve) => {
         const onSubmit = async (ev) => {
