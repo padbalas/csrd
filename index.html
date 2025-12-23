@@ -233,6 +233,30 @@
       background: #f8fafc;
     }
     details summary { cursor: pointer; font-weight: 600; }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .table th, .table td {
+      padding: 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+    .table th {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    .table td {
+      font-size: 0.95rem;
+    }
+    .btn.tab-active {
+      border-color: #16a34a;
+      color: #0f172a;
+      background: #d1fae5;
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
+    }
   </style>
 </head>
 <body>
@@ -436,10 +460,35 @@
     </section>
 
     <section id="history-section" style="display:none;">
-      <h2>My history</h2>
-      <p class="muted">Signed-in users can see saved periods. Data is private to your account via RLS.</p>
-      <div id="history-list" class="history-list"></div>
-      <div id="history-empty" class="muted" style="display:none;">No saved records yet.</div>
+      <div class="top-row" style="margin-bottom:10px;">
+        <div>
+          <h2 style="margin:0;">My Records</h2>
+          <p class="muted" style="margin:4px 0 0;">Your saved Scope 2 electricity emissions</p>
+        </div>
+        <button type="button" class="btn secondary" id="records-signout">Sign out</button>
+      </div>
+      <div id="records-loading" class="muted" style="display:none;">Loading records...</div>
+      <div id="records-error" class="muted" style="display:none;color:#b91c1c;">Could not load records. Please try again.</div>
+      <table class="table" id="records-table" style="display:none;">
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Company</th>
+            <th>Country / Region</th>
+            <th>Electricity (kWh)</th>
+            <th>Scope 2 – Location-based (t CO₂e)</th>
+            <th>Scope 2 – Market-based (t CO₂e)</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="records-tbody"></tbody>
+      </table>
+      <div id="records-empty" class="muted" style="display:none;">
+        You don’t have any saved records yet.
+        <div style="margin-top:8px;">
+          <a href="#calculator" class="btn primary">Calculate emissions</a>
+        </div>
+      </div>
     </section>
 
     <section id="privacy">
@@ -500,7 +549,7 @@
           </div>
           <div>
             <label for="auth-password">Password</label>
-            <input type="password" id="auth-password" required placeholder="••••••••" />
+            <input type="password" id="auth-password" required placeholder="••••••••" autocomplete="current-password" />
           </div>
           <div class="modal-actions" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
             <div style="display:flex;gap:8px;align-items:center;">
@@ -522,7 +571,7 @@
           </div>
           <div>
             <label for="auth-password-signup">Password</label>
-            <input type="password" id="auth-password-signup" required placeholder="••••••••" />
+            <input type="password" id="auth-password-signup" required placeholder="••••••••" autocomplete="new-password" />
           </div>
           <div>
             <label for="signup-company-name">Company name</label>
@@ -569,7 +618,7 @@
         <form id="auth-form-update-password" class="stack" style="display:none;">
           <div>
             <label for="auth-password-new">New password</label>
-            <input type="password" id="auth-password-new" required placeholder="Set a new password" />
+            <input type="password" id="auth-password-new" required placeholder="Set a new password" autocomplete="new-password" />
           </div>
           <div class="modal-actions" style="justify-content:flex-end;">
             <button type="submit" class="btn primary" id="auth-submit-update">Update password</button>
@@ -607,6 +656,64 @@
           <p class="muted small">No bill uploads required. We only store the usage values you enter.</p>
         </form>
       </div>
+    </div>
+  </div>
+
+  <!-- View record modal -->
+  <div class="modal" id="view-modal">
+    <div class="modal-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <h3 style="margin:0;">Record details</h3>
+        <button type="button" class="btn secondary" id="view-close" aria-label="Close view modal" style="padding:8px 10px;">×</button>
+      </div>
+      <div class="stack" id="view-body" style="margin-top:10px;"></div>
+      <p class="muted small" style="margin-top:10px;">Location-based Scope 2 calculation aligned with the GHG Protocol.</p>
+    </div>
+  </div>
+
+  <!-- Edit record modal -->
+  <div class="modal" id="edit-modal">
+    <div class="modal-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <h3 style="margin:0;">Edit record</h3>
+        <button type="button" class="btn secondary" id="edit-close" aria-label="Close edit modal" style="padding:8px 10px;">×</button>
+      </div>
+      <form id="edit-form" class="stack" style="margin-top:10px;">
+        <div class="two-col">
+          <div>
+            <label>Billing period</label>
+            <input type="text" id="edit-period" readonly />
+          </div>
+          <div>
+            <label>Factor source / year</label>
+            <input type="text" id="edit-factor" readonly />
+          </div>
+        </div>
+        <div>
+          <label for="edit-kwh">Electricity used (kWh)</label>
+          <input type="number" id="edit-kwh" min="1" step="any" required />
+        </div>
+        <div class="two-col">
+          <div>
+            <label for="edit-market-type">Instrument type (optional)</label>
+            <select id="edit-market-type">
+              <option value="">Select instrument</option>
+              <option value="REC">REC</option>
+              <option value="PPA">PPA</option>
+              <option value="Green tariff">Green tariff</option>
+            </select>
+          </div>
+          <div>
+            <label for="edit-covered">Covered electricity (kWh)</label>
+            <input type="number" id="edit-covered" min="0" step="any" placeholder="0" />
+          </div>
+        </div>
+        <p class="muted small">This update recalculates emissions using the same methodology.</p>
+        <div class="modal-actions">
+          <button type="submit" class="btn primary" id="edit-save">Save</button>
+        </div>
+        <p class="muted small" id="edit-status"></p>
+      </form>
     </div>
   </div>
 
@@ -672,8 +779,12 @@
     const historyBtn = document.getElementById('history-btn');
     const signoutBtn = document.getElementById('signout-btn');
     const historySection = document.getElementById('history-section');
-    const historyList = document.getElementById('history-list');
-    const historyEmpty = document.getElementById('history-empty');
+    const recordsLoading = document.getElementById('records-loading');
+    const recordsError = document.getElementById('records-error');
+    const recordsTable = document.getElementById('records-table');
+    const recordsTbody = document.getElementById('records-tbody');
+    const recordsEmpty = document.getElementById('records-empty');
+    const recordsSignout = document.getElementById('records-signout');
     const authModal = document.getElementById('auth-modal');
     const authEmail = document.getElementById('auth-email');
     const authCancel = document.getElementById('auth-cancel');
@@ -707,10 +818,23 @@
     const authSubmitUpdate = document.getElementById('auth-submit-update');
     const authStatusUpdate = document.getElementById('auth-status-update');
     const authStatusPasscode = document.getElementById('auth-status-passcode');
+    const authStatusPasscodeHint = document.getElementById('auth-status-passcode-hint');
     const authPasscodeBtn = document.getElementById('auth-passcode');
     const signupCompanyName = document.getElementById('signup-company-name');
     const signupCompanyCountry = document.getElementById('signup-company-country');
     const signupCompanyRegion = document.getElementById('signup-company-region');
+    const viewModal = document.getElementById('view-modal');
+    const viewBody = document.getElementById('view-body');
+    const viewClose = document.getElementById('view-close');
+    const editModal = document.getElementById('edit-modal');
+    const editForm = document.getElementById('edit-form');
+    const editClose = document.getElementById('edit-close');
+    const editPeriod = document.getElementById('edit-period');
+    const editFactor = document.getElementById('edit-factor');
+    const editKwh = document.getElementById('edit-kwh');
+    const editMarketType = document.getElementById('edit-market-type');
+    const editCovered = document.getElementById('edit-covered');
+    const editStatus = document.getElementById('edit-status');
 
     const appState = {
       session: null,
@@ -718,8 +842,13 @@
       companyName: null,
       lastCalculation: null,
       saving: false,
+      records: [],
+      recordsLoading: false,
+      recordsError: '',
+      editingRecordId: null,
       authView: 'signin',
-      authLoading: false
+      authLoading: false,
+      historyRevealed: false
     };
 
     // Supabase client config (replace placeholders or set window.SUPABASE_URL / window.SUPABASE_ANON_KEY)
@@ -731,8 +860,17 @@
       try {
         const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
         supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabaseClient = supabase; // expose for debugging in console
       } catch (err) {
-        console.warn('Supabase client failed to load; save/history disabled until online.', err);
+        console.warn('Supabase client failed to load from esm.sh; trying fallback CDN.', err);
+        try {
+          const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+          supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          window.supabaseClient = supabase;
+          console.info('Supabase loaded via jsDelivr fallback.');
+        } catch (err2) {
+          console.error('Supabase client failed to load; save/history disabled until online.', err2);
+        }
       }
     };
 
@@ -754,6 +892,13 @@
         opt.textContent = y;
         el.appendChild(opt);
       }
+    };
+
+    const refreshSessionDisplay = async () => {
+      if (!supabase) return;
+      const { data } = await supabase.auth.getSession();
+      setSessionUI(data?.session || null);
+      updateCompanyDisplay(data?.session || null);
     };
 
     // Disable future months when current year is selected
@@ -812,14 +957,27 @@
       signoutBtn.style.display = session ? 'inline-flex' : 'none';
       if (!session) {
         historySection.style.display = 'none';
-        historyList.innerHTML = '';
-        historyEmpty.style.display = 'none';
+        recordsTable.style.display = 'none';
+        recordsEmpty.style.display = 'none';
+        recordsError.style.display = 'none';
+        recordsLoading.style.display = 'none';
         appState.companyId = null;
         appState.companyName = null;
+        appState.historyRevealed = false;
         headerSignIn.style.display = 'inline-flex';
         headerCompany.style.display = 'none';
-      } else if (historySection.style.display !== 'none') {
-        loadHistory();
+      } else {
+        headerSignIn.style.display = 'none';
+        headerCompany.style.display = appState.companyName || session?.user?.email ? 'inline' : 'none';
+        if (!appState.historyRevealed) {
+          // Default destination after login: show My Records
+          historySection.style.display = 'block';
+          historySection.scrollIntoView({ behavior: 'smooth' });
+          appState.historyRevealed = true;
+        }
+        if (historySection.style.display !== 'none') {
+          loadRecords();
+        }
       }
     };
 
@@ -858,6 +1016,7 @@
       authStatusUpdate.textContent = 'Enter a new password to complete reset.';
       authStatusPasscode.style.display = 'none';
       authStatusPasscode.textContent = '';
+      authStatusPasscodeHint.style.display = 'none';
       if (view === 'signup') {
         setSignupRegionOptions(signupCompanyCountry.value);
       }
@@ -874,6 +1033,8 @@
       authFormReset.reset();
       authStatusPasscode.style.display = 'none';
       authStatusPasscode.textContent = '';
+      authStatusPasscodeHint.style.display = 'none';
+      authStatusPasscodeHint.textContent = 'After clicking the email link, continue in that tab. Refresh here if needed.';
     };
 
     const showHistorySection = () => {
@@ -884,69 +1045,68 @@
         return;
       }
       historySection.style.display = 'block';
-      loadHistory();
+      loadRecords();
     };
 
-    const renderHistory = (rows) => {
-      historyList.innerHTML = '';
+    const renderRecords = (rows) => {
+      recordsTbody.innerHTML = '';
       if (!rows.length) {
-        historyEmpty.style.display = 'block';
+        recordsTable.style.display = 'none';
+        recordsEmpty.style.display = 'block';
         return;
       }
-      historyEmpty.style.display = 'none';
+      recordsEmpty.style.display = 'none';
+      recordsTable.style.display = 'table';
       rows.forEach((row) => {
-        const div = document.createElement('div');
-        div.className = 'history-item';
+        const tr = document.createElement('tr');
         const period = `${row.period_year}-${String(row.period_month).padStart(2, '0')}`;
-        const marketVal = row.market_based_emissions != null ? `${formatNumber(row.market_based_emissions, 3)} t` : '—';
-        div.innerHTML = `
-          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;">
-            <div><strong>${period}</strong> • ${formatNumber(row.kwh, 0)} kWh</div>
-            <div class="muted">Factor: ${row.emission_factor_source} ${row.emission_factor_year}</div>
-          </div>
-          <div class="muted">Location-based: ${formatNumber(row.location_based_emissions, 3)} t CO₂e • Market-based: ${marketVal}</div>
-          <details style="margin-top:6px;">
-            <summary>View details</summary>
-            <p class="muted">Region (calculation): ${row.calc_country || '—'}${row.calc_region ? ' / ' + row.calc_region : ''}</p>
-            <p class="muted">Company profile: ${row.companies?.country || '—'}${row.companies?.region ? ' / ' + row.companies.region : ''}</p>
-            <p class="muted">Factor value: ${formatNumber(row.emission_factor_value, 6)} t CO₂e/kWh • ${row.emission_factor_source} ${row.emission_factor_year}</p>
-            <p class="muted">Location-based Scope 2 (GHG Protocol)</p>
-            <button class="btn secondary" data-delete="${row.id}" style="margin-top:6px;">Delete record</button>
-          </details>
+        const company = row.companies?.company_name || '—';
+        const region = `${row.calc_country || '—'}${row.calc_region ? ' / ' + row.calc_region : ''}`;
+        const marketVal = row.market_based_emissions != null ? `${formatNumber(row.market_based_emissions, 3)}` : '—';
+        tr.innerHTML = `
+          <td>${period}</td>
+          <td>${company}</td>
+          <td>${region}</td>
+          <td>${formatNumber(row.kwh, 0)}</td>
+          <td>${formatNumber(row.location_based_emissions, 3)}</td>
+          <td>${marketVal}</td>
+          <td style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn secondary" data-action="view" data-id="${row.id}">View</button>
+            <button class="btn secondary" data-action="edit" data-id="${row.id}">Edit</button>
+            <button class="btn secondary" data-action="delete" data-id="${row.id}">Delete</button>
+          </td>
         `;
-        historyList.appendChild(div);
+        recordsTbody.appendChild(tr);
       });
     };
 
-    const loadHistory = async () => {
+    const loadRecords = async () => {
       if (!supabase) {
-        alert('History unavailable while offline.');
+        recordsError.style.display = 'block';
+        recordsError.textContent = 'History unavailable while offline.';
         return;
       }
       if (!appState.session) return;
+      recordsLoading.style.display = 'block';
+      recordsError.style.display = 'none';
+      recordsTable.style.display = 'none';
+      recordsEmpty.style.display = 'none';
       const { data, error } = await supabase
         .from('scope2_records')
-        .select('id,period_year,period_month,kwh,location_based_emissions,market_based_emissions,emission_factor_source,emission_factor_year,emission_factor_value,calc_country,calc_region,companies(country,region)')
+        .select('id,period_year,period_month,kwh,location_based_emissions,market_based_emissions,emission_factor_source,emission_factor_year,emission_factor_value,calc_country,calc_region,market_instrument_type,covered_kwh,companies(company_name,country,region)')
+        .order('period_year', { ascending: false })
+        .order('period_month', { ascending: false })
         .order('created_at', { ascending: false });
+      recordsLoading.style.display = 'none';
       if (error) {
-        alert('Could not load history right now.');
+        recordsError.style.display = 'block';
+        recordsError.textContent = 'Could not load records right now.';
         return;
       }
-      renderHistory(data || []);
+      appState.records = data || [];
+      renderRecords(appState.records);
+      updateCompanyDisplay(appState.session);
     };
-
-    historyList.addEventListener('click', async (e) => {
-      const btn = e.target.closest('button[data-delete]');
-      if (!btn) return;
-      const id = btn.getAttribute('data-delete');
-      if (!confirm('Delete this record?')) return;
-      const { error } = await supabase.from('scope2_records').delete().eq('id', id);
-      if (error) {
-        alert('Delete failed. Please try again.');
-        return;
-      }
-      loadHistory();
-    });
 
     const enterRecoveryMode = (session) => {
       // Supabase sets a temporary session for recovery; detect via session.user.recovery_sent_at or auth event.
@@ -961,11 +1121,13 @@
       if (!supabase) return;
       const { data } = await supabase.auth.getSession();
       setSessionUI(data?.session || null);
+      updateCompanyDisplay(data?.session || null);
       if (data?.session?.user?.recovery_sent_at) {
         enterRecoveryMode(data.session);
       }
       supabase.auth.onAuthStateChange((_event, session) => {
         setSessionUI(session);
+        updateCompanyDisplay(session);
         if (session) {
           if (session.user?.recovery_sent_at || _event === 'PASSWORD_RECOVERY') {
             enterRecoveryMode(session);
@@ -978,6 +1140,15 @@
         }
       });
     };
+
+    // Refresh session display when the user returns to the tab (helps with magic-link flows that open in a new tab)
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && supabase) {
+        const { data } = await supabase.auth.getSession();
+        setSessionUI(data?.session || null);
+        updateCompanyDisplay(data?.session || null);
+      }
+    });
 
     authFormSignin.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -995,6 +1166,7 @@
         return;
       }
       authStatus.textContent = '';
+      await refreshSessionDisplay();
       closeAuthModal();
       if (appState.saving) handleSaveFlow();
     });
@@ -1110,6 +1282,7 @@
         await supabase.auth.signOut();
       }
       appState.companyId = null;
+      await refreshSessionDisplay();
       alert('Signed out.');
     });
 
@@ -1138,6 +1311,117 @@
     });
 
     historyBtn.addEventListener('click', showHistorySection);
+    recordsSignout.addEventListener('click', async () => {
+      if (supabase) await supabase.auth.signOut();
+      window.location.href = '/';
+    });
+
+    const findRecordById = (id) => appState.records.find((r) => r.id === id);
+
+    const openModal = (el) => el && el.classList.add('active');
+    const closeModal = (el) => el && el.classList.remove('active');
+
+    viewClose.addEventListener('click', () => closeModal(viewModal));
+    editClose.addEventListener('click', () => closeModal(editModal));
+
+    const renderViewModal = (record) => {
+      if (!record) return;
+      viewBody.innerHTML = `
+        <div class="two-col">
+          <div><strong>Billing period</strong><br>${record.period_year}-${String(record.period_month).padStart(2, '0')}</div>
+          <div><strong>Company</strong><br>${record.companies?.company_name || '—'}</div>
+        </div>
+        <div class="two-col">
+          <div><strong>Country / region</strong><br>${record.calc_country || '—'}${record.calc_region ? ' / ' + record.calc_region : ''}</div>
+          <div><strong>kWh</strong><br>${formatNumber(record.kwh, 0)}</div>
+        </div>
+        <div class="two-col">
+          <div><strong>Location-based</strong><br>${formatNumber(record.location_based_emissions, 3)} t CO₂e</div>
+          <div><strong>Market-based</strong><br>${record.market_based_emissions != null ? formatNumber(record.market_based_emissions, 3) + ' t CO₂e' : '—'}</div>
+        </div>
+        <div class="two-col">
+          <div><strong>Emission factor</strong><br>${formatNumber(record.emission_factor_value, 6)} t CO₂e/kWh</div>
+          <div><strong>Factor source</strong><br>${record.emission_factor_source} ${record.emission_factor_year}</div>
+        </div>
+      `;
+      openModal(viewModal);
+    };
+
+    const openEditModal = (record) => {
+      if (!record) return;
+      appState.editingRecordId = record.id;
+      editPeriod.value = `${record.period_year}-${String(record.period_month).padStart(2, '0')}`;
+      editFactor.value = `${record.emission_factor_source} ${record.emission_factor_year}`;
+      editKwh.value = record.kwh;
+      editMarketType.value = record.market_instrument_type || '';
+      editCovered.value = record.covered_kwh != null ? record.covered_kwh : '';
+      editStatus.textContent = '';
+      openModal(editModal);
+    };
+
+    recordsTbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-id');
+      const action = btn.getAttribute('data-action');
+      const record = findRecordById(id);
+      if (!record) return;
+      if (action === 'view') {
+        renderViewModal(record);
+      }
+      if (action === 'edit') {
+        openEditModal(record);
+      }
+      if (action === 'delete') {
+        const confirmDelete = confirm('Are you sure you want to delete this record?');
+        if (!confirmDelete) return;
+        supabase.from('scope2_records').delete().eq('id', id).then(({ error }) => {
+          if (error) {
+            alert('Delete failed. Please try again.');
+            return;
+          }
+          loadRecords();
+        });
+      }
+    });
+
+    editForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!supabase) {
+        editStatus.textContent = 'Supabase unavailable. Please retry when online.';
+        return;
+      }
+      const record = findRecordById(appState.editingRecordId);
+      if (!record) {
+        editStatus.textContent = 'Record not found.';
+        return;
+      }
+      const kwhVal = parseFloat(editKwh.value || '0');
+      const coveredVal = parseFloat(editCovered.value || '0');
+      if (!kwhVal || kwhVal <= 0) {
+        editStatus.textContent = 'Enter a valid kWh.';
+        return;
+      }
+      const covered = !Number.isNaN(coveredVal) && coveredVal >= 0 ? coveredVal : 0;
+      const factorVal = record.emission_factor_value;
+      const tonsLocation = kwhVal * factorVal;
+      const tonsMarket = covered > 0 ? Math.max(kwhVal - covered, 0) * factorVal : tonsLocation;
+      editStatus.textContent = 'Saving...';
+      const { error } = await supabase.from('scope2_records').update({
+        kwh: kwhVal,
+        location_based_emissions: tonsLocation,
+        market_based_emissions: record.market_based_emissions != null ? tonsMarket : null,
+        market_instrument_type: editMarketType.value || null,
+        covered_kwh: covered
+      }).eq('id', record.id);
+      if (error) {
+        editStatus.textContent = 'Save failed. Please try again.';
+        return;
+      }
+      editStatus.textContent = 'Saved.';
+      closeModal(editModal);
+      loadRecords();
+    });
 
     const getOrCreateCompany = async () => {
       // Try existing company
@@ -1237,7 +1521,7 @@
         return;
       }
       alert('Saved.');
-      loadHistory();
+      loadRecords();
     };
 
     const getEmissionFactor = (country, region) => {
@@ -1391,9 +1675,3 @@
   </script>
 </body>
 </html>
-    .btn.tab-active {
-      border-color: #16a34a;
-      color: #0f172a;
-      background: #d1fae5;
-      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
-    }
