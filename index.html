@@ -923,67 +923,35 @@
       loadHistory();
     });
 
-    const parseRecoveryParams = () => {
-      // Supabase may pass code/token via query, and access/refresh tokens via hash
-      const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
-      const queryParams = new URLSearchParams(window.location.search);
-      const type = hashParams.get('type') || queryParams.get('type');
-      const code = hashParams.get('code') || queryParams.get('code') || queryParams.get('token');
-      const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
-      const error = hashParams.get('error') || queryParams.get('error');
-      const errorCode = hashParams.get('error_code') || queryParams.get('error_code');
-      return { type, code, accessToken, refreshToken, error, errorCode };
-    };
-
-    const handleRecoveryFromUrl = async () => {
-      if (!supabase) return;
-      const { type, code, accessToken, refreshToken, error, errorCode } = parseRecoveryParams();
-      if (error === 'access_denied' && errorCode === 'otp_expired') {
-        authStatusReset.textContent = 'This reset link is expired. Please request a new one.';
-        setAuthView('reset');
-        authModal.classList.add('active');
-        return;
-      }
-      const hasTokens = !!(accessToken && refreshToken);
-      const isRecovery = type === 'recovery';
-      if (isRecovery || hasTokens || code) {
-        if (code) {
-          const { data, error: exchErr } = await supabase.auth.exchangeCodeForSession(code);
-          if (exchErr) {
-            console.warn('Recovery exchange failed', exchErr);
-            return;
-          }
-          setSessionUI(data?.session || null);
-        } else if (hasTokens) {
-          const { data, error: sessionErr } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-          if (sessionErr) {
-            console.warn('Recovery session set failed', sessionErr);
-            return;
-          }
-          setSessionUI(data?.session || null);
-        }
-        if (appState.session) {
-          setAuthView('update');
-          authModalTitle.textContent = 'Set a new password';
-          authModalDesc.textContent = 'Complete your password reset to continue.';
-          authModal.classList.add('active');
-        }
-      }
+    const enterRecoveryMode = (session) => {
+      // Supabase sets a temporary session for recovery; detect via session.user.recovery_sent_at or auth event.
+      setSessionUI(session || appState.session);
+      setAuthView('update');
+      authModalTitle.textContent = 'Set a new password';
+      authModalDesc.textContent = 'Complete your password reset to continue.';
+      authModal.classList.add('active');
     };
 
     const initAuth = async () => {
       if (!supabase) return;
       const { data } = await supabase.auth.getSession();
       setSessionUI(data?.session || null);
+      if (data?.session?.user?.recovery_sent_at) {
+        enterRecoveryMode(data.session);
+      }
       supabase.auth.onAuthStateChange((_event, session) => {
         setSessionUI(session);
-        if (session && appState.saving) {
-          // Continue save flow after magic link
-          handleSaveFlow();
+        if (session) {
+          if (session.user?.recovery_sent_at || _event === 'PASSWORD_RECOVERY') {
+            enterRecoveryMode(session);
+            return;
+          }
+          if (appState.saving) {
+            // Continue save flow after auth
+            handleSaveFlow();
+          }
         }
       });
-      await handleRecoveryFromUrl();
     };
 
     authFormSignin.addEventListener('submit', async (e) => {
@@ -1108,7 +1076,8 @@
         return;
       }
       authStatusUpdate.textContent = 'Password updated. Please sign in with your new password.';
-      setAuthView('signin');
+      await supabase.auth.signOut();
+      window.location.href = '/';
     });
 
     signoutBtn.addEventListener('click', async () => {
