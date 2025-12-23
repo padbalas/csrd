@@ -240,6 +240,7 @@
     <div class="shell">
       <div class="top-row">
         <div class="tag">CarbonWise</div>
+        <span id="header-company" class="muted" style="display:none;"></span>
         <button class="btn secondary" id="header-signin">Sign in</button>
       </div>
       <h1>Carbon reporting, made simple.</h1>
@@ -700,6 +701,7 @@
     const authSubmitReset = document.getElementById('auth-submit-reset');
     const authForgot = document.getElementById('auth-forgot');
     const headerSignIn = document.getElementById('header-signin');
+    const headerCompany = document.getElementById('header-company');
     const authFormUpdatePassword = document.getElementById('auth-form-update-password');
     const authPasswordNew = document.getElementById('auth-password-new');
     const authSubmitUpdate = document.getElementById('auth-submit-update');
@@ -713,6 +715,7 @@
     const appState = {
       session: null,
       companyId: null,
+      companyName: null,
       lastCalculation: null,
       saving: false,
       authView: 'signin',
@@ -812,9 +815,31 @@
         historyList.innerHTML = '';
         historyEmpty.style.display = 'none';
         appState.companyId = null;
+        appState.companyName = null;
+        headerSignIn.style.display = 'inline-flex';
+        headerCompany.style.display = 'none';
       } else if (historySection.style.display !== 'none') {
         loadHistory();
       }
+    };
+
+    const updateCompanyDisplay = async (session) => {
+      if (!headerCompany || !headerSignIn) return;
+      if (!session) {
+        headerSignIn.style.display = 'inline-flex';
+        headerCompany.style.display = 'none';
+        return;
+      }
+      headerSignIn.style.display = 'none';
+      // Prefer cached company name; otherwise fetch first company for this user
+      if (!appState.companyName && supabase) {
+        const { data } = await supabase.from('companies').select('company_name').limit(1).single();
+        if (data?.company_name) {
+          appState.companyName = data.company_name;
+        }
+      }
+      headerCompany.textContent = appState.companyName || session.user.email;
+      headerCompany.style.display = 'inline';
     };
 
     const setAuthView = (view) => {
