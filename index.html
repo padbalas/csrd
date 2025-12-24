@@ -294,6 +294,7 @@
         <span id="header-company" class="company-badge" style="display:none;"></span>
         <a class="btn secondary" id="header-records" href="records.html">My Records</a>
         <button class="btn secondary" id="header-signin">Sign in</button>
+        <button class="btn secondary" id="header-signout" style="display:none;">Sign out</button>
       </div>
       <h1>Carbon reporting, made simple.</h1>
       <p class="subhead">Calculate your electricity emissions in minutes — no uploads, no accounts, no personal data.</p>
@@ -842,6 +843,7 @@
     const editMarketType = document.getElementById('edit-market-type');
     const editCovered = document.getElementById('edit-covered');
     const editStatus = document.getElementById('edit-status');
+    const headerSignout = document.getElementById('header-signout');
     const historyLink = document.getElementById('history-link');
     const pages = Array.from(document.querySelectorAll('.page'));
 
@@ -966,11 +968,12 @@
 
     const setSessionUI = (session) => {
       // Guard against missing DOM nodes (e.g., when sections are removed/hidden)
-      if (!historySection || !headerSignIn || !headerCompany || !recordsError || !recordsLoading || !recordsTable || !recordsEmpty) {
+      if (!historySection || !headerSignIn || !headerCompany || !recordsError || !recordsLoading || !recordsTable || !recordsEmpty || !headerSignout) {
         return;
       }
       appState.session = session;
       signoutBtn.style.display = session ? 'inline-flex' : 'none';
+      headerSignout.style.display = session ? 'inline-flex' : 'none';
       if (!session) {
         historySection.style.display = 'none';
         recordsTable.style.display = 'none';
@@ -982,6 +985,7 @@
         appState.historyRevealed = false;
         headerSignIn.style.display = 'inline-flex';
         headerCompany.style.display = 'none';
+        headerSignout.style.display = 'none';
       } else {
         headerSignIn.style.display = 'none';
         headerCompany.style.display = appState.companyName || session?.user?.email ? 'inline' : 'none';
@@ -1244,6 +1248,16 @@
       await refreshSessionDisplay();
       alert('Signed out.');
     });
+    if (headerSignout) {
+      headerSignout.addEventListener('click', async () => {
+        if (supabase) {
+          await supabase.auth.signOut();
+        }
+        appState.companyId = null;
+        await refreshSessionDisplay();
+        alert('Signed out.');
+      });
+    }
 
     const handleSaveFlow = async () => {
       if (!appState.session) {
