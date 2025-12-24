@@ -1247,7 +1247,6 @@
       }
       appState.companyId = null;
       await refreshSessionDisplay();
-      alert('Signed out.');
     });
     if (headerSignout) {
       headerSignout.addEventListener('click', async () => {
@@ -1256,7 +1255,7 @@
         }
         appState.companyId = null;
         await refreshSessionDisplay();
-        alert('Signed out.');
+        // Silent sign-out; no alert to avoid popups
       });
     }
 
