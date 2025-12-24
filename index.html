@@ -844,6 +844,7 @@
     const editCovered = document.getElementById('edit-covered');
     const editStatus = document.getElementById('edit-status');
     const headerSignout = document.getElementById('header-signout');
+    const headerRecords = document.getElementById('header-records');
     const historyLink = document.getElementById('history-link');
     const pages = Array.from(document.querySelectorAll('.page'));
 
@@ -968,10 +969,11 @@
 
     const setSessionUI = (session) => {
       // Minimal guard: rely only on header controls to avoid missing-node issues
-      if (!headerSignIn || !headerCompany || !headerSignout) return;
+      if (!headerSignIn || !headerCompany || !headerSignout || !headerRecords) return;
       appState.session = session;
       if (signoutBtn) signoutBtn.style.display = session ? 'inline-flex' : 'none';
       headerSignout.style.display = session ? 'inline-flex' : 'none';
+      headerRecords.style.display = session ? 'inline-flex' : 'none';
       if (!session) {
         if (historySection) historySection.style.display = 'none';
         if (typeof recordsTable !== 'undefined' && recordsTable) recordsTable.style.display = 'none';
@@ -984,6 +986,7 @@
         headerSignIn.style.display = 'inline-flex';
         headerCompany.style.display = 'none';
         headerSignout.style.display = 'none';
+        headerRecords.style.display = 'none';
       } else {
         headerSignIn.style.display = 'none';
         headerCompany.style.display = appState.companyName || session?.user?.email ? 'inline' : 'none';
