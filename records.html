@@ -322,6 +322,69 @@
       }
     };
 
+    const deleteLocalRecord = (id) => {
+      const current = window.loadRecords ? window.loadRecords() : [];
+      const next = current.filter((r) => String(r.id) !== String(id));
+      if (window.saveRecords) window.saveRecords(next);
+    };
+
+    // Wire slide-out Edit/Delete callbacks
+    window.onRecordDelete = async (id) => {
+      const confirmDelete = confirm('Delete this record?');
+      if (!confirmDelete) return;
+      if (supabase) {
+        const { error } = await supabase.from('scope2_records').delete().eq('id', id);
+        if (error) {
+          alert('Delete failed. Please try again.');
+          return;
+        }
+      }
+      deleteLocalRecord(id);
+      if (window.renderRecords) window.renderRecords('recordsTable');
+      if (window.renderCarbonSummary) window.renderCarbonSummary();
+      if (window.renderCarbonReminders) window.renderCarbonReminders();
+    };
+
+    window.onRecordEdit = async (id) => {
+      const records = window.loadRecords ? window.loadRecords() : [];
+      const record = records.find((r) => String(r.id) === String(id));
+      if (!record) {
+        alert('Record not found.');
+        return;
+      }
+      const kwhInput = prompt('Update electricity (kWh):', record.kwh);
+      if (kwhInput === null) return;
+      const kwhVal = parseFloat(kwhInput);
+      if (!kwhVal || kwhVal <= 0) {
+        alert('Enter a valid kWh.');
+        return;
+      }
+      const factorVal = Number(record.emission_factor_value || 0);
+      const tonsLocation = kwhVal * factorVal;
+      const covered = Number(record.covered_kwh || 0);
+      const tonsMarket = record.market_based_emissions != null
+        ? Math.max(kwhVal - covered, 0) * factorVal
+        : null;
+
+      if (supabase) {
+        const { error } = await supabase.from('scope2_records').update({
+          kwh: kwhVal,
+          location_based_emissions: tonsLocation,
+          market_based_emissions: tonsMarket,
+          covered_kwh: record.covered_kwh || null
+        }).eq('id', id);
+        if (error) {
+          alert('Save failed. Please try again.');
+          return;
+        }
+      }
+      const updated = records.map((r) => String(r.id) === String(id) ? { ...r, kwh: kwhVal, location_based_emissions: tonsLocation, market_based_emissions: tonsMarket } : r);
+      if (window.saveRecords) window.saveRecords(updated);
+      if (window.renderRecords) window.renderRecords('recordsTable');
+      if (window.renderCarbonSummary) window.renderCarbonSummary();
+      if (window.renderCarbonReminders) window.renderCarbonReminders();
+    };
+
     const attachHandlers = () => {
       if (recordsTable) {
         recordsTable.addEventListener('click', (e) => {
