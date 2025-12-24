@@ -58,4 +58,12 @@ const openRecord = (recordId) => {
   return rows.find((r) => String(r.id) === String(recordId)) || null;
 };
 
+// Expose globally for non-module usage
+if (typeof window !== 'undefined') {
+  window.loadRecords = loadRecords;
+  window.saveRecords = saveRecords;
+  window.renderRecords = renderRecords;
+  window.openRecord = openRecord;
+}
+
 export { loadRecords, saveRecords, renderRecords, openRecord };
