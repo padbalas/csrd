@@ -78,6 +78,12 @@
     }
     .btn.primary { background: #22c55e; color: #0f172a; }
     .btn.secondary { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+    .btn.active {
+      background: #d1fae5;
+      border-color: #16a34a;
+      color: #0f172a;
+      pointer-events: none;
+    }
     section {
       margin-top: 26px;
       padding: 22px 20px;
@@ -101,7 +107,7 @@
         <div class="tag">CarbonWise</div>
         <div style="display:flex;gap:10px;align-items:center;">
           <a class="btn secondary" href="index.html">Calculator</a>
-          <a class="btn primary" href="records.html">My Records</a>
+          <a class="btn primary active" href="records.html" aria-current="page">My Records</a>
         </div>
       </div>
       <h1>My Records</h1>
