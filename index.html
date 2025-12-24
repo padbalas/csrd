@@ -1107,8 +1107,10 @@
             // Continue save flow after auth
             handleSaveFlow();
           }
-          // After successful sign-in, send users to dedicated records page
-          redirectToRecords();
+          // Redirect only on new sign-in events to avoid bouncing when intentionally visiting the calculator
+          if (_event === 'SIGNED_IN' && !window.location.pathname.endsWith('records.html')) {
+            redirectToRecords();
+          }
         }
       });
     };
@@ -1140,7 +1142,6 @@
       authStatus.textContent = '';
       await refreshSessionDisplay();
       closeAuthModal();
-      redirectToRecords();
       if (appState.saving) handleSaveFlow();
     });
 
