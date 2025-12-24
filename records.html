@@ -125,6 +125,7 @@
         <div style="display:flex;gap:10px;align-items:center;">
           <a class="btn secondary" href="index.html">Calculator</a>
           <a class="btn primary active" href="records.html" aria-current="page">My Records</a>
+          <button class="btn secondary" id="records-signout">Sign out</button>
         </div>
       </div>
       <h1>My Records</h1>
@@ -168,6 +169,31 @@
         if (action === 'view' && window.openRecordPanel) {
           window.openRecordPanel(id, 'recordPanel');
         }
+      });
+    }
+  </script>
+  <script type="module">
+    // Lightweight sign-out for Supabase session while on records page
+    const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
+    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
+    const signoutBtn = document.getElementById('records-signout');
+    if (signoutBtn) {
+      import('https://esm.sh/@supabase/supabase-js@2').then(({ createClient }) => {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        signoutBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          try {
+            await supabase.auth.signOut();
+          } catch (err) {
+            console.warn('Sign out failed', err);
+          }
+          window.location.href = 'index.html';
+        });
+      }).catch((err) => {
+        console.warn('Supabase client unavailable for sign-out', err);
+        signoutBtn.addEventListener('click', () => {
+          window.location.href = 'index.html';
+        });
       });
     }
   </script>
