@@ -916,6 +916,12 @@
     // Records now live on records.html; keep a no-op to avoid undefined references.
     const refreshRecordsFromRemote = () => {};
 
+    const redirectToRecords = () => {
+      if (!window.location.pathname.endsWith('records.html')) {
+        window.location.href = 'records.html';
+      }
+    };
+
     // Disable future months when current year is selected
     const syncMonthOptions = () => {
       const selectedYear = parseInt(yearEl.value, 10);
@@ -1101,6 +1107,8 @@
             // Continue save flow after auth
             handleSaveFlow();
           }
+          // After successful sign-in, send users to dedicated records page
+          redirectToRecords();
         }
       });
     };
@@ -1132,6 +1140,7 @@
       authStatus.textContent = '';
       await refreshSessionDisplay();
       closeAuthModal();
+      redirectToRecords();
       if (appState.saving) handleSaveFlow();
     });
 
