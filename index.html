@@ -94,6 +94,22 @@
       font-size: 0.95rem;
       margin: 6px 0 16px;
     }
+    .step-indicator {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: #dbeafe;
+      font-weight: 600;
+      margin: 12px 0 8px;
+    }
+    .trust-strip {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+      margin-top: 8px;
+    }
     .pill {
       display: inline-flex;
       align-items: center;
@@ -305,11 +321,15 @@
       <p class="subhead">Carbon calculations in minutes, plain-English, no consultants/spreadsheets/data lock-in.</p>
       <p class="hero-clarifier">Built for growing companies that need audit-ready carbon reporting.</p>
       <div class="cta-row">
-        <a class="btn primary" href="#calculator">Calculate My Emissions</a>
+        <a class="btn primary" href="#calculator">Start Carbon Calculation</a>
         <a class="btn secondary" href="#how">See how it works</a>
       </div>
-      <div class="meta-line">
-        <span>Privacy-first · No logins required</span>
+      <!-- Simple, text-first step guide to set expectations quickly -->
+      <div class="step-indicator">
+        <span>① Enter basics</span> <span>→</span> <span>② We calculate</span> <span>→</span> <span>③ Get clear results</span>
+      </div>
+      <div class="trust-strip">
+        <span>Privacy-first · No logins</span>
         <span>Aligned with GHG Protocol</span>
         <span>Scope 1 &amp; Scope 2 focused</span>
       </div>
