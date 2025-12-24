@@ -326,7 +326,7 @@
       </div>
       <!-- Simple, text-first step guide to set expectations quickly -->
       <div class="step-indicator">
-        <span>① Enter basics</span> <span>→</span> <span>② We calculate</span> <span>→</span> <span>③ Get clear results</span>
+        <span>① Enter basics</span> <span>→</span> <span>② We calculate</span> <span>→</span> <span>③ Get clear estimates</span>
       </div>
       <div class="trust-strip">
         <span>Privacy-first · No logins</span>
@@ -1023,11 +1023,7 @@
         headerSignIn.style.display = 'none';
         headerCompany.style.display = appState.companyName || session?.user?.email ? 'inline' : 'none';
         // Default destination after login: show My Records info card
-        if (!appState.historyRevealed && historySection) {
-          showPage('records');
-          historySection.scrollIntoView({ behavior: 'smooth' });
-          appState.historyRevealed = true;
-        }
+        // Keep user on the calculator by default; only show records when requested
       }
     };
 
