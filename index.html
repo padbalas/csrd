@@ -452,14 +452,14 @@
         </div>
         <div class="cta-row" style="margin-top:12px; justify-content:flex-start;">
           <button type="button" class="btn primary" id="save-btn">Save & track history</button>
-          <button type="button" class="btn secondary" id="history-btn">My history</button>
+          <a href="#" class="btn secondary" id="history-link" data-page="records">My history</a>
           <button type="button" class="btn secondary" id="signout-btn" style="display:none;">Sign out</button>
         </div>
       </div>
       <div id="placeholder" class="muted">Your results will appear here after you calculate.</div>
     </section>
 
-    <section id="history-section" style="display:none;">
+    <section id="history-section" class="page" data-page="records" style="display:none;">
       <div class="top-row" style="margin-bottom:10px;">
         <div>
           <h2 style="margin:0;">My Records</h2>
@@ -777,7 +777,7 @@
     const marketDisclaimer = document.getElementById('market-disclaimer');
     const marketDetails = document.getElementById('market-details');
     const saveBtn = document.getElementById('save-btn');
-    const historyBtn = document.getElementById('history-btn');
+    // history-btn removed in favor of link
     const signoutBtn = document.getElementById('signout-btn');
     const historySection = document.getElementById('history-section');
     const recordsLoading = document.getElementById('records-loading');
@@ -836,6 +836,8 @@
     const editMarketType = document.getElementById('edit-market-type');
     const editCovered = document.getElementById('edit-covered');
     const editStatus = document.getElementById('edit-status');
+    const historyLink = document.getElementById('history-link');
+    const pages = Array.from(document.querySelectorAll('.page'));
 
     const appState = {
       session: null,
@@ -972,7 +974,7 @@
         headerCompany.style.display = appState.companyName || session?.user?.email ? 'inline' : 'none';
         if (!appState.historyRevealed) {
           // Default destination after login: show My Records
-          historySection.style.display = 'block';
+          showPage('records');
           historySection.scrollIntoView({ behavior: 'smooth' });
           appState.historyRevealed = true;
         }
@@ -1045,8 +1047,14 @@
         openAuthModal('signin');
         return;
       }
-      historySection.style.display = 'block';
+      showPage('records');
       refreshRecordsFromRemote();
+    };
+
+    const showPage = (pageName) => {
+      pages.forEach((page) => {
+        page.style.display = page.dataset.page === pageName ? 'block' : 'none';
+      });
     };
 
     const refreshRecordsFromRemote = async () => {
@@ -1287,7 +1295,10 @@
       handleSaveFlow();
     });
 
-    historyBtn.addEventListener('click', showHistorySection);
+    historyLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showHistorySection();
+    });
     recordsSignout.addEventListener('click', async () => {
       if (supabase) await supabase.auth.signOut();
       window.location.href = '/';
