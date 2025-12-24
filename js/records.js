@@ -50,6 +50,8 @@ const applyFilters = (records) => {
   });
 };
 
+const getFilteredRecords = () => applyFilters(loadRecords());
+
 const populateFilters = (records) => {
   const years = new Set();
   const countries = new Set();
@@ -100,7 +102,7 @@ const populateFilters = (records) => {
 const renderRecords = (containerId) => {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const records = loadRecords();
+  const records = getFilteredRecords();
   populateFilters(records);
   const rows = applyFilters(records);
   container.innerHTML = '';
@@ -198,8 +200,7 @@ const openRecordPanel = (recordId, panelId = 'recordPanel') => {
   }
 };
 
-const computeCarbonSummary = () => {
-  const records = loadRecords();
+const computeCarbonSummary = (records = loadRecords()) => {
   if (!records.length) return null;
 
   let total = 0;
@@ -227,7 +228,8 @@ const computeCarbonSummary = () => {
 };
 
 const renderCarbonSummary = () => {
-  const summary = computeCarbonSummary();
+  // Tie summary to current filters so totals mirror what the user is viewing
+  const summary = computeCarbonSummary(getFilteredRecords());
   if (!summary) return;
   const totalEl = document.getElementById('totalEmissions');
   const avgEl = document.getElementById('avgEmissions');
