@@ -931,6 +931,10 @@
     };
 
     const setSessionUI = (session) => {
+      // Guard against missing DOM nodes (e.g., when sections are removed/hidden)
+      if (!historySection || !headerSignIn || !headerCompany || !recordsError || !recordsLoading || !recordsTable || !recordsEmpty) {
+        return;
+      }
       appState.session = session;
       signoutBtn.style.display = session ? 'inline-flex' : 'none';
       if (!session) {
