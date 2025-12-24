@@ -97,6 +97,29 @@
     .table th, .table td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: left; }
     .table th { font-weight: 700; font-size: 0.95rem; color: var(--muted); }
     .table td { font-size: 0.95rem; }
+    .carbon-summary {
+      margin-top: 20px;
+      padding: 18px 16px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .summary-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .summary-card .label { color: var(--muted); font-size: 0.95rem; }
+    .summary-card .value { font-weight: 800; font-size: 1.3rem; margin-top: 6px; }
+    .summary-card .unit { color: var(--muted); font-size: 0.9rem; }
     .slide-panel {
       position: fixed;
       top: 0;
@@ -133,6 +156,30 @@
   </header>
 
   <div class="shell">
+    <section class="carbon-summary">
+      <h2 style="margin:0;">Carbon Snapshot (YTD)</h2>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="label">Total Scope 2</div>
+          <div class="value" id="totalEmissions">—</div>
+          <div class="unit">tCO₂e</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">Avg / Month</div>
+          <div class="value" id="avgEmissions">—</div>
+          <div class="unit">tCO₂e</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">Highest Region</div>
+          <div class="value" id="topRegion">—</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">Coverage</div>
+          <div class="value" id="recordCount">—</div>
+          <div class="unit">months</div>
+        </div>
+      </div>
+    </section>
     <section>
       <h2 style="margin:0;">Saved records</h2>
       <table class="table" aria-label="Saved records">
@@ -169,6 +216,7 @@
 
     // Initial render from any cached local data
     if (window.renderRecords) window.renderRecords('recordsTable');
+    if (window.renderCarbonSummary) window.renderCarbonSummary();
 
     let supabase = null;
     const initSupabase = async () => {
@@ -200,6 +248,7 @@
       }
       if (window.saveRecords) window.saveRecords(data || []);
       if (window.renderRecords) window.renderRecords('recordsTable');
+      if (window.renderCarbonSummary) window.renderCarbonSummary();
       if (!data || !data.length) {
         showMessage('No records yet. Save from the calculator page.');
       }

@@ -102,6 +102,47 @@ const openRecordPanel = (recordId, panelId = 'recordPanel') => {
   }
 };
 
+const computeCarbonSummary = () => {
+  const records = loadRecords();
+  if (!records.length) return null;
+
+  let total = 0;
+  const regions = {};
+  const months = new Set();
+
+  records.forEach((r) => {
+    const val = Number(r.location_based_emissions || r.emissions || 0);
+    total += val;
+    const regionLabel = `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`;
+    regions[regionLabel] = (regions[regionLabel] || 0) + val;
+    const monthKey = `${r.period_year || r.year || 'NA'}-${String(r.period_month || r.month || '').padStart(2, '0')}`;
+    months.add(monthKey);
+  });
+
+  const topEntry = Object.entries(regions).sort((a, b) => b[1] - a[1])[0];
+  const topRegion = topEntry ? `${topEntry[0]} (${topEntry[1].toFixed(3)})` : '—';
+
+  return {
+    total: total.toFixed(3),
+    avg: months.size ? (total / months.size).toFixed(3) : total.toFixed(3),
+    topRegion,
+    count: months.size
+  };
+};
+
+const renderCarbonSummary = () => {
+  const summary = computeCarbonSummary();
+  if (!summary) return;
+  const totalEl = document.getElementById('totalEmissions');
+  const avgEl = document.getElementById('avgEmissions');
+  const topEl = document.getElementById('topRegion');
+  const countEl = document.getElementById('recordCount');
+  if (totalEl) totalEl.textContent = summary.total;
+  if (avgEl) avgEl.textContent = summary.avg;
+  if (topEl) topEl.textContent = summary.topRegion;
+  if (countEl) countEl.textContent = summary.count;
+};
+
 // Expose globally for non-module usage
 if (typeof window !== 'undefined') {
   window.loadRecords = loadRecords;
@@ -109,6 +150,8 @@ if (typeof window !== 'undefined') {
   window.renderRecords = renderRecords;
   window.openRecord = openRecord;
   window.openRecordPanel = openRecordPanel;
+  window.computeCarbonSummary = computeCarbonSummary;
+  window.renderCarbonSummary = renderCarbonSummary;
 }
 
-export { loadRecords, saveRecords, renderRecords, openRecord, openRecordPanel };
+export { loadRecords, saveRecords, renderRecords, openRecord, openRecordPanel, computeCarbonSummary, renderCarbonSummary };
