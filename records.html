@@ -156,46 +156,93 @@
   <div id="recordPanel" class="slide-panel hidden" aria-live="polite"></div>
 
   <script type="module" src="./js/records.js"></script>
-  <script>
-    // render from shared localStorage-backed data
-    window.renderRecords && window.renderRecords('recordsTable');
-    const recordsTable = document.getElementById('recordsTable');
-    if (recordsTable) {
-      recordsTable.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-action]');
-        if (!btn) return;
-        const id = btn.getAttribute('data-id');
-        const action = btn.getAttribute('data-action');
-        if (action === 'view' && window.openRecordPanel) {
-          window.openRecordPanel(id, 'recordPanel');
-        }
-      });
-    }
-  </script>
   <script type="module">
-    // Lightweight sign-out for Supabase session while on records page
+    const recordsTable = document.getElementById('recordsTable');
+    const recordPanel = document.getElementById('recordPanel');
+    const signoutBtn = document.getElementById('records-signout');
     const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
     const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
-    const signoutBtn = document.getElementById('records-signout');
-    if (signoutBtn) {
-      import('https://esm.sh/@supabase/supabase-js@2').then(({ createClient }) => {
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const showMessage = (msg) => {
+      if (!recordsTable) return;
+      recordsTable.innerHTML = `<tr><td colspan="7" style="color:#4b5563;">${msg}</td></tr>`;
+    };
+
+    // Initial render from any cached local data
+    if (window.renderRecords) window.renderRecords('recordsTable');
+
+    let supabase = null;
+    const initSupabase = async () => {
+      try {
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+        supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      } catch (err) {
+        console.warn('Supabase client failed to load on records page', err);
+      }
+    };
+
+    const refreshRecords = async () => {
+      if (!supabase || !recordsTable) return;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      if (!session) {
+        showMessage('Sign in on the main page to view your records.');
+        return;
+      }
+      const { data, error } = await supabase
+        .from('scope2_records')
+        .select('id,period_year,period_month,kwh,location_based_emissions,market_based_emissions,emission_factor_source,emission_factor_year,emission_factor_value,calc_country,calc_region,market_instrument_type,covered_kwh,companies(company_name,country,region)')
+        .order('period_year', { ascending: false })
+        .order('period_month', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) {
+        showMessage('Could not load records right now.');
+        return;
+      }
+      if (window.saveRecords) window.saveRecords(data || []);
+      if (window.renderRecords) window.renderRecords('recordsTable');
+      if (!data || !data.length) {
+        showMessage('No records yet. Save from the calculator page.');
+      }
+    };
+
+    const attachHandlers = () => {
+      if (recordsTable) {
+        recordsTable.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-action]');
+          if (!btn) return;
+          const id = btn.getAttribute('data-id');
+          const action = btn.getAttribute('data-action');
+          if (action === 'view' && window.openRecordPanel) {
+            window.openRecordPanel(id, recordPanel?.id || 'recordPanel');
+          }
+        });
+      }
+      if (signoutBtn) {
         signoutBtn.addEventListener('click', async (e) => {
           e.preventDefault();
-          try {
-            await supabase.auth.signOut();
-          } catch (err) {
-            console.warn('Sign out failed', err);
+          if (supabase) {
+            try { await supabase.auth.signOut(); } catch (err) { console.warn('Sign out failed', err); }
           }
           window.location.href = 'index.html';
         });
-      }).catch((err) => {
-        console.warn('Supabase client unavailable for sign-out', err);
-        signoutBtn.addEventListener('click', () => {
-          window.location.href = 'index.html';
+      }
+    };
+
+    (async () => {
+      attachHandlers();
+      await initSupabase();
+      if (supabase) {
+        await refreshRecords();
+        supabase.auth.onAuthStateChange((_event) => {
+          if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED' || _event === 'SIGNED_OUT') {
+            refreshRecords();
+          }
         });
-      });
-    }
+      } else {
+        showMessage('History unavailable while offline.');
+      }
+    })();
   </script>
 </body>
 </html>
