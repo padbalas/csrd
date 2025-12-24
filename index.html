@@ -879,6 +879,9 @@
       updateCompanyDisplay(data?.session || null);
     };
 
+    // Records now live on records.html; keep a no-op to avoid undefined references.
+    const refreshRecordsFromRemote = () => {};
+
     // Disable future months when current year is selected
     const syncMonthOptions = () => {
       const selectedYear = parseInt(yearEl.value, 10);
