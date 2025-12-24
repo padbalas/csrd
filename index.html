@@ -967,19 +967,17 @@
     };
 
     const setSessionUI = (session) => {
-      // Guard against missing DOM nodes (e.g., when sections are removed/hidden)
-      if (!historySection || !headerSignIn || !headerCompany || !recordsError || !recordsLoading || !recordsTable || !recordsEmpty || !headerSignout) {
-        return;
-      }
+      // Minimal guard: rely only on header controls to avoid missing-node issues
+      if (!headerSignIn || !headerCompany || !headerSignout) return;
       appState.session = session;
-      signoutBtn.style.display = session ? 'inline-flex' : 'none';
+      if (signoutBtn) signoutBtn.style.display = session ? 'inline-flex' : 'none';
       headerSignout.style.display = session ? 'inline-flex' : 'none';
       if (!session) {
-        historySection.style.display = 'none';
-        recordsTable.style.display = 'none';
-        recordsEmpty.style.display = 'none';
-        recordsError.style.display = 'none';
-        recordsLoading.style.display = 'none';
+        if (historySection) historySection.style.display = 'none';
+        if (typeof recordsTable !== 'undefined' && recordsTable) recordsTable.style.display = 'none';
+        if (typeof recordsEmpty !== 'undefined' && recordsEmpty) recordsEmpty.style.display = 'none';
+        if (typeof recordsError !== 'undefined' && recordsError) recordsError.style.display = 'none';
+        if (typeof recordsLoading !== 'undefined' && recordsLoading) recordsLoading.style.display = 'none';
         appState.companyId = null;
         appState.companyName = null;
         appState.historyRevealed = false;
@@ -989,8 +987,8 @@
       } else {
         headerSignIn.style.display = 'none';
         headerCompany.style.display = appState.companyName || session?.user?.email ? 'inline' : 'none';
-        if (!appState.historyRevealed) {
-          // Default destination after login: show My Records info card
+        // Default destination after login: show My Records info card
+        if (!appState.historyRevealed && historySection) {
           showPage('records');
           historySection.scrollIntoView({ behavior: 'smooth' });
           appState.historyRevealed = true;
