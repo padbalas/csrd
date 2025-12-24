@@ -719,6 +719,7 @@
 
   <script type="module">
     import { EMISSION_FACTORS, GLOBAL_FALLBACK } from './data/emission-factors.js';
+    import { loadRecords, saveRecords, renderRecords, openRecord } from './js/records.js';
     // Configurable emission factors (metric tons CO2e per kWh)
     // Emission factors imported from a versioned, append-only dataset for easy updates without touching UI/logic.
 
@@ -976,7 +977,7 @@
           appState.historyRevealed = true;
         }
         if (historySection.style.display !== 'none') {
-          loadRecords();
+          refreshRecordsFromRemote();
         }
       }
     };
@@ -1045,42 +1046,10 @@
         return;
       }
       historySection.style.display = 'block';
-      loadRecords();
+      refreshRecordsFromRemote();
     };
 
-    const renderRecords = (rows) => {
-      recordsTbody.innerHTML = '';
-      if (!rows.length) {
-        recordsTable.style.display = 'none';
-        recordsEmpty.style.display = 'block';
-        return;
-      }
-      recordsEmpty.style.display = 'none';
-      recordsTable.style.display = 'table';
-      rows.forEach((row) => {
-        const tr = document.createElement('tr');
-        const period = `${row.period_year}-${String(row.period_month).padStart(2, '0')}`;
-        const company = row.companies?.company_name || '—';
-        const region = `${row.calc_country || '—'}${row.calc_region ? ' / ' + row.calc_region : ''}`;
-        const marketVal = row.market_based_emissions != null ? `${formatNumber(row.market_based_emissions, 3)}` : '—';
-        tr.innerHTML = `
-          <td>${period}</td>
-          <td>${company}</td>
-          <td>${region}</td>
-          <td>${formatNumber(row.kwh, 0)}</td>
-          <td>${formatNumber(row.location_based_emissions, 3)}</td>
-          <td>${marketVal}</td>
-          <td style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn secondary" data-action="view" data-id="${row.id}">View</button>
-            <button class="btn secondary" data-action="edit" data-id="${row.id}">Edit</button>
-            <button class="btn secondary" data-action="delete" data-id="${row.id}">Delete</button>
-          </td>
-        `;
-        recordsTbody.appendChild(tr);
-      });
-    };
-
-    const loadRecords = async () => {
+    const refreshRecordsFromRemote = async () => {
       if (!supabase) {
         recordsError.style.display = 'block';
         recordsError.textContent = 'History unavailable while offline.';
@@ -1104,7 +1073,15 @@
         return;
       }
       appState.records = data || [];
-      renderRecords(appState.records);
+      saveRecords(appState.records);
+      renderRecords('records-tbody');
+      if (!appState.records.length) {
+        recordsTable.style.display = 'none';
+        recordsEmpty.style.display = 'block';
+      } else {
+        recordsEmpty.style.display = 'none';
+        recordsTable.style.display = 'table';
+      }
       updateCompanyDisplay(appState.session);
     };
 
@@ -1316,7 +1293,7 @@
       window.location.href = '/';
     });
 
-    const findRecordById = (id) => appState.records.find((r) => r.id === id);
+    const findRecordById = (id) => openRecord(id) || appState.records.find((r) => r.id === id);
 
     const openModal = (el) => el && el.classList.add('active');
     const closeModal = (el) => el && el.classList.remove('active');
@@ -1380,7 +1357,7 @@
             alert('Delete failed. Please try again.');
             return;
           }
-          loadRecords();
+          refreshRecordsFromRemote();
         });
       }
     });
@@ -1420,7 +1397,7 @@
       }
       editStatus.textContent = 'Saved.';
       closeModal(editModal);
-      loadRecords();
+      refreshRecordsFromRemote();
     });
 
     const getOrCreateCompany = async () => {
@@ -1521,7 +1498,7 @@
         return;
       }
       alert('Saved.');
-      loadRecords();
+      refreshRecordsFromRemote();
     };
 
     const getEmissionFactor = (country, region) => {
