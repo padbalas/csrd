@@ -1536,8 +1536,8 @@
         alert('Save failed. Please try again.');
         return;
       }
-      alert('Saved.');
-      refreshRecordsFromRemote();
+      // Redirect to records page after saving to avoid noisy popups
+      window.location.href = 'records.html';
     };
 
     const getEmissionFactor = (country, region) => {
