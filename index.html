@@ -506,8 +506,8 @@
           California SB-253 / SB-261 and EU CSRD apply to certain larger companies or those operating in those regions. Many small businesses are not required to report yet. This is high-level guidance only — not legal or audit advice.
         </div>
         <div class="cta-row" style="margin-top:12px; justify-content:flex-start;">
-          <button type="button" class="btn primary" id="save-btn">Save & track history</button>
-          <a href="records.html" class="btn secondary" id="history-link" data-page="records">My history</a>
+          <button type="button" class="btn primary" id="save-btn">Save</button>
+          <a href="records.html" class="btn secondary" id="history-link" data-page="records" style="display:none;">My history</a>
           <button type="button" class="btn secondary" id="signout-btn" style="display:none;">Sign out</button>
         </div>
       </div>
@@ -1003,7 +1003,7 @@
       // Minimal guard: rely only on header controls to avoid missing-node issues
       if (!headerSignIn || !headerCompany || !headerSignout || !headerRecords) return;
       appState.session = session;
-      if (signoutBtn) signoutBtn.style.display = session ? 'inline-flex' : 'none';
+      if (signoutBtn) signoutBtn.style.display = 'none'; // keep only header sign-out to reduce clutter near Save
       headerSignout.style.display = session ? 'inline-flex' : 'none';
       headerRecords.style.display = session ? 'inline-flex' : 'none';
       if (!session) {
