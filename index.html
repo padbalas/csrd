@@ -460,34 +460,9 @@
     </section>
 
     <section id="history-section" class="page" data-page="records" style="display:none;">
-      <div class="top-row" style="margin-bottom:10px;">
-        <div>
-          <h2 style="margin:0;">My Records</h2>
-          <p class="muted" style="margin:4px 0 0;">Your saved Scope 2 electricity emissions</p>
-        </div>
-        <button type="button" class="btn secondary" id="records-signout">Sign out</button>
-      </div>
-      <div id="records-loading" class="muted" style="display:none;">Loading records...</div>
-      <div id="records-error" class="muted" style="display:none;color:#b91c1c;">Could not load records. Please try again.</div>
-      <table class="table" id="records-table" style="display:none;">
-        <thead>
-          <tr>
-            <th>Period</th>
-            <th>Company</th>
-            <th>Country / Region</th>
-            <th>Electricity (kWh)</th>
-            <th>Scope 2 – Location-based (t CO₂e)</th>
-            <th>Scope 2 – Market-based (t CO₂e)</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="records-tbody"></tbody>
-      </table>
-      <div id="records-empty" class="muted" style="display:none;">
-        You don’t have any saved records yet.
-        <div style="margin-top:8px;">
-          <a href="#calculator" class="btn primary">Calculate emissions</a>
-        </div>
+      <div class="info-card" style="padding:16px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc;">
+        <div style="font-weight:700;">Your records now live in a dedicated page.</div>
+        <a href="records.html" class="btn secondary" style="margin-top:10px; display:inline-flex;">Go to My Records →</a>
       </div>
     </section>
 
@@ -973,13 +948,10 @@
         headerSignIn.style.display = 'none';
         headerCompany.style.display = appState.companyName || session?.user?.email ? 'inline' : 'none';
         if (!appState.historyRevealed) {
-          // Default destination after login: show My Records
+          // Default destination after login: show My Records info card
           showPage('records');
           historySection.scrollIntoView({ behavior: 'smooth' });
           appState.historyRevealed = true;
-        }
-        if (historySection.style.display !== 'none') {
-          refreshRecordsFromRemote();
         }
       }
     };
@@ -1048,49 +1020,13 @@
         return;
       }
       showPage('records');
-      refreshRecordsFromRemote();
+      // Soft deprecation: no inline rendering; direct link provided in info card.
     };
 
     const showPage = (pageName) => {
       pages.forEach((page) => {
         page.style.display = page.dataset.page === pageName ? 'block' : 'none';
       });
-    };
-
-    const refreshRecordsFromRemote = async () => {
-      if (!supabase) {
-        recordsError.style.display = 'block';
-        recordsError.textContent = 'History unavailable while offline.';
-        return;
-      }
-      if (!appState.session) return;
-      recordsLoading.style.display = 'block';
-      recordsError.style.display = 'none';
-      recordsTable.style.display = 'none';
-      recordsEmpty.style.display = 'none';
-      const { data, error } = await supabase
-        .from('scope2_records')
-        .select('id,period_year,period_month,kwh,location_based_emissions,market_based_emissions,emission_factor_source,emission_factor_year,emission_factor_value,calc_country,calc_region,market_instrument_type,covered_kwh,companies(company_name,country,region)')
-        .order('period_year', { ascending: false })
-        .order('period_month', { ascending: false })
-        .order('created_at', { ascending: false });
-      recordsLoading.style.display = 'none';
-      if (error) {
-        recordsError.style.display = 'block';
-        recordsError.textContent = 'Could not load records right now.';
-        return;
-      }
-      appState.records = data || [];
-      saveRecords(appState.records);
-      renderRecords('records-tbody');
-      if (!appState.records.length) {
-        recordsTable.style.display = 'none';
-        recordsEmpty.style.display = 'block';
-      } else {
-        recordsEmpty.style.display = 'none';
-        recordsTable.style.display = 'table';
-      }
-      updateCompanyDisplay(appState.session);
     };
 
     const enterRecoveryMode = (session) => {
