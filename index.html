@@ -1235,10 +1235,12 @@
       e.preventDefault();
       showHistorySection();
     });
-    recordsSignout.addEventListener('click', async () => {
-      if (supabase) await supabase.auth.signOut();
-      window.location.href = '/';
-    });
+    if (recordsSignout) {
+      recordsSignout.addEventListener('click', async () => {
+        if (supabase) await supabase.auth.signOut();
+        window.location.href = '/';
+      });
+    }
 
     const findRecordById = (id) => openRecord(id) || appState.records.find((r) => r.id === id);
 
