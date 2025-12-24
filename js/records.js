@@ -25,28 +25,86 @@ const saveRecords = (records = []) => {
   return records;
 };
 
+const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+const detectMethod = (row) => (row.market_based_emissions != null ? 'market' : 'location');
+
+const applyFilters = (records) => {
+  const yearEl = document.getElementById('filterYear');
+  const regionEl = document.getElementById('filterRegion');
+  const methodEl = document.getElementById('filterMethod');
+  const yearFilter = yearEl?.value || '';
+  const regionFilter = (regionEl?.value || '').toLowerCase();
+  const methodFilter = methodEl?.value || '';
+  return records.filter((r) => {
+    const yearMatch = yearFilter ? String(r.period_year || r.year) === yearFilter : true;
+    const regionLabel = `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`.toLowerCase();
+    const regionMatch = regionFilter ? regionLabel === regionFilter : true;
+    const method = detectMethod(r);
+    const methodMatch = methodFilter ? method === methodFilter : true;
+    return yearMatch && regionMatch && methodMatch;
+  });
+};
+
+const populateFilters = (records) => {
+  const years = new Set();
+  const regions = new Set();
+  records.forEach((r) => {
+    if (r.period_year || r.year) years.add(String(r.period_year || r.year));
+    regions.add(`${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`);
+  });
+  const yearEl = document.getElementById('filterYear');
+  const regionEl = document.getElementById('filterRegion');
+  if (yearEl) {
+    const current = yearEl.value;
+    yearEl.innerHTML = '<option value=\"\">All</option>';
+    Array.from(years).sort((a, b) => b.localeCompare(a)).forEach((y) => {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      yearEl.appendChild(opt);
+    });
+    yearEl.value = current;
+  }
+  if (regionEl) {
+    const currentR = regionEl.value;
+    regionEl.innerHTML = '<option value=\"\">All</option>';
+    Array.from(regions).sort().forEach((r) => {
+      const opt = document.createElement('option');
+      opt.value = r;
+      opt.textContent = r;
+      regionEl.appendChild(opt);
+    });
+    regionEl.value = currentR;
+  }
+};
+
 const renderRecords = (containerId) => {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const rows = loadRecords();
+  const records = loadRecords();
+  populateFilters(records);
+  const rows = applyFilters(records);
   container.innerHTML = '';
+  if (!rows.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="3" style="color:#4b5563;">No records match these filters.</td>`;
+    container.appendChild(tr);
+    return;
+  }
   rows.forEach((row) => {
     const tr = document.createElement('tr');
-    const period = `${row.period_year}-${String(row.period_month).padStart(2, '0')}`;
-    const company = row.companies?.company_name || '—';
+    const monthName = monthNames[(row.period_month || row.month || 1) - 1] || '';
     const region = `${row.calc_country || '—'}${row.calc_region ? ' / ' + row.calc_region : ''}`;
-    const marketVal = row.market_based_emissions != null ? `${formatNumber(row.market_based_emissions, 3)}` : '—';
+    const method = detectMethod(row) === 'market' ? 'Market-based' : 'Location-based';
     tr.innerHTML = `
-      <td>${period}</td>
-      <td>${company}</td>
-      <td>${region}</td>
-      <td>${formatNumber(row.kwh, 0)}</td>
-      <td>${formatNumber(row.location_based_emissions, 3)}</td>
-      <td>${marketVal}</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="btn secondary" data-action="view" data-id="${row.id}">View</button>
-        <button class="btn secondary" data-action="edit" data-id="${row.id}">Edit</button>
-        <button class="btn secondary" data-action="delete" data-id="${row.id}">Delete</button>
+      <td>
+        <div class="primary">${formatNumber(row.location_based_emissions || row.emissions || 0, 3)} t CO₂e</div>
+        <div class="secondary">${monthName} ${row.period_year || row.year || ''} · ${region}</div>
+      </td>
+      <td class="method">${method}</td>
+      <td class="actions">
+        <button class="btn secondary" onclick="window.openRecordPanel ? window.openRecordPanel('${row.id}') : (window.openRecord && window.openRecord('${row.id}'));">View</button>
       </td>
     `;
     container.appendChild(tr);

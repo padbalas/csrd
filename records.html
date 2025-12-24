@@ -134,6 +134,31 @@
     }
     .reminder-list li { margin-bottom: 6px; }
     .reminder-list .placeholder { list-style: none; padding-left: 0; }
+    .records-filters {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      background: var(--bg);
+      flex-wrap: wrap;
+    }
+    .records-filters label {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .records-filters select {
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      min-width: 140px;
+    }
     .slide-panel {
       position: fixed;
       top: 0;
@@ -203,15 +228,35 @@
     </section>
     <section>
       <h2 style="margin:0;">Saved records</h2>
+      <section class="records-filters">
+        <label>
+          Year
+          <select id="filterYear">
+            <option value="">All</option>
+          </select>
+        </label>
+
+        <label>
+          Region
+          <select id="filterRegion">
+            <option value="">All</option>
+          </select>
+        </label>
+
+        <label>
+          Method
+          <select id="filterMethod">
+            <option value="">All</option>
+            <option value="location">Location-based</option>
+            <option value="market">Market-based</option>
+          </select>
+        </label>
+      </section>
       <table class="table" aria-label="Saved records">
         <thead>
           <tr>
-            <th>Period</th>
-            <th>Company</th>
-            <th>Country / Region</th>
-            <th>Electricity (kWh)</th>
-            <th>Scope 2 – Location-based (t CO₂e)</th>
-            <th>Scope 2 – Market-based (t CO₂e)</th>
+            <th>Emissions</th>
+            <th>Method</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -302,6 +347,13 @@
 
     (async () => {
       attachHandlers();
+      document.querySelectorAll('.records-filters select').forEach((el) => {
+        el.addEventListener('change', () => {
+          if (window.renderRecords) window.renderRecords('recordsTable');
+          if (window.renderCarbonSummary) window.renderCarbonSummary();
+          if (window.renderCarbonReminders) window.renderCarbonReminders();
+        });
+      });
       await initSupabase();
       if (supabase) {
         await refreshRecords();
