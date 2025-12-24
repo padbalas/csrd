@@ -120,6 +120,20 @@
     .summary-card .label { color: var(--muted); font-size: 0.95rem; }
     .summary-card .value { font-weight: 800; font-size: 1.3rem; margin-top: 6px; }
     .summary-card .unit { color: var(--muted); font-size: 0.9rem; }
+    .carbon-reminders {
+      margin-top: 18px;
+      padding: 16px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+    }
+    .reminder-list {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+    .reminder-list li { margin-bottom: 6px; }
+    .reminder-list .placeholder { list-style: none; padding-left: 0; }
     .slide-panel {
       position: fixed;
       top: 0;
@@ -180,6 +194,13 @@
         </div>
       </div>
     </section>
+    <section class="carbon-reminders">
+      <h3>Insights & Reminders</h3>
+
+      <ul id="reminderList" class="reminder-list">
+        <li class="placeholder">Loading insights…</li>
+      </ul>
+    </section>
     <section>
       <h2 style="margin:0;">Saved records</h2>
       <table class="table" aria-label="Saved records">
@@ -217,6 +238,7 @@
     // Initial render from any cached local data
     if (window.renderRecords) window.renderRecords('recordsTable');
     if (window.renderCarbonSummary) window.renderCarbonSummary();
+    if (window.renderCarbonReminders) window.renderCarbonReminders();
 
     let supabase = null;
     const initSupabase = async () => {
@@ -249,6 +271,7 @@
       if (window.saveRecords) window.saveRecords(data || []);
       if (window.renderRecords) window.renderRecords('recordsTable');
       if (window.renderCarbonSummary) window.renderCarbonSummary();
+      if (window.renderCarbonReminders) window.renderCarbonReminders();
       if (!data || !data.length) {
         showMessage('No records yet. Save from the calculator page.');
       }

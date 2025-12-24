@@ -143,6 +143,74 @@ const renderCarbonSummary = () => {
   if (countEl) countEl.textContent = summary.count;
 };
 
+const computeCarbonReminders = () => {
+  const records = loadRecords();
+  if (!records.length) return [];
+
+  const reminders = [];
+  const monthKeys = records.map((r) => `${r.period_year || r.year}-${String(r.period_month || r.month).padStart(2, '0')}`);
+  const uniqueMonths = Array.from(new Set(monthKeys)).sort();
+
+  // Detect missing months in sequence
+  if (uniqueMonths.length) {
+    const [startYear, startMonth] = uniqueMonths[0].split('-').map((v) => parseInt(v, 10));
+    const [endYear, endMonth] = uniqueMonths[uniqueMonths.length - 1].split('-').map((v) => parseInt(v, 10));
+    const missing = [];
+    let y = startYear;
+    let m = startMonth;
+    const seen = new Set(uniqueMonths);
+    while (y < endYear || (y === endYear && m <= endMonth)) {
+      const key = `${y}-${String(m).padStart(2, '0')}`;
+      if (!seen.has(key)) missing.push(key);
+      m += 1;
+      if (m > 12) { m = 1; y += 1; }
+    }
+    missing.forEach((k) => {
+      const [yr, mo] = k.split('-');
+      reminders.push({ type: 'missing', text: `You haven’t added electricity data for ${mo}/${yr}.` });
+    });
+  }
+
+  // Region contribution
+  let total = 0;
+  const regions = {};
+  records.forEach((r) => {
+    const val = Number(r.location_based_emissions || r.emissions || 0);
+    total += val;
+    const regionLabel = `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`;
+    regions[regionLabel] = (regions[regionLabel] || 0) + val;
+  });
+  if (total > 0) {
+    Object.entries(regions).forEach(([region, val]) => {
+      const share = val / total;
+      if (share > 0.3) {
+        reminders.push({ type: 'region', text: `${region} contributes ${ (share * 100).toFixed(0) }% of your Scope 2 emissions.` });
+      }
+    });
+  }
+
+  return reminders;
+};
+
+const renderCarbonReminders = () => {
+  const list = document.getElementById('reminderList');
+  if (!list) return;
+  const reminders = computeCarbonReminders();
+  list.innerHTML = '';
+  if (!reminders.length) {
+    const li = document.createElement('li');
+    li.className = 'placeholder';
+    li.textContent = 'All looks good. No reminders right now.';
+    list.appendChild(li);
+    return;
+  }
+  reminders.forEach((r) => {
+    const li = document.createElement('li');
+    li.textContent = r.text;
+    list.appendChild(li);
+  });
+};
+
 // Expose globally for non-module usage
 if (typeof window !== 'undefined') {
   window.loadRecords = loadRecords;
@@ -152,6 +220,8 @@ if (typeof window !== 'undefined') {
   window.openRecordPanel = openRecordPanel;
   window.computeCarbonSummary = computeCarbonSummary;
   window.renderCarbonSummary = renderCarbonSummary;
+  window.computeCarbonReminders = computeCarbonReminders;
+  window.renderCarbonReminders = renderCarbonReminders;
 }
 
-export { loadRecords, saveRecords, renderRecords, openRecord, openRecordPanel, computeCarbonSummary, renderCarbonSummary };
+export { loadRecords, saveRecords, renderRecords, openRecord, openRecordPanel, computeCarbonSummary, renderCarbonSummary, computeCarbonReminders, renderCarbonReminders };
