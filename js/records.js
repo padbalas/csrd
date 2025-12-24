@@ -31,29 +31,36 @@ const detectMethod = (row) => (row.market_based_emissions != null ? 'market' : '
 
 const applyFilters = (records) => {
   const yearEl = document.getElementById('filterYear');
+  const countryEl = document.getElementById('filterCountry');
   const regionEl = document.getElementById('filterRegion');
   const methodEl = document.getElementById('filterMethod');
   const yearFilter = yearEl?.value || '';
+  const countryFilter = (countryEl?.value || '').toLowerCase();
   const regionFilter = (regionEl?.value || '').toLowerCase();
   const methodFilter = methodEl?.value || '';
   return records.filter((r) => {
     const yearMatch = yearFilter ? String(r.period_year || r.year) === yearFilter : true;
-    const regionLabel = `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`.toLowerCase();
+    const countryLabel = (r.calc_country || '—').toLowerCase();
+    const regionLabel = (r.calc_region || '').toLowerCase();
+    const countryMatch = countryFilter ? countryLabel === countryFilter : true;
     const regionMatch = regionFilter ? regionLabel === regionFilter : true;
     const method = detectMethod(r);
     const methodMatch = methodFilter ? method === methodFilter : true;
-    return yearMatch && regionMatch && methodMatch;
+    return yearMatch && countryMatch && regionMatch && methodMatch;
   });
 };
 
 const populateFilters = (records) => {
   const years = new Set();
+  const countries = new Set();
   const regions = new Set();
   records.forEach((r) => {
     if (r.period_year || r.year) years.add(String(r.period_year || r.year));
-    regions.add(`${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`);
+    countries.add(r.calc_country || '—');
+    if (r.calc_region) regions.add(r.calc_region);
   });
   const yearEl = document.getElementById('filterYear');
+  const countryEl = document.getElementById('filterCountry');
   const regionEl = document.getElementById('filterRegion');
   if (yearEl) {
     const current = yearEl.value;
@@ -65,6 +72,17 @@ const populateFilters = (records) => {
       yearEl.appendChild(opt);
     });
     yearEl.value = current;
+  }
+  if (countryEl) {
+    const currentC = countryEl.value;
+    countryEl.innerHTML = '<option value=\"\">All</option>';
+    Array.from(countries).sort().forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      countryEl.appendChild(opt);
+    });
+    countryEl.value = currentC;
   }
   if (regionEl) {
     const currentR = regionEl.value;
