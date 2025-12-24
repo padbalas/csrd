@@ -139,6 +139,10 @@ const buildRecordDetails = (record) => {
       <div><strong>Emission factor</strong><br>${formatNumber(record.emission_factor_value, 6)} t CO₂e/kWh</div>
       <div><strong>Factor source</strong><br>${record.emission_factor_source} ${record.emission_factor_year}</div>
       <p style="color:#4b5563;font-size:0.95rem;margin:8px 0 0;">Location-based Scope 2 calculation aligned with the GHG Protocol.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <button class="btn secondary" data-panel-edit="${record.id}" style="padding:10px 12px;">Edit</button>
+        <button class="btn secondary" data-panel-delete="${record.id}" style="padding:10px 12px;">Delete</button>
+      </div>
     </div>
   `;
 };
@@ -157,6 +161,22 @@ const openRecordPanel = (recordId, panelId = 'recordPanel') => {
       panel.classList.remove('active');
       panel.classList.add('hidden');
     }, { once: true });
+  }
+  const editBtn = panel.querySelector('[data-panel-edit]');
+  const deleteBtn = panel.querySelector('[data-panel-delete]');
+  if (editBtn) {
+    editBtn.addEventListener('click', () => {
+      if (typeof window.onRecordEdit === 'function') {
+        window.onRecordEdit(recordId);
+      }
+    });
+  }
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', () => {
+      if (typeof window.onRecordDelete === 'function') {
+        window.onRecordDelete(recordId);
+      }
+    });
   }
 };
 
