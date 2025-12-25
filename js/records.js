@@ -245,8 +245,7 @@ const renderCarbonSummary = () => {
   if (compareEl) compareEl.textContent = summary.compare;
 };
 
-const computeCarbonReminders = () => {
-  const records = loadRecords();
+const computeCarbonReminders = (records = getFilteredRecords()) => {
   if (!records.length) return [];
 
   const reminders = [];
