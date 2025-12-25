@@ -218,12 +218,14 @@ const computeCarbonSummary = (records = loadRecords()) => {
 
   const topEntry = Object.entries(regions).sort((a, b) => b[1] - a[1])[0];
   const topRegion = topEntry ? `${topEntry[0]} (${topEntry[1].toFixed(3)})` : '—';
+  const milesPerTon = 1 / 0.000404;
 
   return {
     total: total.toFixed(3),
     avg: months.size ? (total / months.size).toFixed(3) : total.toFixed(3),
     topRegion,
-    count: months.size
+    count: months.size,
+    compare: `${(total * milesPerTon).toFixed(0)} miles`
   };
 };
 
@@ -235,10 +237,12 @@ const renderCarbonSummary = () => {
   const avgEl = document.getElementById('avgEmissions');
   const topEl = document.getElementById('topRegion');
   const countEl = document.getElementById('recordCount');
+  const compareEl = document.getElementById('summaryCompare');
   if (totalEl) totalEl.textContent = summary.total;
   if (avgEl) avgEl.textContent = summary.avg;
   if (topEl) topEl.textContent = summary.topRegion;
   if (countEl) countEl.textContent = summary.count;
+  if (compareEl) compareEl.textContent = summary.compare;
 };
 
 const computeCarbonReminders = () => {
