@@ -357,47 +357,35 @@
   </style>
 </head>
 <body>
-  <div class="app-layout">
-    <aside class="side-nav">
-      <div class="nav-header">ESGRise</div>
-      <nav class="nav-items">
-        <a href="dashboard.html" class="nav-item disabled" data-nav="dashboard">Dashboard</a>
-        <a href="records.html" class="nav-item" data-nav="records">My Records</a>
-        <a href="#" class="nav-item disabled" data-nav="insights">Insights</a>
-        <a href="#" class="nav-item disabled" data-nav="export">Export / Reports</a>
-        <a href="#" class="nav-item disabled" data-nav="settings">Settings</a>
-      </nav>
-    </aside>
-    <div class="app-content">
-      <header>
-        <div class="shell">
-          <div class="top-row">
-            <div class="tag">CarbonWise</div>
-            <span id="header-company" class="company-badge" style="display:none;"></span>
-            <a class="btn secondary" id="header-records" href="records.html">My Records</a>
-            <button class="btn secondary" id="header-signin">Sign in</button>
-            <button class="btn secondary" id="header-signout" style="display:none;">Sign out</button>
-          </div>
-          <h1>Carbon reporting for small teams — without the complexity</h1>
-          <p class="subhead">Carbon calculations in minutes, plain-English, no consultants/spreadsheets/data lock-in.</p>
-          <p class="hero-clarifier">Built for growing companies that need audit-ready carbon reporting.</p>
-          <div class="cta-row">
-            <a class="btn primary" href="#calculator">Start Carbon Calculation</a>
-            <a class="btn secondary" href="#how">See how it works</a>
-          </div>
-          <!-- Simple, text-first step guide to set expectations quickly -->
-          <div class="step-indicator">
-            <span>① Enter basics</span> <span>→</span> <span>② We calculate</span> <span>→</span> <span>③ Get clear estimates</span>
-          </div>
-          <div class="trust-strip">
-            <span>Privacy-first · No logins</span>
-            <span>Aligned with GHG Protocol</span>
-            <span>Scope 1 &amp; Scope 2 focused</span>
-          </div>
-        </div>
-      </header>
+  <header>
+    <div class="shell">
+      <div class="top-row">
+        <div class="tag">CarbonWise</div>
+        <span id="header-company" class="company-badge" style="display:none;"></span>
+        <a class="btn secondary" id="header-records" href="records.html">My Records</a>
+        <button class="btn secondary" id="header-signin">Sign in</button>
+        <button class="btn secondary" id="header-signout" style="display:none;">Sign out</button>
+      </div>
+      <h1>Carbon reporting for small teams — without the complexity</h1>
+      <p class="subhead">Carbon calculations in minutes, plain-English, no consultants/spreadsheets/data lock-in.</p>
+      <p class="hero-clarifier">Built for growing companies that need audit-ready carbon reporting.</p>
+      <div class="cta-row">
+        <a class="btn primary" href="#calculator">Start Carbon Calculation</a>
+        <a class="btn secondary" href="#how">See how it works</a>
+      </div>
+      <!-- Simple, text-first step guide to set expectations quickly -->
+      <div class="step-indicator">
+        <span>① Enter basics</span> <span>→</span> <span>② We calculate</span> <span>→</span> <span>③ Get clear estimates</span>
+      </div>
+      <div class="trust-strip">
+        <span>Privacy-first · No logins</span>
+        <span>Aligned with GHG Protocol</span>
+        <span>Scope 1 &amp; Scope 2 focused</span>
+      </div>
+    </div>
+  </header>
 
-      <div class="shell">
+  <div class="shell">
     <section id="problem">
       <h2>Carbon reporting is confusing by design.</h2>
       <p>Endless portals, vague emission factors, and compliance jargon make small teams stall. CarbonWise removes the noise so you can move.</p>
@@ -810,24 +798,6 @@
 
   <!-- Slide-out record detail panel -->
   <div id="recordPanel" class="slide-panel hidden" aria-live="polite"></div>
-
-    </div> <!-- end app-content -->
-  </div> <!-- end app-layout -->
-
-  <script>
-    (function setActiveNav() {
-      const path = window.location.pathname;
-      document.querySelectorAll('.nav-item').forEach((link) => {
-        const href = link.getAttribute('href');
-        if (href && path.includes(href)) {
-          link.classList.add('active');
-        }
-      });
-      document.querySelectorAll('.nav-item.disabled').forEach((link) => {
-        link.addEventListener('click', (e) => e.preventDefault());
-      });
-    })();
-  </script>
 
   <script type="module">
     import { EMISSION_FACTORS, GLOBAL_FALLBACK } from './data/emission-factors.js';
