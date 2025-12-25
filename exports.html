@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CarbonWise | Export / Reports</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #4b5563;
+      --line: #e5e7eb;
+      --card: #ffffff;
+      --bg: #f7f8fb;
+      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    .app-layout { display: flex; min-height: 100vh; background: var(--bg); }
+    .side-nav { width: 230px; padding: 24px 18px; background: #0b1220; color: #e5e7eb; border-right: 1px solid #111827; position: sticky; top: 0; height: 100vh; box-sizing: border-box; }
+    .nav-items { display: grid; gap: 6px; }
+    .nav-item { display: block; padding: 10px 12px; border-radius: 10px; color: #e5e7eb; text-decoration: none; font-weight: 600; }
+    .nav-item:hover:not(.disabled) { background: rgba(255,255,255,0.08); }
+    .nav-item.active { background: rgba(34,197,94,0.18); color: #fff; border: 1px solid rgba(34,197,94,0.4); }
+    .nav-item.disabled { opacity: 0.5; cursor: default; }
+    .app-content { flex: 1; min-width: 0; }
+    header { padding: 32px 20px 12px; color: #0f172a; }
+    .shell { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+    .top-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .tag { display: inline-block; padding: 6px 10px; background: #e0f2f1; color: #0f766e; border-radius: 999px; font-weight: 600; font-size: 0.9rem; }
+    h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 36px); letter-spacing: -0.01em; }
+    p.muted { color: var(--muted); margin: 0 0 12px; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 12px 30px rgba(15,23,42,0.08); }
+    .stack { display: grid; gap: 12px; }
+    label { font-weight: 600; display: block; margin-bottom: 4px; }
+    select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--line); font-size: 1rem; background: #fff; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 14px; border-radius: 12px; border: 1px solid transparent; font-weight: 700; text-decoration: none; cursor: pointer; color: inherit; }
+    .btn.primary { background: #22c55e; color: #0f172a; }
+    .btn.secondary { background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .status { font-size: 0.95rem; color: var(--muted); min-height: 20px; }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="side-nav">
+      <nav class="nav-items">
+        <a href="dashboard.html" class="nav-item disabled" data-nav="dashboard">Dashboard</a>
+        <a href="records.html" class="nav-item" data-nav="records">My Records</a>
+        <a href="#" class="nav-item disabled" data-nav="insights">Insights</a>
+        <a href="exports.html" class="nav-item active" data-nav="export">Export / Reports</a>
+        <a href="#" class="nav-item disabled" data-nav="settings">Settings</a>
+      </nav>
+    </aside>
+    <div class="app-content">
+      <header>
+        <div class="shell">
+          <div class="top-row">
+            <div class="tag">CarbonWise</div>
+            <div class="muted">Export your Scope 2 records</div>
+          </div>
+          <h1>Export / Reports</h1>
+          <p class="muted">Generate CSV exports for your Scope 2 electricity emissions. Built for handoff to finance and audit teams.</p>
+        </div>
+      </header>
+
+      <div class="shell">
+        <section class="card stack">
+          <div>
+            <label>Company</label>
+            <div id="companyName" class="muted">Loading…</div>
+          </div>
+          <div>
+            <label for="exportYear">Reporting year</label>
+            <select id="exportYear">
+              <option value="">All years</option>
+            </select>
+          </div>
+          <div class="actions">
+            <button class="btn primary" id="exportCsv">Generate CSV</button>
+            <button class="btn secondary" id="exportPdf" disabled title="PDF summary coming soon">Generate PDF</button>
+            <span class="status" id="exportStatus"></span>
+          </div>
+        </section>
+
+        <section class="card" style="margin-top:14px;">
+          <h3 style="margin-top:0;">What’s included</h3>
+          <ul class="muted" style="padding-left:18px; margin:8px 0 0;">
+            <li>Company name and region</li>
+            <li>Period (YYYY-MM) and electricity usage (kWh)</li>
+            <li>Location-based and market-based Scope 2 emissions</li>
+            <li>Emission factor value, year, and source</li>
+            <li>Disclosure: “Location-based Scope 2 calculation aligned with the GHG Protocol.”</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function setActiveNav() {
+      const path = window.location.pathname;
+      document.querySelectorAll('.nav-item').forEach((link) => {
+        const href = link.getAttribute('href');
+        if (href && path.includes(href)) {
+          link.classList.add('active');
+        }
+      });
+      document.querySelectorAll('.nav-item.disabled').forEach((link) => {
+        link.addEventListener('click', (e) => e.preventDefault());
+      });
+    })();
+  </script>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
+    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const companyNameEl = document.getElementById('companyName');
+    const yearSelect = document.getElementById('exportYear');
+    const exportCsvBtn = document.getElementById('exportCsv');
+    const exportPdfBtn = document.getElementById('exportPdf');
+    const statusEl = document.getElementById('exportStatus');
+
+    const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+    const setLoading = (isLoading) => {
+      exportCsvBtn.disabled = isLoading;
+      exportPdfBtn.disabled = true; // PDF not implemented yet
+    };
+
+    const requireAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session) {
+        window.location.href = 'index.html';
+        return null;
+      }
+      return data.session;
+    };
+
+    const fetchCompany = async () => {
+      const { data, error } = await supabase.from('companies').select('company_name,country,region').limit(1).single();
+      if (error) return null;
+      return data;
+    };
+
+    const fetchRecords = async (year = '') => {
+      let query = supabase
+        .from('scope2_records')
+        .select('period_year,period_month,kwh,location_based_emissions,market_based_emissions,emission_factor_value,emission_factor_year,emission_factor_source,calc_country,calc_region,companies(company_name,country,region)')
+        .order('period_year', { ascending: false })
+        .order('period_month', { ascending: false });
+      if (year) {
+        query = query.eq('period_year', year);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    };
+
+    const populateYears = (records) => {
+      const years = Array.from(new Set((records || []).map((r) => r.period_year))).filter(Boolean).sort((a, b) => b - a);
+      const current = yearSelect.value;
+      yearSelect.innerHTML = '<option value=\"\">All years</option>';
+      years.forEach((y) => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+      });
+      yearSelect.value = current;
+    };
+
+    const toCsv = (records, company) => {
+      const disclosure = 'Location-based Scope 2 calculation aligned with the GHG Protocol.';
+      const headers = [
+        'company_name','period','country','kwh','scope2_location_based_tco2e','scope2_market_based_tco2e','emission_factor_value','emission_factor_year','emission_factor_source'
+      ];
+      const rows = records.map((r) => {
+        const period = `${r.period_year}-${String(r.period_month).padStart(2, '0')}`;
+        const country = `${r.calc_country || ''}${r.calc_region ? ' / ' + r.calc_region : ''}`;
+        return [
+          r.companies?.company_name || company?.company_name || '',
+          period,
+          country,
+          r.kwh ?? '',
+          r.location_based_emissions ?? '',
+          r.market_based_emissions ?? '',
+          r.emission_factor_value ?? '',
+          r.emission_factor_year ?? '',
+          r.emission_factor_source ?? ''
+        ];
+      });
+      rows.push(['Disclosure', disclosure]);
+      const csv = [headers, ...rows].map((row) => row.map((v) => `\"${String(v ?? '').replace(/\"/g, '\"\"')}\"`).join(',')).join('\\n');
+      return csv;
+    };
+
+    const downloadCsv = (csv, filename = 'carbonwise_scope2.csv') => {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
+    const init = async () => {
+      setStatus('Checking access…');
+      const session = await requireAuth();
+      if (!session) return;
+      const [company, records] = await Promise.all([fetchCompany(), fetchRecords('')]);
+      if (company) companyNameEl.textContent = `${company.company_name} (${company.country || ''}${company.region ? ' / ' + company.region : ''})`;
+      else companyNameEl.textContent = 'Company not set';
+      populateYears(records);
+      setStatus('');
+
+      exportCsvBtn.addEventListener('click', async () => {
+        setLoading(true);
+        setStatus('Generating CSV…');
+        try {
+          const year = yearSelect.value;
+          const data = await fetchRecords(year);
+          if (!data.length) {
+            setStatus('No records for this selection.');
+            setLoading(false);
+            return;
+          }
+          const csv = toCsv(data, company);
+          const namePart = year ? `${year}` : 'all-years';
+          downloadCsv(csv, `carbonwise_scope2_${namePart}.csv`);
+          setStatus('CSV generated.');
+        } catch (err) {
+          console.warn('CSV export error', err);
+          setStatus('Could not generate CSV right now. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      });
+    };
+
+    init();
+  </script>
+</body>
+</html>
