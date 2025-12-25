@@ -194,7 +194,9 @@
         ];
       });
       rows.push(['Disclosure', disclosure]);
-      const csv = [headers, ...rows].map((row) => row.map((v) => `\"${String(v ?? '').replace(/\"/g, '\"\"')}\"`).join(',')).join('\\n');
+      const csv = [headers, ...rows]
+        .map((row) => row.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
+        .join('\r\n'); // Use CRLF for better compatibility with spreadsheet apps
       return csv;
     };
 
