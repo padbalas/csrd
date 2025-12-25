@@ -208,22 +208,6 @@
       border: 1px solid #e5e7eb;
       min-width: 140px;
     }
-    .export-bar {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin: 10px 0 6px;
-    }
-    .export-bar select {
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid #e5e7eb;
-      min-width: 140px;
-    }
-    .export-bar .btn {
-      padding: 10px 12px;
-    }
     .slide-panel {
       position: fixed;
       top: 0;
@@ -309,16 +293,6 @@
     </section>
         <section>
           <h2 style="margin:0;">Saved records</h2>
-          <div class="export-bar">
-            <label for="exportYear" style="font-weight:600;color:var(--muted);">Year
-              <select id="exportYear">
-                <option value="">All</option>
-              </select>
-            </label>
-            <button class="btn secondary" id="exportCsvBtn">Export CSV</button>
-            <button class="btn secondary" id="exportPdfBtn" disabled title="Coming soon">Export PDF</button>
-            <span class="muted" id="exportStatus" style="font-size:0.95rem;"></span>
-          </div>
           <section class="records-filters">
             <label>
               Year
