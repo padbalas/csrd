@@ -51,6 +51,13 @@ const applyFilters = (records) => {
 };
 
 const getFilteredRecords = () => applyFilters(loadRecords());
+const getAllYears = (records) => {
+  const years = new Set();
+  records.forEach((r) => {
+    if (r.period_year || r.year) years.add(String(r.period_year || r.year));
+  });
+  return Array.from(years).sort((a, b) => b.localeCompare(a));
+};
 
 const populateFilters = (records) => {
   const years = new Set();
