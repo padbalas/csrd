@@ -1,0 +1,24 @@
+{
+  "name": "csrd",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/padbalas/csrd.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/padbalas/csrd/issues"
+  },
+  "homepage": "https://github.com/padbalas/csrd#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}
