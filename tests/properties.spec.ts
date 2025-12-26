@@ -138,4 +138,92 @@ test.describe('Calculator properties (PBT)', () => {
       { numRuns: 3 }
     );
   });
+
+  test('factor mismatch note appears when activity year exceeds factor year', async ({ page }) => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.record({
+          activityYear: fc.integer({ min: new Date().getFullYear(), max: new Date().getFullYear() + 1 }), // current or future
+          factorYear: fc.integer({ min: 2020, max: new Date().getFullYear() - 1 }),
+          monthIndex: fc.integer({ min: 0, max: 11 })
+        }),
+        async ({ activityYear, factorYear, monthIndex }) => {
+          await page.goto('/');
+          // Force factor mismatch by setting billing year > factor year; market year matches billing
+          await selectBaseFields(page, activityYear, monthIndex, 500);
+          const form = calcForm(page);
+          await form.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
+          await form.getByLabel('Instrument type', { exact: true }).selectOption({ value: 'REC' });
+          await form.getByLabel('Covered electricity (kWh)').fill('50');
+          await form.getByLabel('Reporting year (market-based)').selectOption(String(activityYear));
+          await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+          const mismatchText = await page.locator('#factor-mismatch').textContent();
+          expect(mismatchText || '').toMatch(/most recent available data|published with a delay/i);
+        }
+      ),
+      { numRuns: 2 }
+    );
+  });
+
+  test('market-based emissions do not exceed location-based when covered > 0', async ({ page }) => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.record({
+          kwh: fc.float({ min: 100, max: 4000 }),
+          covered: fc.float({ min: 1, max: 500 }),
+          monthIndex: fc.integer({ min: 0, max: 11 }),
+          year: fc.integer({ min: 2020, max: new Date().getFullYear() })
+        }),
+        async ({ kwh, covered, monthIndex, year }) => {
+          await page.goto('/');
+          await selectBaseFields(page, year, monthIndex, kwh);
+          const form = calcForm(page);
+          await form.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
+          await form.getByLabel('Instrument type', { exact: true }).selectOption({ value: 'REC' });
+          await form.getByLabel('Covered electricity (kWh)').fill(covered.toFixed(2));
+          await form.getByLabel('Reporting year (market-based)').selectOption(String(year));
+          await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+          await expect(page.locator('#result-container')).toHaveClass(/active/);
+          const locText = await page.locator('#result-tons').textContent();
+          const mktText = await page.locator('#result-market').textContent();
+          const locVal = Number(locText?.replace(/[^\d.-]/g, '') || 0);
+          const mktVal = Number(mktText?.replace(/[^\d.-]/g, '') || 0);
+          expect(mktVal).toBeLessThanOrEqual(locVal);
+        }
+      ),
+      { numRuns: 3 }
+    );
+  });
+
+  test('covered kWh reported does not exceed total kWh', async ({ page }) => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.record({
+          kwh: fc.float({ min: 100, max: 3000 }),
+          covered: fc.float({ min: 0, max: 5000 }), // may exceed total
+          monthIndex: fc.integer({ min: 0, max: 11 }),
+          year: fc.integer({ min: 2020, max: new Date().getFullYear() })
+        }),
+        async ({ kwh, covered, monthIndex, year }) => {
+          await page.goto('/');
+          await selectBaseFields(page, year, monthIndex, kwh);
+          const form = calcForm(page);
+          await form.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
+          await form.getByLabel('Instrument type', { exact: true }).selectOption({ value: 'REC' });
+          await form.getByLabel('Covered electricity (kWh)').fill(covered.toFixed(2));
+          await form.getByLabel('Reporting year (market-based)').selectOption(String(year));
+          await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+          const details = await page.locator('#market-details').textContent();
+          if (details) {
+            const match = details.match(/Covered kWh: ([\d,]+)/i);
+            if (match?.[1]) {
+              const reportedCovered = Number(match[1].replace(/,/g, ''));
+              expect(reportedCovered).toBeLessThanOrEqual(kwh);
+            }
+          }
+        }
+      ),
+      { numRuns: 3 }
+    );
+  });
 });
