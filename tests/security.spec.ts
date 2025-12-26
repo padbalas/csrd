@@ -125,4 +125,29 @@ test.describe('Export scope checks (opt-in, needs fixtures)', () => {
 
     expect(yearRows).toBeLessThanOrEqual(allRows);
   });
+
+  test('CSV rows are scoped to current user and contain required columns', async ({ page }) => {
+    await page.goto('/exports.html');
+    const companyDisplay = await page.locator('#companyName').textContent();
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Generate CSV' }).click()
+    ]);
+    const csv = fs.readFileSync(await download.path() as string, 'utf-8');
+    const lines = csv.split(/\r?\n/).filter(Boolean);
+    const header = lines[0];
+    expect(header).toMatch(/company_name,period,country,kwh,scope2_location_based_tco2e,scope2_market_based_tco2e,emission_factor_value,emission_factor_year,emission_factor_source/);
+    // No service_role key leaked
+    expect(csv.toLowerCase()).not.toContain('service_role');
+    // Basic column completeness for first data row (if any)
+    if (lines.length > 2) {
+      const firstData = lines[1].split(',');
+      expect(firstData.length).toBeGreaterThanOrEqual(9);
+      if (companyDisplay && !/company not set/i.test(companyDisplay)) {
+        // strip quotes
+        const companyVal = firstData[0].replace(/^"|"$/g, '');
+        expect(companyVal).toContain(companyDisplay.trim());
+      }
+    }
+  });
 });

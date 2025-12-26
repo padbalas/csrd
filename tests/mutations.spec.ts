@@ -140,6 +140,22 @@ test.describe('Mutating flows (opt-in)', () => {
     // Assert marker record is not visible for secondary user
     await expect(page.locator('body')).not.toContainText(markerKwh);
 
+    // Exports for secondary should not contain marker
+    await page.goto('/exports.html');
+    const [dl] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Generate CSV' }).click()
+    ]);
+    const csvContent = await dl.createReadStream().then(async (stream) => {
+      return await new Promise<string>((resolve, reject) => {
+        let data = '';
+        stream.on('data', (chunk) => (data += chunk.toString()));
+        stream.on('end', () => resolve(data));
+        stream.on('error', reject);
+      });
+    });
+    expect(csvContent).not.toContain(markerKwh);
+
     // Clean up: sign out secondary
     await signOut();
   });
