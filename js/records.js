@@ -330,6 +330,7 @@ if (typeof window !== 'undefined') {
   window.renderCarbonSummary = renderCarbonSummary;
   window.computeCarbonReminders = computeCarbonReminders;
   window.renderCarbonReminders = renderCarbonReminders;
+  window.getFilteredRecords = getFilteredRecords;
 }
 
-export { loadRecords, saveRecords, renderRecords, openRecord, openRecordPanel, computeCarbonSummary, renderCarbonSummary, computeCarbonReminders, renderCarbonReminders };
+export { loadRecords, saveRecords, renderRecords, openRecord, openRecordPanel, computeCarbonSummary, renderCarbonSummary, computeCarbonReminders, renderCarbonReminders, getFilteredRecords };
