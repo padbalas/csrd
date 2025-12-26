@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
+  globalSetup: './tests/auth.setup.ts',
   testDir: './tests',
   timeout: 30_000,
   use: {
