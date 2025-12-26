@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const runMutations = process.env.RUN_MUTATION_TESTS === 'true';
 const hasAuth = !!process.env.CW_EMAIL && !!process.env.CW_PASSWORD;
+const hasSecondary = !!process.env.CW_SECONDARY_EMAIL && !!process.env.CW_SECONDARY_PASSWORD;
 
 test.describe('Mutating flows (opt-in)', () => {
   test.skip(!runMutations || !hasAuth, 'Mutating tests are opt-in via RUN_MUTATION_TESTS and require CW_EMAIL/CW_PASSWORD');
@@ -91,5 +92,53 @@ test.describe('Mutating flows (opt-in)', () => {
   test('PDF button remains disabled (placeholder)', async ({ page }) => {
     await page.goto('/exports.html');
     await expect(page.getByRole('button', { name: 'Generate PDF' })).toBeDisabled();
+  });
+
+  test('cross-user isolation: record from primary is not visible to secondary', async ({ page, context }) => {
+    test.skip(!hasSecondary, 'Requires CW_SECONDARY_EMAIL and CW_SECONDARY_PASSWORD');
+
+    const markerKwh = (900000 + Math.floor(Math.random() * 1000)).toString();
+
+    const signOut = async () => {
+      const signOutBtn = page.getByRole('button', { name: /Sign out/i });
+      if (await signOutBtn.isVisible()) {
+        await signOutBtn.click();
+        await page.waitForTimeout(1000);
+      }
+    };
+
+    // Sign in as primary (global storage state already does, but ensure session)
+    await page.goto('/');
+    // Create a marker record
+    const form = page.locator('form#carbon-form');
+    await form.getByLabel('Who are you?').selectOption({ value: 'finance' });
+    await form.getByLabel('Country / region', { exact: true }).selectOption({ value: 'US' });
+    await form.getByLabel('Billing month').selectOption('March');
+    await form.getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
+    await form.getByLabel('Electricity used (kWh)', { exact: true }).fill(markerKwh);
+    await form.getByLabel('State / region').selectOption({ label: 'California' });
+    await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await form.getByRole('button', { name: /^Save$/ }).click();
+    await page.waitForURL(/records\.html/);
+    await page.waitForTimeout(2000);
+    await expect(page.locator('body')).toContainText(markerKwh);
+
+    // Sign out primary
+    await signOut();
+
+    // Sign in as secondary
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.getByLabel('Email').fill(process.env.CW_SECONDARY_EMAIL!);
+    await page.getByLabel('Password').fill(process.env.CW_SECONDARY_PASSWORD!);
+    await page.getByRole('button', { name: /^Sign in$/ }).click();
+    await page.waitForURL(/records\.html/);
+    await page.waitForTimeout(2000);
+
+    // Assert marker record is not visible for secondary user
+    await expect(page.locator('body')).not.toContainText(markerKwh);
+
+    // Clean up: sign out secondary
+    await signOut();
   });
 });
