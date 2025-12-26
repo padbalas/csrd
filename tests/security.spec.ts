@@ -14,6 +14,7 @@ test('client uses anon key placeholders, not service role', async ({ page }) => 
 test('app pages avoid service role key leakage', async ({ page }) => {
   for (const path of ['/records.html', '/exports.html']) {
     await page.goto(path);
+    await page.waitForTimeout(500);
     const content = await page.content();
     expect(content.toLowerCase()).not.toContain('service_role');
   }
