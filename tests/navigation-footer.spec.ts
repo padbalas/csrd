@@ -13,4 +13,11 @@ test.describe('Global privacy and footer copy', () => {
     await expect(page.locator('footer')).toContainText(/Aligned with the GHG Protocol \(Scope 2, location-based\)/i);
     await expect(page.getByRole('link', { name: /Contact \/ feedback/i })).toBeVisible();
   });
+
+  test('basic responsive sanity at mobile width', async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: /Carbon reporting/i })).toBeVisible();
+    await page.close();
+  });
 });

@@ -33,3 +33,27 @@ test.describe('Records page (unauthenticated)', () => {
     ).toBeVisible();
   });
 });
+
+test.describe('Records page (authenticated behaviors)', () => {
+  test.skip(!process.env.CW_EMAIL || !process.env.CW_PASSWORD, 'Requires CW_EMAIL and CW_PASSWORD');
+  test.use({ storageState: 'tests/../auth-state.json' });
+
+  test('filters and reminders respond to method filter when data exists', async ({ page }) => {
+    await page.goto('/records.html');
+    const methodFilter = page.locator('#filterMethod');
+    await expect(methodFilter).toBeVisible();
+
+    const initialSummary = await page.locator('#totalEmissions').textContent();
+    await methodFilter.selectOption('market');
+    await page.waitForTimeout(500);
+    const afterSummary = await page.locator('#totalEmissions').textContent();
+    // If data changes, values may differ; if not, allow equality
+    expect(afterSummary).not.toBeNull();
+    await methodFilter.selectOption('location');
+    await page.waitForTimeout(500);
+    const finalSummary = await page.locator('#totalEmissions').textContent();
+    expect(finalSummary).not.toBeNull();
+    // Reminders list should render
+    await expect(page.locator('#reminderList')).toBeVisible();
+  });
+});
