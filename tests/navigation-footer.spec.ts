@@ -26,4 +26,21 @@ test.describe('Global privacy and footer copy', () => {
     await expect(page.getByText(/Methodology:/i)).toBeVisible();
     await expect(page.getByRole('link', { name: /Methodology/i })).toHaveAttribute('href', 'methodology.html');
   });
+
+  test('records filters remain visible after scroll (desktop)', async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    await page.goto('/records.html');
+    const filters = page.locator('.records-filters');
+    await expect(filters).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect(filters).toBeVisible();
+    await page.close();
+  });
+
+  test('records filters visible on mobile width', async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width: 414, height: 896 } });
+    await page.goto('/records.html');
+    await expect(page.locator('.records-filters')).toBeVisible();
+    await page.close();
+  });
 });
