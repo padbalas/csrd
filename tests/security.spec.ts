@@ -31,6 +31,14 @@ test('unauthenticated calculate avoids Supabase writes', async ({ page }) => {
     requests.push(route.request().url());
     route.abort();
   });
+  await page.route('**supabase.co/**', (route) => {
+    if (route.request().method() !== 'GET') {
+      requests.push(route.request().url());
+      route.abort();
+    } else {
+      route.continue();
+    }
+  });
   await page.goto('/');
   const form = page.locator('form#carbon-form');
   await form.getByLabel('Who are you?').selectOption({ value: 'finance' });
@@ -40,7 +48,7 @@ test('unauthenticated calculate avoids Supabase writes', async ({ page }) => {
   await form.getByLabel('Electricity used (kWh)', { exact: true }).fill('500');
   await form.getByLabel('State / region').selectOption({ label: 'California' });
   await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
-  // No Supabase REST calls should occur during unauthenticated calculation
+  // No Supabase REST or auth calls should occur during unauthenticated calculation
   expect(requests.length).toBe(0);
 });
 
