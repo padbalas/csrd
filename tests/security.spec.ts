@@ -70,6 +70,26 @@ test.describe('Session expiry handling', () => {
   });
 });
 
+test.describe('Input sanitization (UI escapes)', () => {
+  const payload = '<img src=x onerror=alert(1)>';
+
+  test('malicious strings in persona do not render HTML', async ({ page }) => {
+    await page.goto('/');
+    const form = page.locator('form#carbon-form');
+    await form.getByLabel('Who are you?').selectOption({ value: 'other' });
+    await form.getByRole('textbox', { name: /other/i }).fill(payload);
+    await form.getByLabel('Country / region', { exact: true }).selectOption({ value: 'US' });
+    await form.getByLabel('Billing month').selectOption('January');
+    await form.getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
+    await form.getByLabel('Electricity used (kWh)', { exact: true }).fill('500');
+    await form.getByLabel('State / region').selectOption({ label: 'California' });
+    await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await expect(page.locator('img[src="x"]')).toHaveCount(0);
+    const content = await page.locator('body').textContent();
+    expect(content || '').toContain('<img src=x onerror=alert(1)>');
+  });
+});
+
 test.describe('Export scope checks (opt-in, needs fixtures)', () => {
   test.skip(process.env.CW_EMAIL == null || process.env.CW_PASSWORD == null, 'Requires credentials and fixture data');
   test.use({ storageState: 'tests/../auth-state.json' });
