@@ -5,6 +5,18 @@ test.describe('Records page (unauthenticated)', () => {
     await page.goto('/records.html');
   });
 
+  test('redirects or blocks access when unauthenticated', async ({ page }) => {
+    await page.waitForTimeout(1500);
+    const url = page.url();
+    if (url.includes('records.html')) {
+      await expect(
+        page.getByText(/Sign in on the main page to view your records|History unavailable while offline/i)
+      ).toBeVisible();
+    } else {
+      await expect(url).toContain('index.html');
+    }
+  });
+
   test('shows filters, summary, and non-reporting note', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Carbon Snapshot (YTD)' })).toBeVisible();
     await expect(page.locator('#filterYear')).toBeVisible();
