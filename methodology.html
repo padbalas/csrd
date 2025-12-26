@@ -29,25 +29,25 @@
   <div class="shell">
     <header class="card">
       <h1>Methodology & Disclosures</h1>
-      <p class="muted">How CarbonWise calculates Scope 2 electricity emissions and what to expect from the results.</p>
+      <p class="muted">How CarbonWise calculates Scope 2 electricity emissions, including optional user-declared market-based adjustments.</p>
     </header>
 
     <!-- Scope coverage clarity -->
     <section>
       <h2>1. Scope Covered</h2>
-      <p>CarbonWise currently supports Scope 2 electricity emissions using the location-based method. Scope 1 reporting is not supported today. Market-based Scope 2 or Scope 1 may be added in the future.</p>
+      <p>CarbonWise supports Scope 2 greenhouse gas emissions from purchased electricity. Scope 2 calculations use the location-based method by default, and optional market-based adjustments may be applied when users provide information. Additional scopes or market-based capabilities may be added in the future.</p>
     </section>
 
     <!-- Plain-language inputs and formula -->
     <section>
       <h2>2. Calculation Method</h2>
-      <p>Calculations use the information you provide: electricity used in kilowatt-hours and your country or region. Emissions are estimated by multiplying your electricity usage by the grid emission factor for that location.</p>
+      <p>Calculations use the information you provide: electricity used in kilowatt-hours and your country or region. Location-based emissions are estimated by multiplying your electricity usage by the grid emission factor for that location.</p>
     </section>
 
     <!-- Factor sourcing overview -->
     <section>
       <h2>3. Emission Factors</h2>
-      <p>Emission factors represent average grid emissions for a country or region. They are sourced from publicly available datasets and can differ by geography. CarbonWise uses these factors to translate your electricity use into estimated emissions.</p>
+      <p>Emission factors represent average grid emissions intensity for a country or region. They vary by geography, are sourced from publicly available, government-issued datasets, and are year-stamped.</p>
     </section>
 
     <!-- Timing and year alignment explanation -->
@@ -56,28 +56,35 @@
       <p>Grid emission factors are published after the year they describe. CarbonWise may use the most recently available factor even if it does not match the activity year. This timing gap can create a mismatch between the billing period and the factor year.</p>
     </section>
 
-    <!-- Location vs market-based clarity -->
+    <!-- Location-based default clarity -->
     <section>
-      <h2>5. Location-Based vs Market-Based Scope 2</h2>
-      <p>Location-based Scope 2 reflects the average emissions from the grid where electricity is used. CarbonWise reports location-based emissions today. Market-based instruments such as RECs or PPAs are not applied unless explicit support is added in the product.</p>
+      <h2>5. Location-Based Scope 2</h2>
+      <p>Location-based Scope 2 reflects average emissions from the grid where electricity is used. It does not account for contractual renewable energy purchases. This is the default method used by CarbonWise.</p>
+    </section>
+
+    <!-- Market-based option clarity -->
+    <section>
+      <h2>6. Market-Based Scope 2 (RECs / PPAs)</h2>
+      <p>CarbonWise supports optional, user-declared market-based Scope 2 adjustments. Users may specify the portion of electricity covered by instruments such as Renewable Energy Certificates (RECs) or Power Purchase Agreements (PPAs). Covered electricity is treated as market-based; uncovered electricity continues to use location-based emission factors.</p>
+      <p class="muted">CarbonWise does not verify certificates, contracts, or registry claims. All market-based inputs are user-declared. Market-based results are estimates intended for internal reporting and preparation.</p>
     </section>
 
     <!-- Precision and comparability note -->
     <section>
-      <h2>6. Precision, Rounding, and Comparability</h2>
-      <p>Calculations retain reasonable precision for finance and operations teams. Minor differences can occur compared to other tools because of factor selection or rounding. These differences are normal when methods or factor sources vary.</p>
+      <h2>7. Precision, Rounding, and Comparability</h2>
+      <p>Calculations retain reasonable numeric precision. Results may differ from other tools because of emission factor selection, year alignment, or rounding conventions.</p>
     </section>
 
     <!-- Intended use statement -->
     <section>
-      <h2>7. Intended Use & Limitations</h2>
-      <p>CarbonWise is designed for internal reporting, planning, and preparation. It does not replace third-party verification or formal assurance processes you may need for audits or filings.</p>
+      <h2>8. Intended Use & Limitations</h2>
+      <p>CarbonWise supports internal reporting, planning, and disclosure preparation. It does not replace third-party verification or formal assurance, and users remain responsible for final reporting decisions.</p>
     </section>
 
     <!-- Updates transparency -->
     <section>
-      <h2>8. Updates & Changes</h2>
-      <p>Methodology details and emission factors may be updated as new data becomes available. Significant changes will be documented so you can understand what changed and why.</p>
+      <h2>9. Updates & Changes</h2>
+      <p>Emission factors and methodology may be updated as new data becomes available. Significant changes will be documented so you can understand what changed and why.</p>
     </section>
 
     <footer>
