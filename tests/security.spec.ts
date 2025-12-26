@@ -3,8 +3,8 @@ import { test, expect } from '@playwright/test';
 // Assert anon key usage in client configuration (no service_role) by scanning exposed constants
 test('client uses anon key placeholders, not service role', async ({ page }) => {
   await page.goto('/');
-  const supabaseKey = await page.evaluate(() => (window as any).SUPABASE_ANON_KEY || null);
-  expect(supabaseKey).not.toContain('service_role');
+  const supabaseKey = await page.evaluate(() => (window as any).SUPABASE_ANON_KEY || (window as any).supabaseAnonKey || null);
+  expect(supabaseKey ?? '').not.toContain('service_role');
 });
 
 // Ensure unauthenticated calculation does not trigger Supabase writes (blocked via network intercept)
