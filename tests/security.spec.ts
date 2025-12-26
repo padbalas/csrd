@@ -78,7 +78,7 @@ test.describe('Input sanitization (UI escapes)', () => {
     // Open sign-up modal and inject payload into company name (text field)
     await page.getByRole('button', { name: 'Sign in' }).click();
     await page.getByRole('button', { name: 'Create account' }).click();
-    const companyField = page.getByLabel('Company name');
+    const companyField = page.locator('#auth-modal').getByLabel('Company name');
     await companyField.fill(payload);
     await expect(page.locator('#auth-modal img[src="x"]')).toHaveCount(0);
     const content = await page.locator('#auth-modal').innerHTML();
