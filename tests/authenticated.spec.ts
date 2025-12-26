@@ -22,4 +22,46 @@ test.describe('Authenticated flows', () => {
     await expect(page.getByRole('button', { name: 'Generate CSV' })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Generate PDF' })).toBeDisabled();
   });
+
+  test('records list supports viewing details and filtered CSV export with disclosure', async ({ page }) => {
+    await page.goto('/records.html');
+    const viewBtn = page.getByRole('button', { name: 'View' });
+    if ((await viewBtn.count()) === 0) test.skip(true, 'No records available to view');
+
+    // Open first record slide-out
+    await viewBtn.first().click();
+    await expect(page.getByText(/Record details/i)).toBeVisible();
+
+    // Export CSV and confirm disclosure present
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Export CSV' }).click()
+    ]);
+    const csvPath = await download.path();
+    if (!csvPath) test.fail(true, 'Download path not available');
+    const content = fs.readFileSync(csvPath!, 'utf-8');
+    expect(content).toMatch(/Disclosure/);
+    expect(content).toMatch(/Location-based Scope 2 calculation aligned with the GHG Protocol/);
+  });
+
+  test('exports page CSV includes disclosure line', async ({ page }) => {
+    await page.goto('/exports.html');
+    await expect(page.getByRole('heading', { name: 'Export / Reports' })).toBeVisible();
+    const status = page.locator('#exportStatus');
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Generate CSV' }).click()
+    ]);
+    const csvPath = await download.path();
+    if (!csvPath) test.fail(true, 'Download path not available');
+    const content = fs.readFileSync(csvPath!, 'utf-8');
+    expect(content).toMatch(/Disclosure/);
+    expect(content).toMatch(/Location-based Scope 2 calculation aligned with the GHG Protocol/);
+
+    // CSV should include expected columns
+    const headerLine = content.split(/\r?\n/)[0];
+    expect(headerLine).toMatch(/company_name,period,country,kwh,scope2_location_based_tco2e,scope2_market_based_tco2e,emission_factor_value,emission_factor_year,emission_factor_source/);
+    await expect(status).toContainText(/CSV generated|No records/);
+  });
 });
