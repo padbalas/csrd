@@ -1,25 +1,27 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Calculator (index)', () => {
+  const calcForm = (page: any) => page.locator('form#carbon-form');
+
   const fillBaseForm = async (page: any, opts: { kwh: number; month?: string; year?: number }) => {
     const currentYear = new Date().getFullYear();
     await page.goto('/');
-    await page.getByLabel('Who are you?').selectOption({ value: 'finance' });
-    await page.getByLabel('Country / region', { exact: true }).selectOption({ value: 'US' });
-    await page.getByLabel('Billing month').selectOption(opts.month || 'January');
-    await page.getByLabel('Billing year').selectOption(String(opts.year || currentYear));
-    await page.getByLabel('Electricity used (kWh)', { exact: true }).fill(String(opts.kwh));
-    await page.getByLabel('State / region').selectOption({ label: 'California' });
+    await calcForm(page).getByLabel('Who are you?').selectOption({ value: 'finance' });
+    await calcForm(page).getByLabel('Country / region', { exact: true }).selectOption({ value: 'US' });
+    await calcForm(page).getByLabel('Billing month').selectOption(opts.month || 'January');
+    await calcForm(page).getByLabel('Billing year').selectOption(String(opts.year || currentYear));
+    await calcForm(page).getByLabel('Electricity used (kWh)', { exact: true }).fill(String(opts.kwh));
+    await calcForm(page).getByLabel('State / region').selectOption({ label: 'California' });
   };
 
   test('shows core inputs and market toggle reveals optional fields', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByLabel('Who are you?')).toBeVisible();
-    await expect(page.getByLabel('Country / region', { exact: true })).toBeVisible();
-    await expect(page.getByLabel('Billing month')).toBeVisible();
-    await expect(page.getByLabel('Billing year')).toBeVisible();
-    await expect(page.getByLabel('Electricity used (kWh)', { exact: true })).toBeVisible();
-    await expect(page.getByLabel('State / region')).toBeVisible();
+    await expect(calcForm(page).getByLabel('Who are you?')).toBeVisible();
+    await expect(calcForm(page).getByLabel('Country / region', { exact: true })).toBeVisible();
+    await expect(calcForm(page).getByLabel('Billing month')).toBeVisible();
+    await expect(calcForm(page).getByLabel('Billing year')).toBeVisible();
+    await expect(calcForm(page).getByLabel('Electricity used (kWh)', { exact: true })).toBeVisible();
+    await expect(calcForm(page).getByLabel('State / region')).toBeVisible();
 
     // Market-based fields stay hidden until toggled
     const marketFields = page.locator('#market-fields');
@@ -43,11 +45,11 @@ test.describe('Calculator (index)', () => {
     const currentMonth = new Date().getMonth(); // 0-based
     if (currentMonth === 11) test.skip(true, 'No future month in December');
     await page.goto('/');
-    await page.getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
+    await calcForm(page).getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
     // Pick a future month name (account for leading placeholder option)
-    const futureMonthName = page.getByLabel('Billing month').locator('option').nth(currentMonth + 2);
+    const futureMonthName = calcForm(page).getByLabel('Billing month').locator('option').nth(currentMonth + 2);
     const futureMonthValue = await futureMonthName.textContent();
-    await page.getByLabel('Billing month').selectOption({ label: futureMonthValue || '' });
+    await calcForm(page).getByLabel('Billing month').selectOption({ label: futureMonthValue || '' });
     const dialogPromise = page.waitForEvent('dialog');
     await page.getByRole('button', { name: 'See my emissions in minutes' }).click();
     const dialog = await dialogPromise;
@@ -66,10 +68,10 @@ test.describe('Calculator (index)', () => {
 
   test('market-based validation prevents covered kWh above total', async ({ page }) => {
     await fillBaseForm(page, { kwh: 1000 });
-    await page.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
-    await page.getByLabel('Instrument type').selectOption({ value: 'REC' });
-    await page.getByLabel('Covered electricity (kWh)').fill('1500'); // exceeds total
-    await page.getByLabel('Reporting year (market-based)').selectOption(String(new Date().getFullYear()));
+    await calcForm(page).getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
+    await calcForm(page).getByLabel('Instrument type').selectOption({ value: 'REC' });
+    await calcForm(page).getByLabel('Covered electricity (kWh)').fill('1500'); // exceeds total
+    await calcForm(page).getByLabel('Reporting year (market-based)').selectOption(String(new Date().getFullYear()));
     const dialogPromise = page.waitForEvent('dialog');
     await page.getByRole('button', { name: 'See my emissions in minutes' }).click();
     const dialog = await dialogPromise;
@@ -79,10 +81,10 @@ test.describe('Calculator (index)', () => {
 
   test('market-based calculation shows market result and disclaimer', async ({ page }) => {
     await fillBaseForm(page, { kwh: 1000 });
-    await page.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
-    await page.getByLabel('Instrument type').selectOption({ value: 'REC' });
-    await page.getByLabel('Covered electricity (kWh)').fill('200');
-    await page.getByLabel('Reporting year (market-based)').selectOption(String(new Date().getFullYear()));
+    await calcForm(page).getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
+    await calcForm(page).getByLabel('Instrument type').selectOption({ value: 'REC' });
+    await calcForm(page).getByLabel('Covered electricity (kWh)').fill('200');
+    await calcForm(page).getByLabel('Reporting year (market-based)').selectOption(String(new Date().getFullYear()));
     await page.getByRole('button', { name: 'See my emissions in minutes' }).click();
     await expect(page.locator('#result-container')).toHaveClass(/active/);
     await expect(page.locator('#result-market')).not.toHaveText(/Not provided/i);
@@ -91,12 +93,12 @@ test.describe('Calculator (index)', () => {
 
   test('requires kWh > 0 and shows factor sentence/comparison', async ({ page }) => {
     await page.goto('/');
-    await page.getByLabel('Who are you?').selectOption({ value: 'finance' });
-    await page.getByLabel('Country / region').selectOption({ value: 'US' });
-    await page.getByLabel('Billing month').selectOption('January');
-    await page.getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
-    await page.getByLabel('Electricity used (kWh)').fill('0');
-    await page.getByLabel('State / region').selectOption({ label: 'California' });
+    await calcForm(page).getByLabel('Who are you?').selectOption({ value: 'finance' });
+    await calcForm(page).getByLabel('Country / region', { exact: true }).selectOption({ value: 'US' });
+    await calcForm(page).getByLabel('Billing month').selectOption('January');
+    await calcForm(page).getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
+    await calcForm(page).getByLabel('Electricity used (kWh)', { exact: true }).fill('0');
+    await calcForm(page).getByLabel('State / region').selectOption({ label: 'California' });
     const dialogPromise = page.waitForEvent('dialog');
     await page.getByRole('button', { name: 'See my emissions in minutes' }).click();
     const dialog = await dialogPromise;
@@ -113,10 +115,10 @@ test.describe('Calculator (index)', () => {
 
   test('location and market values render together when market is enabled', async ({ page }) => {
     await fillBaseForm(page, { kwh: 750 });
-    await page.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
-    await page.getByLabel('Instrument type').selectOption({ value: 'REC' });
-    await page.getByLabel('Covered electricity (kWh)').fill('100');
-    await page.getByLabel('Reporting year (market-based)').selectOption(String(new Date().getFullYear()));
+    await calcForm(page).getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
+    await calcForm(page).getByLabel('Instrument type').selectOption({ value: 'REC' });
+    await calcForm(page).getByLabel('Covered electricity (kWh)').fill('100');
+    await calcForm(page).getByLabel('Reporting year (market-based)').selectOption(String(new Date().getFullYear()));
     await page.getByRole('button', { name: 'See my emissions in minutes' }).click();
     await expect(page.locator('#result-container')).toHaveClass(/active/);
     await expect(page.locator('#result-tons')).not.toHaveText('—');
