@@ -42,6 +42,7 @@ test.describe('Authenticated flows', () => {
     const content = fs.readFileSync(csvPath!, 'utf-8');
     expect(content).toMatch(/Disclosure/);
     expect(content).toMatch(/Location-based Scope 2 calculation aligned with the GHG Protocol/);
+    expect(content).toMatch(/\r\n/); // CRLF line endings
   });
 
   test('exports page CSV includes disclosure line', async ({ page }) => {

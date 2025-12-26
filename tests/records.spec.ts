@@ -56,4 +56,12 @@ test.describe('Records page (authenticated behaviors)', () => {
     // Reminders list should render
     await expect(page.locator('#reminderList')).toBeVisible();
   });
+
+  test('filters visible on mobile width', async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width: 414, height: 896 } });
+    await page.goto('/records.html');
+    await expect(page.locator('#filterYear')).toBeVisible();
+    await expect(page.locator('#filterMethod')).toBeVisible();
+    await page.close();
+  });
 });

@@ -20,4 +20,10 @@ test.describe('Global privacy and footer copy', () => {
     await expect(page.getByRole('heading', { name: /Carbon reporting/i }).first()).toBeVisible();
     await page.close();
   });
+
+  test('app page footer includes methodology link (exports)', async ({ page }) => {
+    await page.goto('/exports.html');
+    await expect(page.getByText(/Methodology:/i)).toBeVisible();
+    await expect(page.getByRole('link', { name: /Methodology/i })).toHaveAttribute('href', 'https://esgrise.com/methodology.html');
+  });
 });
