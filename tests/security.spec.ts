@@ -43,6 +43,33 @@ test('unauthenticated calculate avoids Supabase writes', async ({ page }) => {
   expect(requests.length).toBe(0);
 });
 
+test.describe('Session expiry handling', () => {
+  const hasAuth = !!process.env.CW_EMAIL && !!process.env.CW_PASSWORD;
+
+  test.skip(!hasAuth, 'Requires CW_EMAIL/CW_PASSWORD to simulate expired session');
+
+  test('expired storage state forces re-auth on protected pages', async ({ page }) => {
+    // Start from records with valid auth to warm state
+    await page.goto('/records.html');
+    await page.waitForTimeout(1000);
+
+    // Corrupt storage state to simulate expiry
+    await page.context().storageState({ path: 'auth-state.json' });
+    await page.context().clearCookies();
+    await page.context().addCookies([{ name: 'supabase-auth-token', value: 'expired', domain: '.esgrise.com', path: '/' }]);
+
+    // Reload records page and expect redirect or sign-in prompt
+    await page.goto('/records.html');
+    await page.waitForTimeout(1500);
+    const url = page.url();
+    if (url.includes('records.html')) {
+      await expect(page.getByText(/Sign in on the main page to view your records|Sign in to view history/i)).toBeVisible();
+    } else {
+      await expect(url).toContain('index.html');
+    }
+  });
+});
+
 test.describe('Export scope checks (opt-in, needs fixtures)', () => {
   test.skip(process.env.CW_EMAIL == null || process.env.CW_PASSWORD == null, 'Requires credentials and fixture data');
   test.use({ storageState: 'tests/../auth-state.json' });
