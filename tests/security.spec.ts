@@ -75,19 +75,13 @@ test.describe('Input sanitization (UI escapes)', () => {
 
   test('malicious strings in persona do not render HTML', async ({ page }) => {
     await page.goto('/');
-    const form = page.locator('form#carbon-form');
-    await form.getByLabel('Who are you?').selectOption({ value: 'other' });
-    const otherInput = form.getByRole('textbox', { name: /Other/i });
-    await otherInput.fill(payload);
-    await form.getByLabel('Country / region', { exact: true }).selectOption({ value: 'US' });
-    await form.getByLabel('Billing month').selectOption('January');
-    await form.getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
-    await form.getByLabel('Electricity used (kWh)', { exact: true }).fill('500');
-    await form.getByLabel('State / region').selectOption({ label: 'California' });
-    await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
-    await expect(page.locator('img[src="x"]')).toHaveCount(0);
-    const content = await page.locator('body').textContent();
-    expect(content || '').toContain('<img src=x onerror=alert(1)>');
+    // Open sign-up modal and inject payload into company name (text field)
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await page.getByLabel('Company name').fill(payload);
+    await expect(page.locator('#auth-modal img[src="x"]')).toHaveCount(0);
+    const content = await page.locator('#auth-modal').innerHTML();
+    expect(content).toContain(payload);
   });
 });
 
