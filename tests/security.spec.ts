@@ -1,16 +1,30 @@
 import { test, expect } from '@playwright/test';
 
-// Assert anon key usage in client configuration (no service_role) by scanning exposed constants
+// Assert anon key usage in client configuration (no service_role) by scanning exposed constants and page content
 test('client uses anon key placeholders, not service role', async ({ page }) => {
   await page.goto('/');
   const supabaseKey = await page.evaluate(() => (window as any).SUPABASE_ANON_KEY || (window as any).supabaseAnonKey || null);
-  expect(supabaseKey ?? '').not.toContain('service_role');
+  expect((supabaseKey ?? '').toLowerCase()).not.toContain('service_role');
+  const content = await page.content();
+  expect(content.toLowerCase()).not.toContain('service_role');
+});
+
+test('app pages avoid service role key leakage', async ({ page }) => {
+  for (const path of ['/records.html', '/exports.html']) {
+    await page.goto(path);
+    const content = await page.content();
+    expect(content.toLowerCase()).not.toContain('service_role');
+  }
 });
 
 // Ensure unauthenticated calculation does not trigger Supabase writes (blocked via network intercept)
 test('unauthenticated calculate avoids Supabase writes', async ({ page }) => {
   const requests: string[] = [];
   await page.route('**supabase.co/rest/**', (route) => {
+    requests.push(route.request().url());
+    route.abort();
+  });
+  await page.route('**supabase.co/auth/**', (route) => {
     requests.push(route.request().url());
     route.abort();
   });
