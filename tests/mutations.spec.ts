@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test';
 const runMutations = process.env.RUN_MUTATION_TESTS === 'true';
 const hasAuth = !!process.env.CW_EMAIL && !!process.env.CW_PASSWORD;
 const hasSecondary = !!process.env.CW_SECONDARY_EMAIL && !!process.env.CW_SECONDARY_PASSWORD;
+const secondaryEmail = process.env.CW_SECONDARY_EMAIL;
+const secondaryPassword = process.env.CW_SECONDARY_PASSWORD;
 
 test.describe('Mutating flows (opt-in)', () => {
   test.skip(!runMutations || !hasAuth, 'Mutating tests are opt-in via RUN_MUTATION_TESTS and require CW_EMAIL/CW_PASSWORD');
@@ -129,8 +131,8 @@ test.describe('Mutating flows (opt-in)', () => {
     // Sign in as secondary
     await page.goto('/');
     await page.getByRole('button', { name: 'Sign in' }).click();
-    await page.getByLabel('Email').fill(process.env.CW_SECONDARY_EMAIL!);
-    await page.getByLabel('Password').fill(process.env.CW_SECONDARY_PASSWORD!);
+    await page.getByLabel('Email').fill(secondaryEmail!);
+    await page.getByLabel('Password').fill(secondaryPassword!);
     await page.getByRole('button', { name: /^Sign in$/ }).click();
     await page.waitForURL(/records\.html/);
     await page.waitForTimeout(2000);
