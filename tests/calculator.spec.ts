@@ -5,10 +5,10 @@ test.describe('Calculator (index)', () => {
     const currentYear = new Date().getFullYear();
     await page.goto('/');
     await page.getByLabel('Who are you?').selectOption({ value: 'finance' });
-    await page.getByLabel('Country / region').selectOption({ value: 'US' });
+    await page.getByLabel('Country / region', { exact: true }).selectOption({ value: 'US' });
     await page.getByLabel('Billing month').selectOption(opts.month || 'January');
     await page.getByLabel('Billing year').selectOption(String(opts.year || currentYear));
-    await page.getByLabel('Electricity used (kWh)').fill(String(opts.kwh));
+    await page.getByLabel('Electricity used (kWh)', { exact: true }).fill(String(opts.kwh));
     await page.getByLabel('State / region').selectOption({ label: 'California' });
   };
 
@@ -18,7 +18,7 @@ test.describe('Calculator (index)', () => {
     await expect(page.getByLabel('Country / region', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Billing month')).toBeVisible();
     await expect(page.getByLabel('Billing year')).toBeVisible();
-    await expect(page.getByLabel('Electricity used (kWh)')).toBeVisible();
+    await expect(page.getByLabel('Electricity used (kWh)', { exact: true })).toBeVisible();
     await expect(page.getByLabel('State / region')).toBeVisible();
 
     // Market-based fields stay hidden until toggled
