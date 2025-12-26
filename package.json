@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "test:pbt": "PLAYWRIGHT_PBT=true playwright test tests/properties.spec.ts"
   },
   "repository": {
     "type": "git",
