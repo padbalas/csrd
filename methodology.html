@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CarbonWise | Methodology & Disclosures</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #4b5563;
+      --line: #e5e7eb;
+      --card: #ffffff;
+      --bg: #f7f8fb;
+      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    .shell { max-width: 920px; margin: 0 auto; padding: 56px 18px 80px; }
+    h1 { margin: 0 0 12px; font-size: clamp(30px, 4vw, 40px); letter-spacing: -0.01em; }
+    h2 { margin: 26px 0 10px; font-size: 1.5rem; letter-spacing: -0.01em; }
+    p { margin: 0 0 12px; color: var(--muted); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 12px 30px rgba(15,23,42,0.06); }
+    .muted { color: var(--muted); font-size: 0.95rem; }
+    footer { margin-top: 32px; color: var(--muted); font-size: 0.95rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="card">
+      <h1>Methodology & Disclosures</h1>
+      <p class="muted">How CarbonWise calculates Scope 2 electricity emissions and what to expect from the results.</p>
+    </header>
+
+    <!-- Scope coverage clarity -->
+    <section>
+      <h2>1. Scope Covered</h2>
+      <p>CarbonWise currently supports Scope 2 electricity emissions using the location-based method. Scope 1 reporting is not supported today. Market-based Scope 2 or Scope 1 may be added in the future.</p>
+    </section>
+
+    <!-- Plain-language inputs and formula -->
+    <section>
+      <h2>2. Calculation Method</h2>
+      <p>Calculations use the information you provide: electricity used in kilowatt-hours and your country or region. Emissions are estimated by multiplying your electricity usage by the grid emission factor for that location.</p>
+    </section>
+
+    <!-- Factor sourcing overview -->
+    <section>
+      <h2>3. Emission Factors</h2>
+      <p>Emission factors represent average grid emissions for a country or region. They are sourced from publicly available datasets and can differ by geography. CarbonWise uses these factors to translate your electricity use into estimated emissions.</p>
+    </section>
+
+    <!-- Timing and year alignment explanation -->
+    <section>
+      <h2>4. Emission Factor Year & Timing</h2>
+      <p>Grid emission factors are published after the year they describe. CarbonWise may use the most recently available factor even if it does not match the activity year. This timing gap can create a mismatch between the billing period and the factor year.</p>
+    </section>
+
+    <!-- Location vs market-based clarity -->
+    <section>
+      <h2>5. Location-Based vs Market-Based Scope 2</h2>
+      <p>Location-based Scope 2 reflects the average emissions from the grid where electricity is used. CarbonWise reports location-based emissions today. Market-based instruments such as RECs or PPAs are not applied unless explicit support is added in the product.</p>
+    </section>
+
+    <!-- Precision and comparability note -->
+    <section>
+      <h2>6. Precision, Rounding, and Comparability</h2>
+      <p>Calculations retain reasonable precision for finance and operations teams. Minor differences can occur compared to other tools because of factor selection or rounding. These differences are normal when methods or factor sources vary.</p>
+    </section>
+
+    <!-- Intended use statement -->
+    <section>
+      <h2>7. Intended Use & Limitations</h2>
+      <p>CarbonWise is designed for internal reporting, planning, and preparation. It does not replace third-party verification or formal assurance processes you may need for audits or filings.</p>
+    </section>
+
+    <!-- Updates transparency -->
+    <section>
+      <h2>8. Updates & Changes</h2>
+      <p>Methodology details and emission factors may be updated as new data becomes available. Significant changes will be documented so you can understand what changed and why.</p>
+    </section>
+
+    <footer>
+      <p>Suggest linking this page from Export / Reports and the site footer; optionally from My Records.</p>
+      <!-- Link placement note: add links from exports, footer, and optionally records to make this visible where results are used -->
+    </footer>
+  </div>
+</body>
+</html>
