@@ -15,7 +15,7 @@ test.describe('Calculator (index)', () => {
   test('shows core inputs and market toggle reveals optional fields', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByLabel('Who are you?')).toBeVisible();
-    await expect(page.getByLabel('Country / region')).toBeVisible();
+    await expect(page.getByLabel('Country / region', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Billing month')).toBeVisible();
     await expect(page.getByLabel('Billing year')).toBeVisible();
     await expect(page.getByLabel('Electricity used (kWh)')).toBeVisible();
