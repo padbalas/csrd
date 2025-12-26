@@ -81,8 +81,8 @@ test.describe('Input sanitization (UI escapes)', () => {
     const companyField = page.locator('#auth-modal').getByLabel('Company name', { exact: true }).first();
     await companyField.fill(payload);
     await expect(page.locator('#auth-modal img[src="x"]')).toHaveCount(0);
-    const content = await page.locator('#auth-modal').innerHTML();
-    expect(content).toContain(payload);
+    const text = await page.locator('#auth-modal').textContent();
+    expect(text || '').toContain(payload); // rendered as text, not as HTML
   });
 });
 
