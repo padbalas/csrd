@@ -77,7 +77,8 @@ test.describe('Input sanitization (UI escapes)', () => {
     await page.goto('/');
     const form = page.locator('form#carbon-form');
     await form.getByLabel('Who are you?').selectOption({ value: 'other' });
-    await form.getByRole('textbox', { name: /other/i }).fill(payload);
+    const otherInput = form.getByRole('textbox', { name: /Other/i });
+    await otherInput.fill(payload);
     await form.getByLabel('Country / region', { exact: true }).selectOption({ value: 'US' });
     await form.getByLabel('Billing month').selectOption('January');
     await form.getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
