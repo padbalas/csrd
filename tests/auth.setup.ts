@@ -7,7 +7,7 @@ const STORAGE_PATH = path.join(__dirname, '..', 'auth-state.json');
 async function globalSetup() {
   const email = process.env.CW_EMAIL;
   const password = process.env.CW_PASSWORD;
-  const baseURL = process.env.CW_BASE_URL || 'https://esgrise.com';
+  const baseURL = process.env.CW_BASE_URL || 'https://www.esgrise.com';
 
   if (!email || !password) {
     // No credentials provided; skip auth state creation so unauth tests can still run.

@@ -5,7 +5,7 @@ export default defineConfig({
   testDir: './tests',
   timeout: 30_000,
   use: {
-    baseURL: 'https://esgrise.com', // OR your github.io URL
+    baseURL: process.env.CW_BASE_URL || 'https://www.esgrise.com', // OR your github.io URL
     headless: true,
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

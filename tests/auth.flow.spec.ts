@@ -10,14 +10,14 @@ test.describe('Auth flow (password)', () => {
   test('can sign in and sign out', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Sign in' }).click();
-    await page.getByLabel('Email').fill(process.env.CW_EMAIL!);
-    await page.getByLabel('Password').fill(process.env.CW_PASSWORD!);
-    await page.getByRole('button', { name: /^Sign in$/ }).click();
+    await page.locator('#auth-email').fill(process.env.CW_EMAIL!);
+    await page.locator('#auth-password').fill(process.env.CW_PASSWORD!);
+    await page.locator('#auth-submit').click();
     await page.waitForURL(/records\.html/);
-    await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+    await expect(page.locator('#header-signout')).toBeVisible();
 
     // Sign out and expect redirect back to landing
-    await page.getByRole('button', { name: 'Sign out' }).click();
+    await page.locator('#header-signout').click();
     await page.waitForURL(/index\.html|\/$/);
     await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
   });
