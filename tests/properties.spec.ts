@@ -29,7 +29,7 @@ test.describe('Calculator properties (PBT)', () => {
     await form.getByLabel('State / region').selectOption({ label: 'California' });
   };
 
-  const pbtOptions = { numRuns: 1, interruptAfterTimeLimit: 10000 };
+  const pbtOptions = { numRuns: 1, maxSkipsPerRun: 2000 };
 
   test('market-based inputs never produce negative emissions and enforce covered <= total', async ({ page }) => {
     await fc.assert(
