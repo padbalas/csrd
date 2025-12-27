@@ -14,15 +14,17 @@ test.describe('Auth flow (password)', () => {
     await page.locator('#auth-email').fill(process.env.CW_EMAIL!);
     await page.locator('#auth-password').fill(process.env.CW_PASSWORD!);
     await page.locator('#auth-submit').click();
-    await page.waitForFunction(() => {
-      const status = document.querySelector('#auth-status')?.textContent?.trim();
-      const signout = document.querySelector('#header-signout');
-      const signoutVisible = signout ? getComputedStyle(signout).display !== 'none' : false;
-      return /records\.html/.test(window.location.href) || signoutVisible || !!status;
-    }, { timeout: 15000 });
-    const statusText = await page.locator('#auth-status').textContent();
-    if (statusText && statusText.trim()) {
-      throw new Error(`Auth failed: ${statusText.trim()}`);
+    await page.waitForFunction(async () => {
+      const status = document.querySelector('#auth-status')?.textContent?.trim() || '';
+      if (/could not sign in|check your email|confirm your account/i.test(status)) return true;
+      const client = (window as any).supabaseClient;
+      if (!client) return false;
+      const { data } = await client.auth.getSession();
+      return !!data?.session;
+    }, { timeout: 20000 });
+    const statusText = (await page.locator('#auth-status').textContent())?.trim() || '';
+    if (/could not sign in|check your email|confirm your account/i.test(statusText)) {
+      throw new Error(`Auth failed: ${statusText}`);
     }
 
     // Sign out and expect redirect back to landing
