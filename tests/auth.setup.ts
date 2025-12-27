@@ -24,7 +24,7 @@ async function globalSetup() {
   await page.locator('#auth-submit').click();
 
   // Wait for sign-out control to confirm session established
-  await page.waitForSelector('#header-signout', { timeout: 15000 });
+  await page.waitForSelector('#header-signout', { state: 'attached', timeout: 15000 });
   const storageState = await page.context().storageState();
   fs.writeFileSync(STORAGE_PATH, JSON.stringify(storageState, null, 2));
 
