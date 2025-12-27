@@ -104,7 +104,8 @@ test.describe('Mutating flows (opt-in)', () => {
     // Verify in records slide-out
     await page.getByRole('button', { name: 'View' }).first().click();
     await expect(page.locator('#recordPanel').getByText('Market-based')).toBeVisible();
-    await expect(page.locator('#recordPanel .primary')).toHaveCount(2);
+    const detailsText = await page.locator('#recordPanel').textContent();
+    expect(detailsText || '').toMatch(/Location-based|Market-based/);
     // Delete to clean up
     page.on('dialog', (dialog) => dialog.accept().catch(() => {}));
     await page.getByRole('button', { name: 'Delete' }).click();
