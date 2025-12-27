@@ -128,6 +128,7 @@ test.describe('Export scope checks (opt-in, needs fixtures)', () => {
 
   test('CSV rows are scoped to current user and contain required columns', async ({ page }) => {
     await page.goto('/exports.html');
+    await page.waitForLoadState('domcontentloaded');
     if (page.url().includes('index.html')) {
       test.skip(true, 'Auth state missing for exports page');
     }
