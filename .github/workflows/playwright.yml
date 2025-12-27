@@ -9,6 +9,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      CW_EMAIL: ${{ secrets.CW_EMAIL }}
+      CW_PASSWORD: ${{ secrets.CW_PASSWORD }}
+      CW_SECONDARY_EMAIL: ${{ secrets.CW_SECONDARY_EMAIL }}
+      CW_SECONDARY_PASSWORD: ${{ secrets.CW_SECONDARY_PASSWORD }}
+      RUN_MUTATION_TESTS: ${{ vars.RUN_MUTATION_TESTS }}
+      PLAYWRIGHT_PBT: ${{ vars.PLAYWRIGHT_PBT }}
+      CW_BASE_URL: ${{ vars.CW_BASE_URL }}
 
     steps:
       - name: Checkout repo
