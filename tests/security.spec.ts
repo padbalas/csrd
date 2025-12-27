@@ -128,6 +128,10 @@ test.describe('Export scope checks (opt-in, needs fixtures)', () => {
 
   test('CSV rows are scoped to current user and contain required columns', async ({ page }) => {
     await page.goto('/exports.html');
+    if (page.url().includes('index.html')) {
+      test.skip(true, 'Auth state missing for exports page');
+    }
+    await page.waitForSelector('#companyName', { timeout: 10000 });
     const companyDisplay = await page.locator('#companyName').textContent();
     const [download] = await Promise.all([
       page.waitForEvent('download'),

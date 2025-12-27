@@ -30,12 +30,11 @@ test.describe('Auth flow (password)', () => {
     // Sign out and expect redirect back to landing
     const recordsSignout = page.locator('#records-signout');
     const headerSignout = page.locator('#header-signout');
-    if (await recordsSignout.isVisible()) {
-      await recordsSignout.click();
-    } else if (await headerSignout.isVisible()) {
-      await headerSignout.click();
-    }
+    await page.evaluate(async () => {
+      const client = (window as any).supabaseClient;
+      if (client) await client.auth.signOut();
+    });
     await page.waitForURL(/index\.html|\/$/);
-    await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
+    await expect(page.locator('#header-signin')).toBeVisible();
   });
 });

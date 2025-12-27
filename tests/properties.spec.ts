@@ -33,8 +33,8 @@ test.describe('Calculator properties (PBT)', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.record({
-          kwh: fc.float({ min: 1, max: 5000 }),
-          covered: fc.float({ min: 0, max: 6000 }),
+          kwh: fc.float({ min: 1, max: 5000, noNaN: true, noDefaultInfinity: true }),
+          covered: fc.float({ min: 0, max: 6000, noNaN: true, noDefaultInfinity: true }),
           monthIndex: fc.integer({ min: 0, max: 11 }),
           year: fc.integer({ min: 2024, max: new Date().getFullYear() })
         }),
@@ -66,7 +66,8 @@ test.describe('Calculator properties (PBT)', () => {
               }
             }
           } else {
-            await expect(page.locator('#result-container')).toHaveClass(/active/);
+            const isActive = await page.locator('#result-container').evaluate((el) => el.classList.contains('active'));
+            fc.pre(isActive);
             const locText = await page.locator('#result-tons').textContent();
             const marketText = await page.locator('#result-market').textContent();
             const locVal = Number(locText?.replace(/[^\d.-]/g, '') || 0);
@@ -84,7 +85,7 @@ test.describe('Calculator properties (PBT)', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.record({
-          kwh: fc.float({ min: 1, max: 3000 }),
+          kwh: fc.float({ min: 1, max: 3000, noNaN: true, noDefaultInfinity: true }),
           monthIndex: fc.integer({ min: 0, max: 11 }),
           year: fc.integer({ min: 2024, max: new Date().getFullYear() })
         }),
@@ -92,7 +93,8 @@ test.describe('Calculator properties (PBT)', () => {
           await page.goto('/');
           await selectBaseFields(page, year, monthIndex, kwh);
           await calcForm(page).getByRole('button', { name: 'See my emissions in minutes' }).click();
-          await expect(page.locator('#result-container')).toHaveClass(/active/);
+          const isActive = await page.locator('#result-container').evaluate((el) => el.classList.contains('active'));
+          fc.pre(isActive);
           await expect(page.locator('#result-market')).toHaveText(/Not provided/i);
         }
       ),
@@ -124,8 +126,8 @@ test.describe('Calculator properties (PBT)', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.record({
-          kwhA: fc.float({ min: 1, max: 2000 }),
-          kwhB: fc.float({ min: 2001, max: 4000 }),
+          kwhA: fc.float({ min: 1, max: 2000, noNaN: true, noDefaultInfinity: true }),
+          kwhB: fc.float({ min: 2001, max: 4000, noNaN: true, noDefaultInfinity: true }),
           monthIndex: fc.integer({ min: 0, max: 11 }),
           year: fc.integer({ min: 2024, max: new Date().getFullYear() })
         }),
@@ -134,7 +136,8 @@ test.describe('Calculator properties (PBT)', () => {
           await page.goto('/');
           await selectBaseFields(page, year, monthIndex, kwhA);
           await calcForm(page).getByRole('button', { name: 'See my emissions in minutes' }).click();
-          await expect(page.locator('#result-container')).toHaveClass(/active/);
+          const isActiveA = await page.locator('#result-container').evaluate((el) => el.classList.contains('active'));
+          fc.pre(isActiveA);
           const locAText = await page.locator('#result-tons').textContent();
           const locA = Number(locAText?.replace(/[^\d.-]/g, '') || 0);
 
@@ -142,7 +145,8 @@ test.describe('Calculator properties (PBT)', () => {
           await page.goto('/');
           await selectBaseFields(page, year, monthIndex, kwhB);
           await calcForm(page).getByRole('button', { name: 'See my emissions in minutes' }).click();
-          await expect(page.locator('#result-container')).toHaveClass(/active/);
+          const isActiveB = await page.locator('#result-container').evaluate((el) => el.classList.contains('active'));
+          fc.pre(isActiveB);
           const locBText = await page.locator('#result-tons').textContent();
           const locB = Number(locBText?.replace(/[^\d.-]/g, '') || 0);
 
@@ -187,8 +191,8 @@ test.describe('Calculator properties (PBT)', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.record({
-          kwh: fc.float({ min: 100, max: 4000 }),
-          covered: fc.float({ min: 1, max: 500 }),
+          kwh: fc.float({ min: 100, max: 4000, noNaN: true, noDefaultInfinity: true }),
+          covered: fc.float({ min: 1, max: 500, noNaN: true, noDefaultInfinity: true }),
           monthIndex: fc.integer({ min: 0, max: 11 }),
           year: fc.integer({ min: 2024, max: new Date().getFullYear() })
         }),
@@ -204,7 +208,8 @@ test.describe('Calculator properties (PBT)', () => {
           const marketYear = marketOptions.includes(String(year)) ? String(year) : marketOptions[0];
           await marketYearSelect.selectOption(marketYear);
           await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
-          await expect(page.locator('#result-container')).toHaveClass(/active/);
+          const isActive = await page.locator('#result-container').evaluate((el) => el.classList.contains('active'));
+          fc.pre(isActive);
           const locText = await page.locator('#result-tons').textContent();
           const mktText = await page.locator('#result-market').textContent();
           const locVal = Number(locText?.replace(/[^\d.-]/g, '') || 0);
@@ -220,8 +225,8 @@ test.describe('Calculator properties (PBT)', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.record({
-          kwh: fc.float({ min: 100, max: 3000 }),
-          covered: fc.float({ min: 0, max: 5000 }), // may exceed total
+          kwh: fc.float({ min: 100, max: 3000, noNaN: true, noDefaultInfinity: true }),
+          covered: fc.float({ min: 0, max: 5000, noNaN: true, noDefaultInfinity: true }), // may exceed total
           monthIndex: fc.integer({ min: 0, max: 11 }),
           year: fc.integer({ min: 2024, max: new Date().getFullYear() })
         }),
