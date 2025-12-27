@@ -33,6 +33,10 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
+      - name: Debug env presence
+        run: |
+          node -e "console.log({ hasCWEmail: !!process.env.CW_EMAIL, hasCWPassword: !!process.env.CW_PASSWORD, hasSecondary: !!process.env.CW_SECONDARY_EMAIL && !!process.env.CW_SECONDARY_PASSWORD, runMutations: process.env.RUN_MUTATION_TESTS, runPbt: process.env.PLAYWRIGHT_PBT, baseUrl: process.env.CW_BASE_URL })"
+
       - name: Run Playwright tests
         run: npx playwright test
 
