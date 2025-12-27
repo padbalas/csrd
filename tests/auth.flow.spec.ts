@@ -28,10 +28,12 @@ test.describe('Auth flow (password)', () => {
     }
 
     // Sign out and expect redirect back to landing
-    if (/records\.html/.test(page.url())) {
-      await page.locator('#records-signout').click();
-    } else {
-      await page.locator('#header-signout').click();
+    const recordsSignout = page.locator('#records-signout');
+    const headerSignout = page.locator('#header-signout');
+    if (await recordsSignout.isVisible()) {
+      await recordsSignout.click();
+    } else if (await headerSignout.isVisible()) {
+      await headerSignout.click();
     }
     await page.waitForURL(/index\.html|\/$/);
     await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();

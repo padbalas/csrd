@@ -15,15 +15,16 @@ test.describe('Calculator properties (PBT)', () => {
     const currentMonthIndex = new Date().getMonth();
     await form.getByLabel('Who are you?').selectOption({ value: 'finance' });
     await form.getByLabel('Country / region', { exact: true }).selectOption({ value: 'US' });
-    if (year === currentYear && monthIndex > currentMonthIndex) {
-      monthIndex = currentMonthIndex;
-    }
-    await form.getByLabel('Billing month').selectOption(form.getByLabel('Billing month').locator('option').nth(monthIndex + 1));
     const yearSelect = form.getByLabel('Billing year');
     await page.waitForFunction(() => document.querySelectorAll('#year option').length > 0);
     const yearOptions = await yearSelect.locator('option').allTextContents();
     const chosenYear = yearOptions.includes(String(year)) ? String(year) : yearOptions[0];
     await yearSelect.selectOption(chosenYear);
+    if (Number(chosenYear) === currentYear && monthIndex > currentMonthIndex) {
+      monthIndex = currentMonthIndex;
+    }
+    await form.getByLabel('Billing month').selectOption(form.getByLabel('Billing month').locator('option').nth(monthIndex + 1));
+    await page.waitForFunction(() => document.querySelectorAll('#region option').length > 1);
     await form.getByLabel('Electricity used (kWh)', { exact: true }).fill(kwh.toFixed(2));
     await form.getByLabel('State / region').selectOption({ label: 'California' });
   };

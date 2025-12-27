@@ -7,7 +7,10 @@ const STORAGE_PATH = path.join(__dirname, '..', 'auth-state.json');
 async function globalSetup() {
   const email = process.env.CW_EMAIL;
   const password = process.env.CW_PASSWORD;
-  const baseURL = process.env.CW_BASE_URL || 'https://www.esgrise.com';
+  const rawBaseURL = process.env.CW_BASE_URL || 'https://www.esgrise.com';
+  const baseURL = /https?:\/\/(www\.)?esgrise\.com\/?$/i.test(rawBaseURL)
+    ? 'https://www.esgrise.com'
+    : rawBaseURL;
 
   if (!email || !password) {
     // No credentials provided; skip auth state creation so unauth tests can still run.
@@ -19,24 +22,19 @@ async function globalSetup() {
 
   await page.goto(baseURL);
   await page.waitForFunction(() => (window as any).supabaseClient);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.locator('#auth-email').fill(email);
-  await page.locator('#auth-password').fill(password);
-  await page.locator('#auth-submit').click();
+  await page.evaluate(async ({ email, password }) => {
+    const client = (window as any).supabaseClient;
+    if (!client) throw new Error('Supabase client unavailable');
+    await client.auth.signInWithPassword({ email, password });
+  }, { email, password });
 
   // Wait for sign-in to complete (redirect or visible sign-out, or error)
   await page.waitForFunction(async () => {
-    const status = document.querySelector('#auth-status')?.textContent?.trim() || '';
-    if (/could not sign in|check your email|confirm your account/i.test(status)) return true;
     const client = (window as any).supabaseClient;
     if (!client) return false;
     const { data } = await client.auth.getSession();
     return !!data?.session;
   }, { timeout: 20000 });
-  const statusText = (await page.locator('#auth-status').textContent())?.trim() || '';
-  if (/could not sign in|check your email|confirm your account/i.test(statusText)) {
-    throw new Error(`Auth failed: ${statusText}`);
-  }
   const storageState = await page.context().storageState();
   fs.writeFileSync(STORAGE_PATH, JSON.stringify(storageState, null, 2));
 
