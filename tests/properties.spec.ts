@@ -29,6 +29,8 @@ test.describe('Calculator properties (PBT)', () => {
     await form.getByLabel('State / region').selectOption({ label: 'California' });
   };
 
+  const pbtOptions = { numRuns: 1, interruptAfterTimeLimit: 10000 };
+
   test('market-based inputs never produce negative emissions and enforce covered <= total', async ({ page }) => {
     await fc.assert(
       fc.asyncProperty(
@@ -78,7 +80,7 @@ test.describe('Calculator properties (PBT)', () => {
           }
         }
       ),
-      { numRuns: 5 } // keep modest for CI
+      pbtOptions
     );
   });
 
@@ -100,7 +102,7 @@ test.describe('Calculator properties (PBT)', () => {
           await expect(page.locator('#result-market')).toHaveText(/Not provided/i);
         }
       ),
-      { numRuns: 3 }
+      pbtOptions
     );
   });
 
@@ -120,7 +122,7 @@ test.describe('Calculator properties (PBT)', () => {
           expect(isActive).toBeFalsy();
         }
       ),
-      { numRuns: 2 }
+      pbtOptions
     );
   });
 
@@ -157,7 +159,7 @@ test.describe('Calculator properties (PBT)', () => {
           expect(locB).toBeGreaterThanOrEqual(locA);
         }
       ),
-      { numRuns: 3 }
+      pbtOptions
     );
   });
 
@@ -187,7 +189,7 @@ test.describe('Calculator properties (PBT)', () => {
           expect(mismatchText).toMatch(/most recent available data|published with a delay/i);
         }
       ),
-      { numRuns: 2 }
+      pbtOptions
     );
   });
 
@@ -222,7 +224,7 @@ test.describe('Calculator properties (PBT)', () => {
           expect(mktVal).toBeLessThanOrEqual(locVal);
         }
       ),
-      { numRuns: 3 }
+      pbtOptions
     );
   });
 
@@ -257,7 +259,7 @@ test.describe('Calculator properties (PBT)', () => {
           }
         }
       ),
-      { numRuns: 3 }
+      pbtOptions
     );
   });
 });

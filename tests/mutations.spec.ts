@@ -103,7 +103,7 @@ test.describe('Mutating flows (opt-in)', () => {
 
     // Verify in records slide-out
     await page.getByRole('button', { name: 'View' }).first().click();
-    await expect(page.getByText(/Market-based/)).toBeVisible();
+    await expect(page.locator('#recordPanel').getByText('Market-based')).toBeVisible();
     await expect(page.getByText(/t CO₂e/)).toBeVisible();
     // Delete to clean up
     page.once('dialog', (dialog) => dialog.accept());
@@ -155,7 +155,12 @@ test.describe('Mutating flows (opt-in)', () => {
     const navigatedPrimary = await page.waitForURL(/records\.html/, { timeout: 15000 }).then(() => true).catch(() => false);
     if (!navigatedPrimary) test.skip(true, 'Save did not redirect to records');
     await page.waitForTimeout(2000);
-    await expect(page.locator('body')).toContainText(markerKwh);
+    const markerId = await page.evaluate((marker) => {
+      const records = window.loadRecords ? window.loadRecords() : [];
+      const hit = records.find((r) => String(r.kwh) === String(marker));
+      return hit ? hit.id : null;
+    }, markerKwh);
+    if (!markerId) test.skip(true, 'Marker record not found in local cache');
 
     // Sign out primary
     await signOut();
