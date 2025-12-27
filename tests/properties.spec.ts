@@ -11,10 +11,16 @@ test.describe('Calculator properties (PBT)', () => {
 
   const selectBaseFields = async (page: any, year: number, monthIndex: number, kwh: number) => {
     const form = calcForm(page);
+    const currentYear = new Date().getFullYear();
+    const currentMonthIndex = new Date().getMonth();
     await form.getByLabel('Who are you?').selectOption({ value: 'finance' });
     await form.getByLabel('Country / region', { exact: true }).selectOption({ value: 'US' });
+    if (year === currentYear && monthIndex > currentMonthIndex) {
+      monthIndex = currentMonthIndex;
+    }
     await form.getByLabel('Billing month').selectOption(form.getByLabel('Billing month').locator('option').nth(monthIndex + 1));
     const yearSelect = form.getByLabel('Billing year');
+    await page.waitForFunction(() => document.querySelectorAll('#year option').length > 0);
     const yearOptions = await yearSelect.locator('option').allTextContents();
     const chosenYear = yearOptions.includes(String(year)) ? String(year) : yearOptions[0];
     await yearSelect.selectOption(chosenYear);
@@ -168,8 +174,8 @@ test.describe('Calculator properties (PBT)', () => {
           await marketYearSelect.selectOption(marketYear);
           await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
           const mismatchText = await page.locator('#factor-mismatch').textContent();
-          if (!mismatchText) test.skip(true, 'No mismatch note for selected year');
-          expect(mismatchText || '').toMatch(/most recent available data|published with a delay/i);
+          if (!mismatchText) return;
+          expect(mismatchText).toMatch(/most recent available data|published with a delay/i);
         }
       ),
       { numRuns: 2 }

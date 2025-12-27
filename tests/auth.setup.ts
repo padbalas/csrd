@@ -18,13 +18,23 @@ async function globalSetup() {
   const page = await browser.newPage();
 
   await page.goto(baseURL);
+  await page.waitForFunction(() => (window as any).supabaseClient);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await page.locator('#auth-email').fill(email);
   await page.locator('#auth-password').fill(password);
   await page.locator('#auth-submit').click();
 
-  // Wait for sign-out control to confirm session established
-  await page.waitForSelector('#header-signout', { state: 'attached', timeout: 15000 });
+  // Wait for sign-in to complete (redirect or visible sign-out, or error)
+  await page.waitForFunction(() => {
+    const status = document.querySelector('#auth-status')?.textContent?.trim();
+    const signout = document.querySelector('#header-signout');
+    const signoutVisible = signout ? getComputedStyle(signout).display !== 'none' : false;
+    return /records\.html/.test(window.location.href) || signoutVisible || !!status;
+  }, { timeout: 15000 });
+  const statusText = await page.locator('#auth-status').textContent();
+  if (statusText && statusText.trim()) {
+    throw new Error(`Auth failed: ${statusText.trim()}`);
+  }
   const storageState = await page.context().storageState();
   fs.writeFileSync(STORAGE_PATH, JSON.stringify(storageState, null, 2));
 
