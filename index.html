@@ -327,14 +327,6 @@
       background: #d1fae5;
       box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
     }
-    .company-badge {
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-weight: 700;
-      border: 1px solid rgba(255,255,255,0.25);
-    }
     .slide-panel {
       position: fixed;
       top: 0;
@@ -361,8 +353,6 @@
     <div class="shell">
       <div class="top-row">
         <div class="tag">CarbonWise</div>
-        <span id="header-company" class="company-badge" style="display:none;"></span>
-        <a class="btn secondary" id="header-records" href="records.html">My Records</a>
         <button class="btn secondary" id="header-signin">Log in</button>
         <button class="btn secondary" id="header-signout" style="display:none;">Log out</button>
       </div>
@@ -539,18 +529,10 @@
         </div>
         <div class="cta-row" style="margin-top:12px; justify-content:flex-start;">
           <button type="button" class="btn primary" id="save-btn">Save</button>
-          <a href="records.html" class="btn secondary" id="history-link" data-page="records" style="display:none;">My history</a>
           <button type="button" class="btn secondary" id="signout-btn" style="display:none;">Log out</button>
         </div>
       </div>
       <div id="placeholder" class="muted">Your results will appear here after you calculate.</div>
-    </section>
-
-    <section id="history-section" class="page" data-page="records" style="display:none;">
-      <div class="info-card" style="padding:16px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc;">
-        <div style="font-weight:700;">Your records now live in a dedicated page.</div>
-        <a href="records.html" class="btn secondary" style="margin-top:10px; display:inline-flex;">Go to My Records →</a>
-      </div>
     </section>
 
     <section id="privacy">
@@ -845,7 +827,6 @@
     const saveBtn = document.getElementById('save-btn');
     // history-btn removed in favor of link
     const signoutBtn = document.getElementById('signout-btn');
-    const historySection = document.getElementById('history-section');
     const recordsLoading = document.getElementById('records-loading');
     const recordsError = document.getElementById('records-error');
     const recordsTable = document.getElementById('records-table');
@@ -879,7 +860,6 @@
     const authSubmitReset = document.getElementById('auth-submit-reset');
     const authForgot = document.getElementById('auth-forgot');
     const headerSignIn = document.getElementById('header-signin');
-    const headerCompany = document.getElementById('header-company');
     const authFormUpdatePassword = document.getElementById('auth-form-update-password');
     const authPasswordNew = document.getElementById('auth-password-new');
     const authSubmitUpdate = document.getElementById('auth-submit-update');
@@ -903,8 +883,6 @@
     const editCovered = document.getElementById('edit-covered');
     const editStatus = document.getElementById('edit-status');
     const headerSignout = document.getElementById('header-signout');
-    const headerRecords = document.getElementById('header-records');
-    const historyLink = document.getElementById('history-link');
     const pages = Array.from(document.querySelectorAll('.page'));
 
     const appState = {
@@ -969,7 +947,6 @@
       if (!supabase) return;
       const { data } = await supabase.auth.getSession();
       setSessionUI(data?.session || null);
-      updateCompanyDisplay(data?.session || null);
     };
 
     // Records now live on records.html; keep a no-op to avoid undefined references.
@@ -1034,13 +1011,11 @@
 
     const setSessionUI = (session) => {
       // Minimal guard: rely only on header controls to avoid missing-node issues
-      if (!headerSignIn || !headerCompany || !headerSignout || !headerRecords) return;
+      if (!headerSignIn || !headerSignout) return;
       appState.session = session;
       if (signoutBtn) signoutBtn.style.display = 'none'; // keep only header sign-out to reduce clutter near Save
       headerSignout.style.display = session ? 'inline-flex' : 'none';
-      headerRecords.style.display = session ? 'inline-flex' : 'none';
       if (!session) {
-        if (historySection) historySection.style.display = 'none';
         if (typeof recordsTable !== 'undefined' && recordsTable) recordsTable.style.display = 'none';
         if (typeof recordsEmpty !== 'undefined' && recordsEmpty) recordsEmpty.style.display = 'none';
         if (typeof recordsError !== 'undefined' && recordsError) recordsError.style.display = 'none';
@@ -1049,35 +1024,14 @@
         appState.companyName = null;
         appState.historyRevealed = false;
         headerSignIn.style.display = 'inline-flex';
-        headerCompany.style.display = 'none';
         headerSignout.style.display = 'none';
-        headerRecords.style.display = 'none';
       } else {
         headerSignIn.style.display = 'none';
-        headerCompany.style.display = appState.companyName || session?.user?.email ? 'inline' : 'none';
         // Default destination after login: show My Records info card
         // Keep user on the calculator by default; only show records when requested
       }
     };
 
-    const updateCompanyDisplay = async (session) => {
-      if (!headerCompany || !headerSignIn) return;
-      if (!session) {
-        headerSignIn.style.display = 'inline-flex';
-        headerCompany.style.display = 'none';
-        return;
-      }
-      headerSignIn.style.display = 'none';
-      // Prefer cached company name; otherwise fetch first company for this user
-      if (!appState.companyName && supabase) {
-        const { data } = await supabase.from('companies').select('company_name').limit(1).single();
-        if (data?.company_name) {
-          appState.companyName = data.company_name;
-        }
-      }
-      headerCompany.textContent = appState.companyName || session.user.email;
-      headerCompany.style.display = 'inline';
-    };
 
     const setAuthView = (view) => {
       appState.authView = view;
@@ -1146,13 +1100,11 @@
       if (!supabase) return;
       const { data } = await supabase.auth.getSession();
       setSessionUI(data?.session || null);
-      updateCompanyDisplay(data?.session || null);
       if (data?.session?.user?.recovery_sent_at) {
         enterRecoveryMode(data.session);
       }
       supabase.auth.onAuthStateChange((_event, session) => {
         setSessionUI(session);
-        updateCompanyDisplay(session);
         if (session) {
           if (session.user?.recovery_sent_at || _event === 'PASSWORD_RECOVERY') {
             enterRecoveryMode(session);
@@ -1175,7 +1127,6 @@
       if (document.visibilityState === 'visible' && supabase) {
         const { data } = await supabase.auth.getSession();
         setSessionUI(data?.session || null);
-        updateCompanyDisplay(data?.session || null);
       }
     });
 
@@ -1348,10 +1299,6 @@
       handleSaveFlow();
     });
 
-    historyLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      showHistorySection();
-    });
     if (recordsSignout) {
       recordsSignout.addEventListener('click', async () => {
         if (supabase) await supabase.auth.signOut();
