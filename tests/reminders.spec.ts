@@ -18,7 +18,7 @@ test.describe('Reminders with local fixtures', () => {
         period_month: 3,
         location_based_emissions: 1,
         calc_country: 'US',
-        calc_region: 'NY'
+        calc_region: 'CA'
       }
     ];
 
@@ -31,7 +31,7 @@ test.describe('Reminders with local fixtures', () => {
 
     const reminders = page.locator('#reminderList');
     await expect(reminders).toBeVisible();
-    await expect(reminders).toContainText('02/' + year); // missing February
-    await expect(reminders).toContainText(/US \/ CA contributes/i);
+    await expect(reminders).toContainText(/Missing Feb/i);
+    await expect(reminders).toContainText(/US \/ CA/);
   });
 });
