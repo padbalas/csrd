@@ -256,11 +256,32 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
   if (!records.length) return [];
 
   const reminders = [];
+  const filterYear = document.getElementById('filterYear')?.value || '';
+  const pref = typeof window !== 'undefined' ? window.companyReportingPreference : null;
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const targetYear = filterYear
+    ? parseInt(filterYear, 10)
+    : pref === 'current'
+      ? currentYear
+      : pref === 'previous'
+        ? currentYear - 1
+        : null;
+
   const monthKeys = records.map((r) => `${r.period_year || r.year}-${String(r.period_month || r.month).padStart(2, '0')}`);
   const uniqueMonths = Array.from(new Set(monthKeys)).sort();
 
   // Detect missing months in sequence
-  if (uniqueMonths.length) {
+  if (targetYear) {
+    const seen = new Set(uniqueMonths.filter((k) => k.startsWith(`${targetYear}-`)));
+    const maxMonth = targetYear === currentYear ? now.getMonth() + 1 : 12;
+    for (let m = 1; m <= maxMonth; m += 1) {
+      const key = `${targetYear}-${String(m).padStart(2, '0')}`;
+      if (!seen.has(key)) {
+        reminders.push({ type: 'missing', text: `You haven’t added electricity data for ${String(m).padStart(2, '0')}/${targetYear}.` });
+      }
+    }
+  } else if (uniqueMonths.length) {
     const [startYear, startMonth] = uniqueMonths[0].split('-').map((v) => parseInt(v, 10));
     const [endYear, endMonth] = uniqueMonths[uniqueMonths.length - 1].split('-').map((v) => parseInt(v, 10));
     const missing = [];

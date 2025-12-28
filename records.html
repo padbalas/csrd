@@ -661,6 +661,17 @@
       return data?.[0]?.id || null;
     };
 
+    const loadCompanyPreference = async () => {
+      if (!supabase) return;
+      const { data, error } = await supabase
+        .from('companies')
+        .select('reporting_year_preference')
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (error || !data || !data.length) return;
+      window.companyReportingPreference = data[0]?.reporting_year_preference || 'all';
+    };
+
     const isFuturePeriod = (year, month) => (
       year > CURRENT_YEAR || (year === CURRENT_YEAR && month > CURRENT_MONTH)
     );
@@ -1274,9 +1285,14 @@
       await initSupabase();
       if (supabase) {
         await refreshRecords();
+        await loadCompanyPreference();
+        if (window.renderCarbonReminders) window.renderCarbonReminders();
         supabase.auth.onAuthStateChange((_event) => {
           if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED' || _event === 'SIGNED_OUT') {
             refreshRecords();
+            loadCompanyPreference().then(() => {
+              if (window.renderCarbonReminders) window.renderCarbonReminders();
+            });
           }
         });
       } else {
