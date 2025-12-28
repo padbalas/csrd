@@ -219,6 +219,56 @@
     }
     .records-actions { display: flex; align-items: center; gap: 8px; }
     .records-status { color: var(--muted); font-size: 0.9rem; }
+    .records-filters .records-actions { margin-left: auto; }
+    .panel-form {
+      display: grid;
+      gap: 12px;
+    }
+    .panel-row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .panel-row.single {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .panel-form label {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .panel-form input,
+    .panel-form select {
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+    }
+    .panel-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+    .panel-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .panel-status { color: var(--muted); font-size: 0.9rem; }
+    .bulk-row {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+    .bulk-row-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
     .slide-panel {
       position: fixed;
       top: 0;
@@ -370,6 +420,10 @@
             <option value="market">Market-based</option>
           </select>
         </label>
+        <div class="records-actions">
+          <button class="btn secondary" id="records-add" type="button">Add record</button>
+          <button class="btn secondary" id="records-bulk" type="button">Bulk add</button>
+        </div>
       </section>
       <table class="table" aria-label="Saved records">
         <thead>
@@ -404,14 +458,125 @@
   </script>
   <script type="module" src="./js/records.js"></script>
   <script type="module">
+    import { EMISSION_FACTORS, GLOBAL_FALLBACK } from './data/emission-factors.js';
     const recordsTable = document.getElementById('recordsTable');
     const recordPanel = document.getElementById('recordPanel');
     const signoutBtn = document.getElementById('records-signout');
     const exportBtn = document.getElementById('records-export-csv');
     const exportStatus = document.getElementById('records-export-status');
+    const addBtn = document.getElementById('records-add');
+    const bulkBtn = document.getElementById('records-bulk');
     const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
     const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
 
+    const TODAY = new Date();
+    const CURRENT_YEAR = TODAY.getFullYear();
+    const CURRENT_MONTH = TODAY.getMonth() + 1;
+    const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const COUNTRY_OPTIONS = [
+      { value: 'US', label: 'United States' },
+      { value: 'CA', label: 'Canada' },
+      { value: 'UK', label: 'United Kingdom' },
+      { value: 'AU', label: 'Australia' },
+      { value: 'SG', label: 'Singapore' },
+      { value: 'NZ', label: 'New Zealand' }
+    ];
+    const REGION_OPTIONS = {
+      US: [
+        "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","District of Columbia",
+        "Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine",
+        "Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada",
+        "New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma",
+        "Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont",
+        "Virginia","Washington","West Virginia","Wisconsin","Wyoming"
+      ],
+      CA: [
+        "Alberta","British Columbia","Manitoba","New Brunswick","Newfoundland and Labrador","Northwest Territories",
+        "Nova Scotia","Nunavut","Ontario","Prince Edward Island","Quebec","Saskatchewan","Yukon"
+      ],
+      UK: [
+        "England","Northern Ireland","Scotland","Wales"
+      ],
+      AU: [
+        "New South Wales","Victoria","Queensland","Western Australia","South Australia",
+        "Tasmania","Australian Capital Territory","Northern Territory"
+      ],
+      SG: [
+        "Singapore"
+      ],
+      NZ: [
+        "Auckland","Bay of Plenty","Canterbury","Gisborne","Hawke's Bay","Manawatu-Whanganui","Marlborough",
+        "Nelson","Northland","Otago","Southland","Taranaki","Tasman","Waikato","Wellington","West Coast"
+      ]
+    };
+
+    const normalizeKey = (str) => (str || '').trim().toUpperCase();
+
+    const populateYears = (el, withPlaceholder = true) => {
+      el.innerHTML = withPlaceholder ? '<option value="">Select year</option>' : '';
+      for (let y = CURRENT_YEAR; y >= 2024; y -= 1) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        el.appendChild(opt);
+      }
+    };
+
+    const populateMonths = (el) => {
+      el.innerHTML = '<option value="">Select month</option>';
+      MONTHS.forEach((m, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx + 1);
+        opt.textContent = m;
+        el.appendChild(opt);
+      });
+    };
+
+    const populateCountries = (el) => {
+      el.innerHTML = '<option value="">Select country</option>';
+      COUNTRY_OPTIONS.forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c.value;
+        opt.textContent = c.label;
+        el.appendChild(opt);
+      });
+    };
+
+    const setRegionOptions = (country, regionEl) => {
+      const opts = REGION_OPTIONS[country] || [];
+      regionEl.innerHTML = '<option value="">Select region</option>';
+      opts.forEach((name) => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        regionEl.appendChild(opt);
+      });
+    };
+
+    const selectFinalFactor = (records, billingYear) => {
+      const finals = (records || []).filter((r) => r.status === 'final');
+      if (!finals.length) return null;
+      const exact = finals.find((r) => r.year === billingYear);
+      if (exact) return exact;
+      return finals.reduce((latest, rec) => {
+        if (!latest) return rec;
+        return rec.year > latest.year ? rec : latest;
+      }, null);
+    };
+
+    const getEmissionFactor = (country, region, billingYear) => {
+      const countryData = EMISSION_FACTORS[country];
+      const regionKey = normalizeKey(region);
+      if (countryData?.regions && countryData.regions[regionKey]) {
+        const data = selectFinalFactor(countryData.regions[regionKey], billingYear);
+        if (data) return data;
+      }
+      if (countryData?.default) {
+        const data = selectFinalFactor(countryData.default, billingYear);
+        if (data) return data;
+      }
+      return selectFinalFactor(GLOBAL_FALLBACK, billingYear) || GLOBAL_FALLBACK[0];
+    };
     const showMessage = (msg) => {
       if (!recordsTable) return;
       recordsTable.innerHTML = `<tr><td colspan="7" style="color:#4b5563;">${msg}</td></tr>`;
@@ -458,6 +623,49 @@
         showMessage('No records yet. Save from the calculator page.');
       }
     };
+
+    const closePanel = () => {
+      if (!recordPanel) return;
+      recordPanel.classList.remove('active');
+      recordPanel.classList.add('hidden');
+      recordPanel.innerHTML = '';
+    };
+
+    const openPanel = (html) => {
+      if (!recordPanel) return;
+      recordPanel.innerHTML = html;
+      recordPanel.classList.remove('hidden');
+      recordPanel.classList.add('active');
+      const closeBtn = recordPanel.querySelector('[data-close-panel]');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closePanel, { once: true });
+      }
+    };
+
+    const getSession = async () => {
+      if (!supabase) return null;
+      const { data } = await supabase.auth.getSession();
+      return data?.session || null;
+    };
+
+    const getCompanyId = async (session) => {
+      if (!supabase || !session) return null;
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (error) {
+        console.warn('Company lookup failed', error);
+        return null;
+      }
+      return data?.[0]?.id || null;
+    };
+
+    const isFuturePeriod = (year, month) => (
+      year > CURRENT_YEAR || (year === CURRENT_YEAR && month > CURRENT_MONTH)
+    );
 
     const deleteLocalRecord = (id) => {
       const current = window.loadRecords ? window.loadRecords() : [];
@@ -538,6 +746,427 @@
       } finally {
         if (exportBtn) exportBtn.disabled = false;
       }
+    };
+
+    const buildAddPanel = () => `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
+        <div>
+          <div style="font-weight:700;font-size:1.05rem;">Add record</div>
+          <div style="color:#4b5563;font-size:0.95rem;">Create a single Scope 2 entry without leaving this page.</div>
+        </div>
+        <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
+      </div>
+      <form id="add-record-form" class="panel-form">
+        <div class="panel-row">
+          <label>
+            Country / region
+            <select id="add-country" required></select>
+          </label>
+          <label>
+            State / region
+            <select id="add-region" required></select>
+          </label>
+        </div>
+        <div class="panel-row">
+          <label>
+            Billing month
+            <select id="add-month" required></select>
+          </label>
+          <label>
+            Billing year
+            <select id="add-year" required></select>
+          </label>
+        </div>
+        <div class="panel-row single">
+          <label>
+            Electricity (kWh)
+            <input type="number" id="add-kwh" min="1" step="any" placeholder="e.g., 1200" required />
+          </label>
+        </div>
+        <label class="panel-toggle">
+          <input type="checkbox" id="add-market-toggle" />
+          Include market-based Scope 2
+        </label>
+        <div class="panel-row">
+          <label>
+            Instrument type (optional)
+            <select id="add-market-type">
+              <option value="">None</option>
+              <option value="REC">REC</option>
+              <option value="PPA">PPA</option>
+              <option value="Green tariff">Green tariff</option>
+            </select>
+          </label>
+          <label>
+            Covered electricity (kWh)
+            <input type="number" id="add-covered" min="0" step="any" placeholder="0" />
+          </label>
+        </div>
+        <div class="panel-row single">
+          <label>
+            Reporting year (market-based)
+            <select id="add-market-year"></select>
+          </label>
+        </div>
+        <div class="panel-actions">
+          <button type="submit" class="btn primary">Save record</button>
+        </div>
+        <p class="panel-status" id="add-status"></p>
+      </form>
+    `;
+
+    const openAddPanel = () => {
+      openPanel(buildAddPanel());
+      const form = recordPanel?.querySelector('#add-record-form');
+      const countryEl = recordPanel?.querySelector('#add-country');
+      const regionEl = recordPanel?.querySelector('#add-region');
+      const monthEl = recordPanel?.querySelector('#add-month');
+      const yearEl = recordPanel?.querySelector('#add-year');
+      const kwhEl = recordPanel?.querySelector('#add-kwh');
+      const marketToggle = recordPanel?.querySelector('#add-market-toggle');
+      const marketTypeEl = recordPanel?.querySelector('#add-market-type');
+      const coveredEl = recordPanel?.querySelector('#add-covered');
+      const marketYearEl = recordPanel?.querySelector('#add-market-year');
+      const statusEl = recordPanel?.querySelector('#add-status');
+
+      if (!form || !countryEl || !regionEl || !monthEl || !yearEl || !kwhEl || !marketToggle || !marketTypeEl || !coveredEl || !marketYearEl) {
+        return;
+      }
+
+      populateCountries(countryEl);
+      populateMonths(monthEl);
+      populateYears(yearEl);
+      populateYears(marketYearEl);
+      setRegionOptions(countryEl.value, regionEl);
+      marketTypeEl.disabled = true;
+      coveredEl.disabled = true;
+      marketYearEl.disabled = true;
+
+      countryEl.addEventListener('change', () => setRegionOptions(countryEl.value, regionEl));
+      marketToggle.addEventListener('change', () => {
+        const enabled = marketToggle.checked;
+        marketTypeEl.disabled = !enabled;
+        coveredEl.disabled = !enabled;
+        marketYearEl.disabled = !enabled;
+        if (!enabled) {
+          marketTypeEl.value = '';
+          coveredEl.value = '';
+          marketYearEl.value = '';
+        } else if (!marketYearEl.value) {
+          marketYearEl.value = String(CURRENT_YEAR);
+        }
+      });
+
+      const setStatus = (msg) => {
+        if (statusEl) statusEl.textContent = msg;
+      };
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setStatus('');
+        const country = countryEl.value;
+        const region = regionEl.value;
+        const month = parseInt(monthEl.value, 10);
+        const year = parseInt(yearEl.value, 10);
+        const kwh = parseFloat(kwhEl.value);
+        const marketEnabled = marketToggle.checked;
+        const marketType = marketTypeEl.value;
+        const coveredKwh = parseFloat(coveredEl.value || '0');
+        const marketYear = parseInt(marketYearEl.value || '0', 10);
+
+        if (!country || !region || !month || !year || !Number.isFinite(kwh) || kwh <= 0) {
+          setStatus('Please complete all required fields.');
+          return;
+        }
+        if (isFuturePeriod(year, month)) {
+          setStatus('Future billing periods are not allowed.');
+          return;
+        }
+        if (marketEnabled) {
+          if (!marketType || !Number.isFinite(coveredKwh) || coveredKwh < 0 || !marketYear) {
+            setStatus('Provide instrument type, covered kWh, and reporting year.');
+            return;
+          }
+          if (marketYear > CURRENT_YEAR) {
+            setStatus('Reporting year cannot be in the future.');
+            return;
+          }
+          if (coveredKwh > kwh) {
+            setStatus('Covered kWh cannot exceed total kWh.');
+            return;
+          }
+        }
+
+        const session = await getSession();
+        if (!session) {
+          window.location.href = 'index.html';
+          return;
+        }
+        const companyId = await getCompanyId(session);
+        if (!companyId) {
+          setStatus('Company profile missing. Add it on the calculator page.');
+          return;
+        }
+
+        const factorData = getEmissionFactor(country, region, year);
+        const factorValue = factorData.factor;
+        const tonsLocation = kwh * factorValue;
+        const tonsMarket = marketEnabled ? Math.max(kwh - coveredKwh, 0) * factorValue : null;
+
+        try {
+          const payload = {
+            user_id: session.user.id,
+            company_id: companyId,
+            period_year: year,
+            period_month: month,
+            kwh,
+            location_based_emissions: tonsLocation,
+            market_based_emissions: marketEnabled ? tonsMarket : null,
+            market_instrument_type: marketEnabled ? marketType : null,
+            covered_kwh: marketEnabled ? coveredKwh : null,
+            emission_factor_value: factorValue,
+            emission_factor_year: factorData.year,
+            emission_factor_source: factorData.source,
+            calc_country: country,
+            calc_region: region
+          };
+          const { error } = await supabase
+            .from('scope2_records')
+            .upsert([payload], { onConflict: 'user_id,company_id,period_year,period_month' });
+          if (error) {
+            console.warn('Add record failed', error);
+            setStatus('Save failed. Please try again.');
+            return;
+          }
+          await refreshRecords();
+          closePanel();
+        } catch (err) {
+          console.warn('Add record error', err);
+          setStatus('Save failed. Please try again.');
+        }
+      });
+    };
+
+    const buildBulkPanel = () => `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
+        <div>
+          <div style="font-weight:700;font-size:1.05rem;">Bulk add records</div>
+          <div style="color:#4b5563;font-size:0.95rem;">Add multiple months at once (market-based optional per row).</div>
+        </div>
+        <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
+      </div>
+      <form id="bulk-form" class="panel-form">
+        <div id="bulk-rows"></div>
+        <div class="panel-actions">
+          <button type="button" class="btn secondary" id="bulk-add-row">Add row</button>
+          <button type="submit" class="btn primary">Save rows</button>
+        </div>
+        <p class="panel-status" id="bulk-status"></p>
+      </form>
+    `;
+
+    const createBulkRow = () => {
+      const row = document.createElement('div');
+      row.className = 'bulk-row';
+      row.innerHTML = `
+        <div class="panel-row">
+          <label>
+            Country / region
+            <select data-field="country"></select>
+          </label>
+          <label>
+            State / region
+            <select data-field="region"></select>
+          </label>
+        </div>
+        <div class="panel-row">
+          <label>
+            Billing month
+            <select data-field="month"></select>
+          </label>
+          <label>
+            Billing year
+            <select data-field="year"></select>
+          </label>
+        </div>
+        <div class="panel-row">
+          <label>
+            Electricity (kWh)
+            <input type="number" data-field="kwh" min="1" step="any" placeholder="e.g., 1200" />
+          </label>
+          <label>
+            Instrument type (optional)
+            <select data-field="marketType">
+              <option value="">None</option>
+              <option value="REC">REC</option>
+              <option value="PPA">PPA</option>
+              <option value="Green tariff">Green tariff</option>
+            </select>
+          </label>
+        </div>
+        <div class="panel-row">
+          <label>
+            Covered electricity (kWh)
+            <input type="number" data-field="covered" min="0" step="any" placeholder="0" />
+          </label>
+          <label>
+            Reporting year (market-based)
+            <select data-field="marketYear"></select>
+          </label>
+        </div>
+        <div class="bulk-row-actions">
+          <button type="button" class="btn secondary" data-remove-row>Remove row</button>
+        </div>
+      `;
+      const countryEl = row.querySelector('[data-field="country"]');
+      const regionEl = row.querySelector('[data-field="region"]');
+      const monthEl = row.querySelector('[data-field="month"]');
+      const yearEl = row.querySelector('[data-field="year"]');
+      const marketYearEl = row.querySelector('[data-field="marketYear"]');
+      if (countryEl && regionEl && monthEl && yearEl && marketYearEl) {
+        populateCountries(countryEl);
+        populateMonths(monthEl);
+        populateYears(yearEl);
+        populateYears(marketYearEl);
+        setRegionOptions(countryEl.value, regionEl);
+        countryEl.addEventListener('change', () => setRegionOptions(countryEl.value, regionEl));
+      }
+      const removeBtn = row.querySelector('[data-remove-row]');
+      if (removeBtn) {
+        removeBtn.addEventListener('click', () => row.remove());
+      }
+      return row;
+    };
+
+    const openBulkPanel = () => {
+      openPanel(buildBulkPanel());
+      const rowsEl = recordPanel?.querySelector('#bulk-rows');
+      const addRowBtn = recordPanel?.querySelector('#bulk-add-row');
+      const form = recordPanel?.querySelector('#bulk-form');
+      const statusEl = recordPanel?.querySelector('#bulk-status');
+      if (!rowsEl || !addRowBtn || !form) return;
+
+      for (let i = 0; i < 3; i += 1) {
+        rowsEl.appendChild(createBulkRow());
+      }
+      addRowBtn.addEventListener('click', () => {
+        rowsEl.appendChild(createBulkRow());
+      });
+
+      const setStatus = (msg) => {
+        if (statusEl) statusEl.textContent = msg;
+      };
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setStatus('');
+        const rows = Array.from(rowsEl.querySelectorAll('.bulk-row'));
+        if (!rows.length) {
+          setStatus('Add at least one row.');
+          return;
+        }
+
+        const session = await getSession();
+        if (!session) {
+          window.location.href = 'index.html';
+          return;
+        }
+        const companyId = await getCompanyId(session);
+        if (!companyId) {
+          setStatus('Company profile missing. Add it on the calculator page.');
+          return;
+        }
+
+        const payloads = [];
+        const errors = [];
+
+        rows.forEach((row, idx) => {
+          const country = row.querySelector('[data-field="country"]')?.value || '';
+          const region = row.querySelector('[data-field="region"]')?.value || '';
+          const month = parseInt(row.querySelector('[data-field="month"]')?.value || '0', 10);
+          const year = parseInt(row.querySelector('[data-field="year"]')?.value || '0', 10);
+          const kwh = parseFloat(row.querySelector('[data-field="kwh"]')?.value || '');
+          const marketType = row.querySelector('[data-field="marketType"]')?.value || '';
+          const coveredKwh = parseFloat(row.querySelector('[data-field="covered"]')?.value || '0');
+          const marketYear = parseInt(row.querySelector('[data-field="marketYear"]')?.value || '0', 10);
+
+          const hasAny = [country, region, month, year, kwh, marketType, coveredKwh, marketYear].some((v) => v);
+          if (!hasAny) return;
+
+          if (!country || !region || !month || !year || !Number.isFinite(kwh) || kwh <= 0) {
+            errors.push(`Row ${idx + 1}: complete country, region, month, year, and kWh.`);
+            return;
+          }
+          if (isFuturePeriod(year, month)) {
+            errors.push(`Row ${idx + 1}: future billing periods are not allowed.`);
+            return;
+          }
+          if (marketType) {
+            if (!Number.isFinite(coveredKwh) || coveredKwh < 0 || !marketYear) {
+              errors.push(`Row ${idx + 1}: provide covered kWh and reporting year for market-based.`);
+              return;
+            }
+            if (marketYear > CURRENT_YEAR) {
+              errors.push(`Row ${idx + 1}: reporting year cannot be in the future.`);
+              return;
+            }
+            if (coveredKwh > kwh) {
+              errors.push(`Row ${idx + 1}: covered kWh cannot exceed total kWh.`);
+              return;
+            }
+          } else if (coveredKwh > 0 || marketYear) {
+            errors.push(`Row ${idx + 1}: select an instrument type or clear market fields.`);
+            return;
+          }
+
+          const factorData = getEmissionFactor(country, region, year);
+          const factorValue = factorData.factor;
+          const tonsLocation = kwh * factorValue;
+          const tonsMarket = marketType ? Math.max(kwh - coveredKwh, 0) * factorValue : null;
+
+          payloads.push({
+            user_id: session.user.id,
+            company_id: companyId,
+            period_year: year,
+            period_month: month,
+            kwh,
+            location_based_emissions: tonsLocation,
+            market_based_emissions: marketType ? tonsMarket : null,
+            market_instrument_type: marketType || null,
+            covered_kwh: marketType ? coveredKwh : null,
+            emission_factor_value: factorValue,
+            emission_factor_year: factorData.year,
+            emission_factor_source: factorData.source,
+            calc_country: country,
+            calc_region: region
+          });
+        });
+
+        if (errors.length) {
+          setStatus(errors[0]);
+          return;
+        }
+        if (!payloads.length) {
+          setStatus('Add at least one complete row.');
+          return;
+        }
+
+        try {
+          const { error } = await supabase
+            .from('scope2_records')
+            .upsert(payloads, { onConflict: 'user_id,company_id,period_year,period_month' });
+          if (error) {
+            console.warn('Bulk add failed', error);
+            setStatus('Save failed. Please try again.');
+            return;
+          }
+          await refreshRecords();
+          closePanel();
+        } catch (err) {
+          console.warn('Bulk add error', err);
+          setStatus('Save failed. Please try again.');
+        }
+      });
     };
 
     // Wire slide-out Edit/Delete callbacks
@@ -621,6 +1250,16 @@
       if (exportBtn) {
         exportBtn.addEventListener('click', async () => {
           await exportFiltered();
+        });
+      }
+      if (addBtn) {
+        addBtn.addEventListener('click', () => {
+          openAddPanel();
+        });
+      }
+      if (bulkBtn) {
+        bulkBtn.addEventListener('click', () => {
+          openBulkPanel();
         });
       }
     };
