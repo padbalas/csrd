@@ -10,7 +10,7 @@ const pages = [
 ];
 
 test.describe('Mobile viewport smoke checks', () => {
-  for (const { path, heading } of pages) {
+  for (const { path, heading, allowRedirect } of pages) {
     test(`renders ${path} on mobile`, async ({ browser }) => {
       const page = await browser.newPage({ viewport: mobileViewport });
       await page.goto(path);
