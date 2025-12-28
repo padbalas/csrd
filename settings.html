@@ -105,6 +105,14 @@
                 <select id="company-region"></select>
               </div>
             </div>
+            <div>
+              <label for="company-reporting-year">Reporting year preference</label>
+              <select id="company-reporting-year">
+                <option value="all">All years</option>
+                <option value="current">Current year</option>
+                <option value="previous">Previous year</option>
+              </select>
+            </div>
             <div class="actions">
               <button class="btn primary" type="submit">Save changes</button>
               <span class="status" id="settings-status"></span>
@@ -178,6 +186,7 @@
     const nameEl = document.getElementById('company-name');
     const countryEl = document.getElementById('company-country');
     const regionEl = document.getElementById('company-region');
+    const reportingEl = document.getElementById('company-reporting-year');
     const statusEl = document.getElementById('settings-status');
 
     let companyId = null;
@@ -219,7 +228,7 @@
     const loadCompany = async () => {
       const { data, error } = await supabase
         .from('companies')
-        .select('id,company_name,country,region')
+        .select('id,company_name,country,region,reporting_year_preference')
         .order('created_at', { ascending: true })
         .limit(1);
       if (error || !data || !data.length) return;
@@ -228,6 +237,9 @@
       nameEl.value = company.company_name || '';
       countryEl.value = company.country || '';
       setRegionOptions(company.country, company.region || '');
+      if (reportingEl) {
+        reportingEl.value = company.reporting_year_preference || 'all';
+      }
     };
 
     form.addEventListener('submit', async (e) => {
@@ -240,6 +252,7 @@
       const name = nameEl.value.trim();
       const country = countryEl.value;
       const region = regionEl.value.trim() || null;
+      const reportingPref = reportingEl ? reportingEl.value : 'all';
       if (!name || !country) {
         setStatus('Company name and country are required.');
         return;
@@ -248,7 +261,8 @@
         user_id: session.user.id,
         company_name: name,
         country,
-        region
+        region,
+        reporting_year_preference: reportingPref || 'all'
       };
       try {
         if (companyId) {

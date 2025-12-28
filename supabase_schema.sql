@@ -9,6 +9,7 @@ create table if not exists public.companies (
   company_name text not null,
   country text not null,
   region text null,
+  reporting_year_preference text null default 'all',
   created_at timestamptz not null default now()
 );
 

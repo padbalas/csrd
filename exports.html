@@ -168,7 +168,7 @@
     };
 
     const fetchCompany = async () => {
-      const { data, error } = await supabase.from('companies').select('company_name,country,region').limit(1).single();
+      const { data, error } = await supabase.from('companies').select('company_name,country,region,reporting_year_preference').limit(1).single();
       if (error) return null;
       return data;
     };
@@ -198,6 +198,16 @@
         yearSelect.appendChild(opt);
       });
       yearSelect.value = current;
+    };
+
+    const applyReportingPreference = (company, years) => {
+      const pref = company?.reporting_year_preference || 'all';
+      const now = new Date().getFullYear();
+      const targetYear = pref === 'current' ? now : pref === 'previous' ? now - 1 : null;
+      if (!targetYear) return;
+      if (years.includes(targetYear)) {
+        yearSelect.value = String(targetYear);
+      }
     };
 
     const toCsv = (records, company) => {
@@ -247,6 +257,8 @@
       if (company) companyNameEl.textContent = `${company.company_name} (${company.country || ''}${company.region ? ' / ' + company.region : ''})`;
       else companyNameEl.textContent = 'Company not set';
       populateYears(records);
+      const years = Array.from(new Set((records || []).map((r) => r.period_year))).filter(Boolean);
+      applyReportingPreference(company, years);
       setStatus('');
 
       exportCsvBtn.addEventListener('click', async () => {
