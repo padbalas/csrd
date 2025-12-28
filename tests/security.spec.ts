@@ -72,7 +72,7 @@ test.describe('Session expiry handling', () => {
     await page.waitForTimeout(1500);
     const url = page.url();
     if (url.includes('records.html')) {
-      await expect(page.getByText(/Sign in on the main page to view your records|Sign in to view history/i)).toBeVisible();
+      await expect(page.getByText(/Log in on the main page to view your records|Log in to view history/i)).toBeVisible();
     } else {
       await expect(url).toContain('index.html');
     }
@@ -85,7 +85,7 @@ test.describe('Input sanitization (UI escapes)', () => {
   test('malicious strings in persona do not render HTML', async ({ page }) => {
     await page.goto('/');
     // Open sign-up modal and inject payload into company name (text field)
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.getByRole('button', { name: 'Log in' }).click();
     await page.getByRole('button', { name: 'Create account' }).click();
     const companyField = page.locator('#auth-modal').getByLabel('Company name', { exact: true }).first();
     await companyField.fill(payload);

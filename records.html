@@ -284,7 +284,7 @@
             <div style="display:flex;gap:10px;align-items:center;">
               <a class="btn secondary" href="index.html#calculator">Calculator</a>
               <a class="btn primary active" href="records.html" aria-current="page">My Records</a>
-              <button class="btn secondary" id="records-signout">Sign out</button>
+              <button class="btn secondary" id="records-signout">Log out</button>
             </div>
           </div>
           <h1>My Records</h1>
@@ -437,7 +437,7 @@
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       if (!session) {
-        showMessage('Sign in on the main page to view your records.');
+        showMessage('Log in on the main page to view your records.');
         return;
       }
       const { data, error } = await supabase
@@ -613,7 +613,7 @@
         signoutBtn.addEventListener('click', async (e) => {
           e.preventDefault();
           if (supabase) {
-            try { await supabase.auth.signOut(); } catch (err) { console.warn('Sign out failed', err); }
+            try { await supabase.auth.signOut(); } catch (err) { console.warn('Log out failed', err); }
           }
           window.location.href = 'index.html';
         });

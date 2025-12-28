@@ -27,7 +27,7 @@ test.describe('Auth flow (password)', () => {
       throw new Error(`Auth failed: ${statusText}`);
     }
 
-    // Sign out and expect redirect back to landing
+    // Log out and expect redirect back to landing
     const recordsSignout = page.locator('#records-signout');
     const headerSignout = page.locator('#header-signout');
     await page.evaluate(async () => {

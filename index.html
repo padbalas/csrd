@@ -363,8 +363,8 @@
         <div class="tag">CarbonWise</div>
         <span id="header-company" class="company-badge" style="display:none;"></span>
         <a class="btn secondary" id="header-records" href="records.html">My Records</a>
-        <button class="btn secondary" id="header-signin">Sign in</button>
-        <button class="btn secondary" id="header-signout" style="display:none;">Sign out</button>
+        <button class="btn secondary" id="header-signin">Log in</button>
+        <button class="btn secondary" id="header-signout" style="display:none;">Log out</button>
       </div>
       <h1>Carbon reporting for small teams — without the complexity</h1>
       <p class="subhead">Calculate Scope 2 emissions in minutes.</p>
@@ -540,7 +540,7 @@
         <div class="cta-row" style="margin-top:12px; justify-content:flex-start;">
           <button type="button" class="btn primary" id="save-btn">Save</button>
           <a href="records.html" class="btn secondary" id="history-link" data-page="records" style="display:none;">My history</a>
-          <button type="button" class="btn secondary" id="signout-btn" style="display:none;">Sign out</button>
+          <button type="button" class="btn secondary" id="signout-btn" style="display:none;">Log out</button>
         </div>
       </div>
       <div id="placeholder" class="muted">Your results will appear here after you calculate.</div>
@@ -557,7 +557,7 @@
       <h2>Privacy & trust</h2>
       <ul>
         <li>No uploads. We never ask for bills or PDFs.</li>
-        <li>Calculate without an account. Sign in only to save or export.</li>
+        <li>Calculate without an account. Log in only to save or export.</li>
         <li>No stored personal data. Inputs stay on your device.</li>
         <li>Emission factors from EPA / DEFRA — transparent and explainable.</li>
         <li>See our calculation methodology and disclosures at <a href="methodology.html">methodology</a>.</li>
@@ -594,14 +594,14 @@
   <div class="modal" id="auth-modal">
     <div class="modal-content">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-        <h3 id="auth-modal-title" style="margin:0;">Sign in to save & track history</h3>
+        <h3 id="auth-modal-title" style="margin:0;">Log in to save & track history</h3>
         <button type="button" class="btn secondary" id="auth-close" aria-label="Close auth modal" style="padding:8px 10px;">×</button>
       </div>
-      <p class="muted" id="auth-modal-desc">Sign in to save results and track your history. Calculations work without an account.</p>
+      <p class="muted" id="auth-modal-desc">Log in to save results and track your history. Calculations work without an account.</p>
 
       <div class="stack">
         <div class="cta-row" style="justify-content:flex-start;gap:8px;">
-          <button type="button" class="btn secondary" id="auth-tab-signin">Sign in</button>
+          <button type="button" class="btn secondary" id="auth-tab-signin">Log in</button>
           <button type="button" class="btn secondary" id="auth-tab-signup">Create account</button>
         </div>
 
@@ -619,7 +619,7 @@
               <button type="button" class="btn secondary" id="auth-cancel">Cancel</button>
               <button type="button" class="btn secondary" id="auth-forgot">Forgot password?</button>
             </div>
-            <button type="submit" class="btn primary" id="auth-submit">Sign in</button>
+            <button type="submit" class="btn primary" id="auth-submit">Log in</button>
           </div>
           <button type="button" class="btn secondary" id="auth-passcode" style="width:auto;">Use email passcode instead</button>
           <p class="muted small" id="auth-status"></p>
@@ -1118,8 +1118,8 @@
 
     const showHistorySection = () => {
       if (!appState.session) {
-        authModalTitle.textContent = 'Sign in to view history';
-        authModalDesc.textContent = 'Sign in to view saved records. Calculations work without an account.';
+        authModalTitle.textContent = 'Log in to view history';
+        authModalDesc.textContent = 'Log in to view saved records. Calculations work without an account.';
         openAuthModal('signin');
         return;
       }
@@ -1281,8 +1281,8 @@
       authStatusPasscodeHint.style.display = 'block';
     });
     headerSignIn.addEventListener('click', () => {
-      authModalTitle.textContent = 'Sign in to save & track history';
-      authModalDesc.textContent = 'Sign in to save results and track your history. Calculations work without an account.';
+      authModalTitle.textContent = 'Log in to save & track history';
+      authModalDesc.textContent = 'Log in to save results and track your history. Calculations work without an account.';
       openAuthModal('signin');
     });
     authSubmitUpdate.addEventListener('click', async (e) => {
@@ -1326,8 +1326,8 @@
 
     const handleSaveFlow = async () => {
       if (!appState.session) {
-        authModalTitle.textContent = 'Sign in to save & track history';
-        authModalDesc.textContent = 'Sign in to save results and track your history. Calculations work without an account.';
+        authModalTitle.textContent = 'Log in to save & track history';
+        authModalDesc.textContent = 'Log in to save results and track your history. Calculations work without an account.';
         openAuthModal('signin');
         appState.saving = true;
         return;

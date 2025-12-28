@@ -17,7 +17,7 @@ test.describe('Authenticated flows', () => {
   test('records page accessible when signed in', async ({ page }) => {
     await page.goto('/records.html');
     await expect(page.getByRole('heading', { name: 'Carbon Snapshot (YTD)' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
   });
 
   test('exports page accessible and CSV action enabled', async ({ page }) => {

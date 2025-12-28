@@ -136,7 +136,7 @@ test.describe('Mutating flows (opt-in)', () => {
       }
     };
 
-    // Sign in as primary (global storage state already does, but ensure session)
+    // Log in as primary (global storage state already does, but ensure session)
     await page.goto('/');
     // Create a marker record
     const form = page.locator('form#carbon-form');
@@ -163,10 +163,10 @@ test.describe('Mutating flows (opt-in)', () => {
     }, markerKwh);
     if (!markerId) test.skip(true, 'Marker record not found in local cache');
 
-    // Sign out primary
+    // Log out primary
     await signOut();
 
-    // Sign in as secondary
+    // Log in as secondary
     await page.goto('/');
     await page.locator('#header-signin').click();
     await page.locator('#auth-email').fill(secondaryEmail!);
