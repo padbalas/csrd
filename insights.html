@@ -35,10 +35,22 @@
     .filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
     label { font-weight: 600; display: block; margin-bottom: 4px; color: var(--muted); }
     select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--line); font-size: 1rem; background: #fff; }
-    .table { width: 100%; border-collapse: collapse; }
-    .table th, .table td { text-align: left; padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-    .table th { font-size: 0.9rem; color: var(--muted); }
     .kpi { font-weight: 700; }
+    .kpi-grid { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .kpi-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #f8fafc; }
+    .kpi-card .label { color: var(--muted); font-size: 0.9rem; }
+    .kpi-card .value { font-size: 1.3rem; font-weight: 800; margin-top: 6px; }
+    .sparkline { width: 100%; height: 80px; }
+    .sparkline path { stroke: #0f766e; stroke-width: 2; fill: none; }
+    .sparkline circle { fill: #0f766e; }
+    .donut-wrap { display: grid; gap: 16px; grid-template-columns: minmax(160px, 220px) minmax(0, 1fr); align-items: center; }
+    .donut { width: 200px; height: 200px; }
+    .donut circle.bg { stroke: #e5e7eb; }
+    .bars { display: grid; gap: 10px; }
+    .bar-row { display: grid; gap: 6px; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 0.95rem; }
+    .bar-track { height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; background: #0f766e; border-radius: 999px; }
     .status { font-size: 0.95rem; color: var(--muted); min-height: 20px; }
 
     @media (max-width: 980px) {
@@ -61,7 +73,8 @@
       .shell { padding: 0 16px 50px; }
       .nav-items { grid-auto-flow: row; }
       .filters { flex-direction: column; align-items: stretch; }
-      .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .donut-wrap { grid-template-columns: minmax(0, 1fr); }
     }
   </style>
 </head>
@@ -100,33 +113,41 @@
           </div>
         </section>
 
-        <section class="card">
-          <h3 style="margin-top:0;">Monthly trend</h3>
-          <table class="table" aria-label="Monthly trend">
-            <thead>
-              <tr>
-                <th>Month</th>
-                <th>Total (tCO₂e)</th>
-                <th>Change vs prior</th>
-                <th>Top region</th>
-              </tr>
-            </thead>
-            <tbody id="trendBody"></tbody>
-          </table>
+        <section class="card stack">
+          <h3 style="margin:0;">Monthly trend</h3>
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="label">Total emissions</div>
+              <div class="value" id="trendTotal">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Latest month</div>
+              <div class="value" id="trendLatest">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">MoM change</div>
+              <div class="value" id="trendMoM">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Months covered</div>
+              <div class="value" id="trendMonths">—</div>
+            </div>
+          </div>
+          <svg class="sparkline" viewBox="0 0 320 80" preserveAspectRatio="none" aria-label="Monthly trend sparkline">
+            <path id="sparklinePath" d=""></path>
+            <circle id="sparklineLast" cx="0" cy="0" r="3" />
+          </svg>
         </section>
 
-        <section class="card">
-          <h3 style="margin-top:0;">Region breakdown</h3>
-          <table class="table" aria-label="Region breakdown">
-            <thead>
-              <tr>
-                <th>Region</th>
-                <th>Total (tCO₂e)</th>
-                <th>Share</th>
-              </tr>
-            </thead>
-            <tbody id="regionBody"></tbody>
-          </table>
+        <section class="card stack">
+          <h3 style="margin:0;">Region breakdown</h3>
+          <div class="donut-wrap">
+            <svg class="donut" viewBox="0 0 120 120" aria-label="Region donut chart">
+              <circle class="bg" cx="60" cy="60" r="48" stroke-width="12" fill="none"></circle>
+              <g id="donutSegments"></g>
+            </svg>
+            <div class="bars" id="regionBars"></div>
+          </div>
         </section>
       </div>
     </div>
@@ -156,10 +177,15 @@
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const yearSelect = document.getElementById('insightYear');
-    const trendBody = document.getElementById('trendBody');
-    const regionBody = document.getElementById('regionBody');
+    const trendTotal = document.getElementById('trendTotal');
+    const trendLatest = document.getElementById('trendLatest');
+    const trendMoM = document.getElementById('trendMoM');
+    const trendMonths = document.getElementById('trendMonths');
+    const sparklinePath = document.getElementById('sparklinePath');
+    const sparklineLast = document.getElementById('sparklineLast');
+    const donutSegments = document.getElementById('donutSegments');
+    const regionBars = document.getElementById('regionBars');
     const statusEl = document.getElementById('insightStatus');
-    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
     const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
 
@@ -215,44 +241,58 @@
     };
 
     const renderTrend = (records) => {
-      trendBody.innerHTML = '';
       if (!records.length) {
-        trendBody.innerHTML = '<tr><td colspan=\"4\" class=\"muted\">No records for this selection.</td></tr>';
+        trendTotal.textContent = '—';
+        trendLatest.textContent = '—';
+        trendMoM.textContent = '—';
+        trendMonths.textContent = '0';
+        sparklinePath.setAttribute('d', '');
+        sparklineLast.setAttribute('cx', '0');
+        sparklineLast.setAttribute('cy', '0');
         return;
       }
+
       const grouped = {};
       records.forEach((r) => {
         const key = `${r.period_year}-${String(r.period_month).padStart(2, '0')}`;
-        grouped[key] = grouped[key] || { total: 0, regions: {} };
-        const val = Number(r.location_based_emissions || 0);
-        grouped[key].total += val;
-        const regionLabel = `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`;
-        grouped[key].regions[regionLabel] = (grouped[key].regions[regionLabel] || 0) + val;
+        grouped[key] = grouped[key] || 0;
+        grouped[key] += Number(r.location_based_emissions || 0);
       });
       const keys = Object.keys(grouped).sort();
-      let prev = null;
-      keys.forEach((key) => {
-        const [year, month] = key.split('-');
-        const total = grouped[key].total;
-        const regions = grouped[key].regions;
-        const topRegion = Object.entries(regions).sort((a, b) => b[1] - a[1])[0];
-        const change = prev == null ? '—' : `${(((total - prev) / prev) * 100).toFixed(0)}%`;
-        prev = total;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${monthNames[Number(month) - 1]} ${year}</td>
-          <td class="kpi">${total.toFixed(3)}</td>
-          <td>${change}</td>
-          <td>${topRegion ? `${topRegion[0]} (${topRegion[1].toFixed(3)})` : '—'}</td>
-        `;
-        trendBody.appendChild(tr);
+      const values = keys.map((k) => grouped[k]);
+
+      const total = values.reduce((sum, v) => sum + v, 0);
+      const latest = values[values.length - 1];
+      const prev = values.length > 1 ? values[values.length - 2] : null;
+      const mom = prev ? `${(((latest - prev) / prev) * 100).toFixed(0)}%` : '—';
+
+      trendTotal.textContent = total.toFixed(3);
+      trendLatest.textContent = latest.toFixed(3);
+      trendMoM.textContent = mom;
+      trendMonths.textContent = String(values.length);
+
+      const max = Math.max(...values);
+      const min = Math.min(...values);
+      const range = max - min || 1;
+      const width = 320;
+      const height = 80;
+      const points = values.map((v, idx) => {
+        const x = (idx / (values.length - 1 || 1)) * (width - 8) + 4;
+        const y = height - ((v - min) / range) * (height - 16) - 8;
+        return [x, y];
       });
+      const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+      sparklinePath.setAttribute('d', path);
+      const last = points[points.length - 1];
+      sparklineLast.setAttribute('cx', last[0]);
+      sparklineLast.setAttribute('cy', last[1]);
     };
 
     const renderRegions = (records) => {
-      regionBody.innerHTML = '';
+      regionBars.innerHTML = '';
+      donutSegments.innerHTML = '';
       if (!records.length) {
-        regionBody.innerHTML = '<tr><td colspan=\"3\" class=\"muted\">No records for this selection.</td></tr>';
+        regionBars.innerHTML = '<div class="muted">No records for this selection.</div>';
         return;
       }
       const totals = {};
@@ -263,18 +303,37 @@
         totals[label] = (totals[label] || 0) + val;
         totalEmissions += val;
       });
-      Object.entries(totals)
-        .sort((a, b) => b[1] - a[1])
-        .forEach(([label, val]) => {
-          const share = totalEmissions ? (val / totalEmissions) * 100 : 0;
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${label}</td>
-            <td class="kpi">${val.toFixed(3)}</td>
-            <td>${share.toFixed(0)}%</td>
-          `;
-          regionBody.appendChild(tr);
-        });
+      const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+      const colors = ['#0f766e','#059669','#10b981','#14b8a6','#0ea5e9','#6366f1'];
+      let offset = 0;
+      const radius = 48;
+      const circumference = 2 * Math.PI * radius;
+
+      sorted.forEach(([label, val], idx) => {
+        const share = totalEmissions ? val / totalEmissions : 0;
+        const dash = share * circumference;
+        const color = colors[idx % colors.length];
+        const segment = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        segment.setAttribute('cx', '60');
+        segment.setAttribute('cy', '60');
+        segment.setAttribute('r', String(radius));
+        segment.setAttribute('fill', 'none');
+        segment.setAttribute('stroke', color);
+        segment.setAttribute('stroke-width', '12');
+        segment.setAttribute('stroke-dasharray', `${dash} ${circumference - dash}`);
+        segment.setAttribute('stroke-dashoffset', String(-offset));
+        segment.setAttribute('stroke-linecap', 'butt');
+        donutSegments.appendChild(segment);
+        offset += dash;
+
+        const row = document.createElement('div');
+        row.className = 'bar-row';
+        row.innerHTML = `
+          <div class="bar-label"><span>${label}</span><span>${(share * 100).toFixed(0)}%</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(share * 100).toFixed(2)}%;background:${color};"></div></div>
+        `;
+        regionBars.appendChild(row);
+      });
     };
 
     const applyFilters = (records) => {
