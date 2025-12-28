@@ -281,6 +281,34 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
     )
   ).filter(Boolean);
 
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const formatMissingRanges = (months, year, regionLabel) => {
+    const sorted = Array.from(new Set(months)).sort((a, b) => a - b);
+    const ranges = [];
+    let start = null;
+    let prev = null;
+    sorted.forEach((m) => {
+      if (start === null) {
+        start = m;
+        prev = m;
+        return;
+      }
+      if (m === prev + 1) {
+        prev = m;
+        return;
+      }
+      ranges.push([start, prev]);
+      start = m;
+      prev = m;
+    });
+    if (start !== null) ranges.push([start, prev]);
+
+    ranges.forEach(([s, e]) => {
+      const rangeLabel = s === e ? `${monthNames[s - 1]} ${year}` : `${monthNames[s - 1]}–${monthNames[e - 1]} ${year}`;
+      reminders.push({ type: 'missing', text: `Missing ${rangeLabel} (${regionLabel}).` });
+    });
+  };
+
   // Detect missing months in sequence
   if (targetYear) {
     const maxMonth = targetYear === currentYear ? now.getMonth() + 1 : 12;
@@ -292,12 +320,12 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
           .map((r) => `${r.period_year || r.year}-${String(r.period_month || r.month).padStart(2, '0')}`)
           .filter((k) => k.startsWith(`${targetYear}-`))
       );
+      const missing = [];
       for (let m = 1; m <= maxMonth; m += 1) {
         const key = `${targetYear}-${String(m).padStart(2, '0')}`;
-        if (!seen.has(key)) {
-          reminders.push({ type: 'missing', text: `You haven’t added electricity data for ${String(m).padStart(2, '0')}/${targetYear} (${regionLabel}).` });
-        }
+        if (!seen.has(key)) missing.push(m);
       }
+      if (missing.length) formatMissingRanges(missing, targetYear, regionLabel);
     });
   } else if (uniqueMonths.length) {
     const regionList = filterRegionLabel ? [filterRegionLabel] : regionsPresent;
@@ -309,19 +337,21 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
       if (!regionMonths.length) return;
       const [startYear, startMonth] = regionMonths[0].split('-').map((v) => parseInt(v, 10));
       const [endYear, endMonth] = regionMonths[regionMonths.length - 1].split('-').map((v) => parseInt(v, 10));
-      const missing = [];
+      const missingByYear = {};
       let y = startYear;
       let m = startMonth;
       const seen = new Set(regionMonths);
       while (y < endYear || (y === endYear && m <= endMonth)) {
         const key = `${y}-${String(m).padStart(2, '0')}`;
-        if (!seen.has(key)) missing.push(key);
+        if (!seen.has(key)) {
+          if (!missingByYear[y]) missingByYear[y] = [];
+          missingByYear[y].push(m);
+        }
         m += 1;
         if (m > 12) { m = 1; y += 1; }
       }
-      missing.forEach((k) => {
-        const [yr, mo] = k.split('-');
-        reminders.push({ type: 'missing', text: `You haven’t added electricity data for ${mo}/${yr} (${regionLabel}).` });
+      Object.entries(missingByYear).forEach(([yr, months]) => {
+        if (months.length) formatMissingRanges(months, Number(yr), regionLabel);
       });
     });
   }
