@@ -58,9 +58,9 @@ create policy "Scope2 records scoped to owner (update)" on public.scope2_records
 create policy "Scope2 records scoped to owner (delete)" on public.scope2_records
   for delete using (auth.uid() = user_id);
 
--- Prevent duplicate periods per company/user
+-- Prevent duplicate periods per company/user/region
 create unique index if not exists scope2_records_unique_period
-  on public.scope2_records(user_id, company_id, period_year, period_month);
+  on public.scope2_records(user_id, company_id, period_year, period_month, calc_country, calc_region);
 
 -- Helpful index for history listing
 create index if not exists scope2_records_user_created_idx

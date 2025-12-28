@@ -930,7 +930,7 @@
           };
           const { error } = await supabase
             .from('scope2_records')
-            .upsert([payload], { onConflict: 'user_id,company_id,period_year,period_month' });
+            .upsert([payload], { onConflict: 'user_id,company_id,period_year,period_month,calc_country,calc_region' });
           if (error) {
             console.warn('Add record failed', error);
             setStatus('Save failed. Please try again.');
@@ -1152,7 +1152,7 @@
         try {
           const { error } = await supabase
             .from('scope2_records')
-            .upsert(payloads, { onConflict: 'user_id,company_id,period_year,period_month' });
+            .upsert(payloads, { onConflict: 'user_id,company_id,period_year,period_month,calc_country,calc_region' });
           if (error) {
             console.warn('Bulk add failed', error);
             setStatus('Save failed. Please try again.');

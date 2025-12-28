@@ -1506,7 +1506,7 @@
       };
       const { error } = await supabase
         .from('scope2_records')
-        .upsert([payload], { onConflict: 'user_id,company_id,period_year,period_month' });
+        .upsert([payload], { onConflict: 'user_id,company_id,period_year,period_month,calc_country,calc_region' });
       if (error) {
         alert('Save failed. Please try again.');
         return;
