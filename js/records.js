@@ -259,8 +259,8 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
   const filterYear = document.getElementById('filterYear')?.value || '';
   const filterCountry = document.getElementById('filterCountry')?.value || '';
   const filterRegion = document.getElementById('filterRegion')?.value || '';
-  const filterRegionLabel = filterCountry
-    ? `${filterCountry}${filterRegion ? ' / ' + filterRegion : ''}`
+  const filterRegionLabel = filterCountry && filterRegion
+    ? `${filterCountry} / ${filterRegion}`
     : '';
   const pref = typeof window !== 'undefined' ? window.companyReportingPreference : null;
   const now = new Date();
@@ -280,6 +280,9 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
       records.map((r) => `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`)
     )
   ).filter(Boolean);
+  const regionsForCountry = filterCountry
+    ? regionsPresent.filter((label) => label.startsWith(`${filterCountry} / `))
+    : [];
 
   const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const formatMissingRanges = (months, year, regionLabel) => {
@@ -312,7 +315,11 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
   // Detect missing months in sequence
   if (targetYear) {
     const maxMonth = targetYear === currentYear ? now.getMonth() + 1 : 12;
-    const regionList = filterRegionLabel ? [filterRegionLabel] : regionsPresent;
+    const regionList = filterRegionLabel
+      ? [filterRegionLabel]
+      : filterCountry
+        ? regionsForCountry
+        : regionsPresent;
     regionList.forEach((regionLabel) => {
       const seen = new Set(
         records
@@ -328,7 +335,11 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
       if (missing.length) formatMissingRanges(missing, targetYear, regionLabel);
     });
   } else if (uniqueMonths.length) {
-    const regionList = filterRegionLabel ? [filterRegionLabel] : regionsPresent;
+    const regionList = filterRegionLabel
+      ? [filterRegionLabel]
+      : filterCountry
+        ? regionsForCountry
+        : regionsPresent;
     regionList.forEach((regionLabel) => {
       const regionMonths = records
         .filter((r) => (r.calc_country || '—') + (r.calc_region ? ' / ' + r.calc_region : '') === regionLabel)
