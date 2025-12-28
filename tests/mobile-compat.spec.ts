@@ -14,7 +14,13 @@ test.describe('Mobile viewport smoke checks', () => {
     test(`renders ${path} on mobile`, async ({ browser }) => {
       const page = await browser.newPage({ viewport: mobileViewport });
       await page.goto(path);
-      if (page.url().includes('index.html')) {
+      let redirectedToLanding = false;
+      try {
+        await page.waitForURL(/\/(index\.html)?$/, { timeout: 5000 });
+        redirectedToLanding = true;
+      } catch {}
+
+      if (redirectedToLanding) {
         await expect(page.getByRole('heading', { name: /Carbon reporting/i })).toBeVisible();
       } else {
         await expect(page.getByRole('heading', { name: heading })).toBeVisible();
