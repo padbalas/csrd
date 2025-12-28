@@ -4,17 +4,17 @@ const mobileViewport = { width: 390, height: 844 };
 
 const pages = [
   { path: '/', heading: /Carbon reporting/i },
-  { path: '/records.html', heading: /My Records/i, allowRedirect: true },
-  { path: '/exports.html', heading: /Export \/ Reports/i, allowRedirect: true },
+  { path: '/records.html', heading: /My Records/i },
+  { path: '/exports.html', heading: /Export \/ Reports/i },
   { path: '/methodology.html', heading: /Methodology/i },
 ];
 
 test.describe('Mobile viewport smoke checks', () => {
-  for (const { path, heading, allowRedirect } of pages) {
+  for (const { path, heading } of pages) {
     test(`renders ${path} on mobile`, async ({ browser }) => {
       const page = await browser.newPage({ viewport: mobileViewport });
       await page.goto(path);
-      if (allowRedirect && page.url().includes('index.html')) {
+      if (page.url().includes('index.html')) {
         await expect(page.getByRole('heading', { name: /Carbon reporting/i })).toBeVisible();
       } else {
         await expect(page.getByRole('heading', { name: heading })).toBeVisible();
