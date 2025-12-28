@@ -332,7 +332,6 @@
           <div class="top-row">
             <div class="tag">CarbonWise</div>
             <div style="display:flex;gap:10px;align-items:center;">
-              <a class="btn secondary" href="index.html#calculator">Calculator</a>
               <a class="btn primary active" href="records.html" aria-current="page">My Records</a>
               <button class="btn secondary" id="records-signout">Log out</button>
             </div>
@@ -620,7 +619,7 @@
       if (window.renderCarbonSummary) window.renderCarbonSummary();
       if (window.renderCarbonReminders) window.renderCarbonReminders();
       if (!data || !data.length) {
-        showMessage('No records yet. Save from the calculator page.');
+        showMessage('No records yet. Add one to get started.');
       }
     };
 
@@ -904,7 +903,7 @@
         }
         const companyId = await getCompanyId(session);
         if (!companyId) {
-          setStatus('Company profile missing. Add it on the calculator page.');
+          setStatus('Company profile missing. Add it from the main page.');
           return;
         }
 
@@ -1073,7 +1072,7 @@
         }
         const companyId = await getCompanyId(session);
         if (!companyId) {
-          setStatus('Company profile missing. Add it on the calculator page.');
+          setStatus('Company profile missing. Add it from the main page.');
           return;
         }
 
