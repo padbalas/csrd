@@ -9,6 +9,10 @@ const hasAuthState = fs.existsSync(storagePath);
 test.describe('Authenticated flows', () => {
   test.skip(!hasAuthState, 'Requires CW_EMAIL and CW_PASSWORD to generate auth-state.json');
   test.use({ storageState: storagePath });
+  const isLandingPage = (currentUrl: string) => {
+    const pathname = new URL(currentUrl).pathname;
+    return pathname === '/' || pathname.endsWith('/index.html');
+  };
 
   test('records page accessible when signed in', async ({ page }) => {
     await page.goto('/records.html');
@@ -18,7 +22,7 @@ test.describe('Authenticated flows', () => {
 
   test('exports page accessible and CSV action enabled', async ({ page }) => {
     await page.goto('/exports.html');
-    if (page.url().includes('index.html')) {
+    if (isLandingPage(page.url())) {
       test.skip(true, 'Auth state missing for exports page');
     }
     await expect(page.getByRole('heading', { name: 'Export / Reports' })).toBeVisible();
@@ -28,7 +32,7 @@ test.describe('Authenticated flows', () => {
 
   test('records list supports viewing details and filtered CSV export with disclosure', async ({ page }) => {
     await page.goto('/records.html');
-    if (page.url().includes('index.html')) {
+    if (isLandingPage(page.url())) {
       test.skip(true, 'Auth state missing for records page');
     }
     const viewBtn = page.getByRole('button', { name: 'View' });
@@ -37,6 +41,8 @@ test.describe('Authenticated flows', () => {
     // Open first record slide-out
     await viewBtn.first().click();
     await expect(page.getByText(/Record details/i)).toBeVisible();
+    await page.getByRole('button', { name: '×' }).click();
+    await expect(page.locator('#recordPanel')).toHaveClass(/hidden/);
 
     // Export CSV and confirm disclosure present
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
@@ -61,7 +67,7 @@ test.describe('Authenticated flows', () => {
 
   test('exports page CSV includes disclosure line', async ({ page }) => {
     await page.goto('/exports.html');
-    if (page.url().includes('index.html')) {
+    if (isLandingPage(page.url())) {
       test.skip(true, 'Auth state missing for exports page');
     }
     await expect(page.getByRole('heading', { name: 'Export / Reports' })).toBeVisible();
