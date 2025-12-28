@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CarbonWise | Insights</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #4b5563;
+      --line: #e5e7eb;
+      --card: #ffffff;
+      --bg: #f7f8fb;
+      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    .app-layout { display: flex; min-height: 100vh; background: var(--bg); }
+    .side-nav { width: 230px; padding: 24px 18px; background: #0b1220; color: #e5e7eb; border-right: 1px solid #111827; position: sticky; top: 0; height: 100vh; box-sizing: border-box; }
+    .nav-items { display: grid; gap: 6px; }
+    .nav-item { display: block; padding: 10px 12px; border-radius: 10px; color: #e5e7eb; text-decoration: none; font-weight: 600; }
+    .nav-item:hover:not(.disabled) { background: rgba(255,255,255,0.08); }
+    .nav-item.active { background: rgba(34,197,94,0.18); color: #fff; border: 1px solid rgba(34,197,94,0.4); }
+    .nav-item.disabled { opacity: 0.5; cursor: default; }
+    .app-content { flex: 1; min-width: 0; }
+    header { padding: 32px 20px 12px; color: #0f172a; }
+    .shell { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+    .top-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .tag { display: inline-block; padding: 6px 10px; background: #e0f2f1; color: #0f766e; border-radius: 999px; font-weight: 600; font-size: 0.9rem; }
+    h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 36px); letter-spacing: -0.01em; }
+    p.muted { color: var(--muted); margin: 0 0 12px; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 12px 30px rgba(15,23,42,0.08); }
+    .stack { display: grid; gap: 12px; }
+    .filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    label { font-weight: 600; display: block; margin-bottom: 4px; color: var(--muted); }
+    select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--line); font-size: 1rem; background: #fff; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { text-align: left; padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .table th { font-size: 0.9rem; color: var(--muted); }
+    .kpi { font-weight: 700; }
+    .status { font-size: 0.95rem; color: var(--muted); min-height: 20px; }
+
+    @media (max-width: 980px) {
+      .app-layout { flex-direction: column; }
+      .side-nav {
+        width: 100%;
+        height: auto;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        border-right: none;
+        border-bottom: 1px solid #111827;
+      }
+      .nav-items { grid-auto-flow: column; grid-auto-columns: minmax(120px, 1fr); }
+      header { padding: 24px 20px 10px; }
+      .top-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+
+    @media (max-width: 680px) {
+      .shell { padding: 0 16px 50px; }
+      .nav-items { grid-auto-flow: row; }
+      .filters { flex-direction: column; align-items: stretch; }
+      .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="side-nav">
+      <nav class="nav-items">
+        <a href="records.html" class="nav-item" data-nav="records">My Records</a>
+        <a href="insights.html" class="nav-item active" data-nav="insights">Insights</a>
+        <a href="exports.html" class="nav-item" data-nav="export">Export / Reports</a>
+        <a href="settings.html" class="nav-item" data-nav="settings">Settings</a>
+      </nav>
+    </aside>
+    <div class="app-content">
+      <header>
+        <div class="shell">
+          <div class="top-row">
+            <div class="tag">CarbonWise</div>
+            <div class="muted">Trends and regional breakdowns</div>
+          </div>
+          <h1>Insights</h1>
+          <p class="muted">Monthly trends and regional contributors based on your saved records.</p>
+        </div>
+      </header>
+
+      <div class="shell stack">
+        <section class="card">
+          <div class="filters">
+            <div>
+              <label for="insightYear">Reporting year</label>
+              <select id="insightYear">
+                <option value="">All years</option>
+              </select>
+            </div>
+            <div class="status" id="insightStatus"></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0;">Monthly trend</h3>
+          <table class="table" aria-label="Monthly trend">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Total (tCO₂e)</th>
+                <th>Change vs prior</th>
+                <th>Top region</th>
+              </tr>
+            </thead>
+            <tbody id="trendBody"></tbody>
+          </table>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0;">Region breakdown</h3>
+          <table class="table" aria-label="Region breakdown">
+            <thead>
+              <tr>
+                <th>Region</th>
+                <th>Total (tCO₂e)</th>
+                <th>Share</th>
+              </tr>
+            </thead>
+            <tbody id="regionBody"></tbody>
+          </table>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function setActiveNav() {
+      const path = window.location.pathname;
+      document.querySelectorAll('.nav-item').forEach((link) => {
+        const href = link.getAttribute('href');
+        if (href && path.includes(href)) {
+          link.classList.add('active');
+        }
+      });
+      document.querySelectorAll('.nav-item.disabled').forEach((link) => {
+        link.addEventListener('click', (e) => e.preventDefault());
+      });
+    })();
+  </script>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const STORAGE_KEY = 'cw_records';
+    const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
+    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const yearSelect = document.getElementById('insightYear');
+    const trendBody = document.getElementById('trendBody');
+    const regionBody = document.getElementById('regionBody');
+    const statusEl = document.getElementById('insightStatus');
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+    const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+
+    const loadRecords = () => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    };
+
+    const saveRecords = (records = []) => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+      } catch {
+        /* ignore */
+      }
+      return records;
+    };
+
+    const requireAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session) {
+        window.location.href = 'index.html';
+        return null;
+      }
+      return data.session;
+    };
+
+    const fetchRecords = async () => {
+      const { data, error } = await supabase
+        .from('scope2_records')
+        .select('period_year,period_month,location_based_emissions,calc_country,calc_region')
+        .order('period_year', { ascending: false })
+        .order('period_month', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    };
+
+    const populateYears = (records) => {
+      const years = Array.from(new Set(records.map((r) => r.period_year))).filter(Boolean).sort((a, b) => b - a);
+      const current = yearSelect.value;
+      yearSelect.innerHTML = '<option value=\"\">All years</option>';
+      years.forEach((y) => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+      });
+      yearSelect.value = current;
+    };
+
+    const renderTrend = (records) => {
+      trendBody.innerHTML = '';
+      if (!records.length) {
+        trendBody.innerHTML = '<tr><td colspan=\"4\" class=\"muted\">No records for this selection.</td></tr>';
+        return;
+      }
+      const grouped = {};
+      records.forEach((r) => {
+        const key = `${r.period_year}-${String(r.period_month).padStart(2, '0')}`;
+        grouped[key] = grouped[key] || { total: 0, regions: {} };
+        const val = Number(r.location_based_emissions || 0);
+        grouped[key].total += val;
+        const regionLabel = `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`;
+        grouped[key].regions[regionLabel] = (grouped[key].regions[regionLabel] || 0) + val;
+      });
+      const keys = Object.keys(grouped).sort();
+      let prev = null;
+      keys.forEach((key) => {
+        const [year, month] = key.split('-');
+        const total = grouped[key].total;
+        const regions = grouped[key].regions;
+        const topRegion = Object.entries(regions).sort((a, b) => b[1] - a[1])[0];
+        const change = prev == null ? '—' : `${(((total - prev) / prev) * 100).toFixed(0)}%`;
+        prev = total;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${monthNames[Number(month) - 1]} ${year}</td>
+          <td class="kpi">${total.toFixed(3)}</td>
+          <td>${change}</td>
+          <td>${topRegion ? `${topRegion[0]} (${topRegion[1].toFixed(3)})` : '—'}</td>
+        `;
+        trendBody.appendChild(tr);
+      });
+    };
+
+    const renderRegions = (records) => {
+      regionBody.innerHTML = '';
+      if (!records.length) {
+        regionBody.innerHTML = '<tr><td colspan=\"3\" class=\"muted\">No records for this selection.</td></tr>';
+        return;
+      }
+      const totals = {};
+      let totalEmissions = 0;
+      records.forEach((r) => {
+        const label = `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`;
+        const val = Number(r.location_based_emissions || 0);
+        totals[label] = (totals[label] || 0) + val;
+        totalEmissions += val;
+      });
+      Object.entries(totals)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([label, val]) => {
+          const share = totalEmissions ? (val / totalEmissions) * 100 : 0;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${label}</td>
+            <td class="kpi">${val.toFixed(3)}</td>
+            <td>${share.toFixed(0)}%</td>
+          `;
+          regionBody.appendChild(tr);
+        });
+    };
+
+    const applyFilters = (records) => {
+      const year = yearSelect.value;
+      if (!year) return records;
+      return records.filter((r) => String(r.period_year) === year);
+    };
+
+    const renderAll = (records) => {
+      const filtered = applyFilters(records);
+      renderTrend(filtered);
+      renderRegions(filtered);
+    };
+
+    (async () => {
+      setStatus('Checking access…');
+      const session = await requireAuth();
+      if (!session) return;
+      try {
+        const records = await fetchRecords();
+        saveRecords(records);
+        populateYears(records);
+        renderAll(records);
+        setStatus('');
+      } catch (err) {
+        console.warn('Insights load error', err);
+        const cached = loadRecords();
+        populateYears(cached);
+        renderAll(cached);
+        setStatus('Showing cached data.');
+      }
+    })();
+
+    yearSelect.addEventListener('change', () => {
+      const records = loadRecords();
+      renderAll(records);
+    });
+  </script>
+</body>
+</html>
