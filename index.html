@@ -598,7 +598,6 @@
           </div>
           <div class="modal-actions" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
             <div style="display:flex;gap:8px;align-items:center;">
-              <button type="button" class="btn secondary" id="auth-cancel">Cancel</button>
               <button type="button" class="btn secondary" id="auth-forgot">Forgot password?</button>
             </div>
             <button type="submit" class="btn primary" id="auth-submit">Log in</button>
@@ -835,7 +834,6 @@
     const recordsSignout = document.getElementById('records-signout');
     const authModal = document.getElementById('auth-modal');
     const authEmail = document.getElementById('auth-email');
-    const authCancel = document.getElementById('auth-cancel');
     const authStatus = document.getElementById('auth-status');
     const companyForm = document.getElementById('company-form');
     const companyName = document.getElementById('company-name');
@@ -1196,9 +1194,6 @@
       authStatusReset.textContent = 'We’ve sent you a password reset link.';
     });
 
-    authCancel.addEventListener('click', () => {
-      closeAuthModal();
-    });
     authClose.addEventListener('click', () => {
       closeAuthModal();
     });
