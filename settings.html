@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CarbonWise | Settings</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #4b5563;
+      --line: #e5e7eb;
+      --card: #ffffff;
+      --bg: #f7f8fb;
+      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    .app-layout { display: flex; min-height: 100vh; background: var(--bg); }
+    .side-nav { width: 230px; padding: 24px 18px; background: #0b1220; color: #e5e7eb; border-right: 1px solid #111827; position: sticky; top: 0; height: 100vh; box-sizing: border-box; }
+    .nav-items { display: grid; gap: 6px; }
+    .nav-item { display: block; padding: 10px 12px; border-radius: 10px; color: #e5e7eb; text-decoration: none; font-weight: 600; }
+    .nav-item:hover:not(.disabled) { background: rgba(255,255,255,0.08); }
+    .nav-item.active { background: rgba(34,197,94,0.18); color: #fff; border: 1px solid rgba(34,197,94,0.4); }
+    .nav-item.disabled { opacity: 0.5; cursor: default; }
+    .app-content { flex: 1; min-width: 0; }
+    header { padding: 32px 20px 12px; color: #0f172a; }
+    .shell { max-width: 900px; margin: 0 auto; padding: 0 20px 60px; }
+    .top-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .tag { display: inline-block; padding: 6px 10px; background: #e0f2f1; color: #0f766e; border-radius: 999px; font-weight: 600; font-size: 0.9rem; }
+    h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 36px); letter-spacing: -0.01em; }
+    p.muted { color: var(--muted); margin: 0 0 12px; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 12px 30px rgba(15,23,42,0.08); }
+    .stack { display: grid; gap: 12px; }
+    .row { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    label { font-weight: 600; display: block; margin-bottom: 4px; color: var(--muted); }
+    input, select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--line); font-size: 1rem; background: #fff; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 14px; border-radius: 12px; border: 1px solid transparent; font-weight: 700; text-decoration: none; cursor: pointer; color: inherit; }
+    .btn.primary { background: #22c55e; color: #0f172a; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .status { font-size: 0.95rem; color: var(--muted); min-height: 20px; }
+
+    @media (max-width: 980px) {
+      .app-layout { flex-direction: column; }
+      .side-nav {
+        width: 100%;
+        height: auto;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        border-right: none;
+        border-bottom: 1px solid #111827;
+      }
+      .nav-items { grid-auto-flow: column; grid-auto-columns: minmax(120px, 1fr); }
+      header { padding: 24px 20px 10px; }
+      .top-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+
+    @media (max-width: 680px) {
+      .shell { padding: 0 16px 50px; }
+      .nav-items { grid-auto-flow: row; }
+      .row { grid-template-columns: minmax(0, 1fr); }
+      .actions { flex-direction: column; align-items: stretch; }
+      .actions .btn { width: 100%; }
+      .status { min-height: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="side-nav">
+      <nav class="nav-items">
+        <a href="records.html" class="nav-item" data-nav="records">My Records</a>
+        <a href="#" class="nav-item disabled" data-nav="insights">Insights</a>
+        <a href="exports.html" class="nav-item" data-nav="export">Export / Reports</a>
+        <a href="settings.html" class="nav-item active" data-nav="settings">Settings</a>
+      </nav>
+    </aside>
+    <div class="app-content">
+      <header>
+        <div class="shell">
+          <div class="top-row">
+            <div class="tag">CarbonWise</div>
+            <div class="muted">Company profile</div>
+          </div>
+          <h1>Settings</h1>
+          <p class="muted">Update the company information used in records and exports.</p>
+        </div>
+      </header>
+
+      <div class="shell">
+        <section class="card stack">
+          <form id="company-form" class="stack">
+            <div>
+              <label for="company-name">Company name</label>
+              <input type="text" id="company-name" required placeholder="Acme Co." />
+            </div>
+            <div class="row">
+              <div>
+                <label for="company-country">Country / region</label>
+                <select id="company-country" required></select>
+              </div>
+              <div>
+                <label for="company-region">State / region (optional)</label>
+                <select id="company-region"></select>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn primary" type="submit">Save changes</button>
+              <span class="status" id="settings-status"></span>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function setActiveNav() {
+      const path = window.location.pathname;
+      document.querySelectorAll('.nav-item').forEach((link) => {
+        const href = link.getAttribute('href');
+        if (href && path.includes(href)) {
+          link.classList.add('active');
+        }
+      });
+      document.querySelectorAll('.nav-item.disabled').forEach((link) => {
+        link.addEventListener('click', (e) => e.preventDefault());
+      });
+    })();
+  </script>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
+    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const COUNTRY_OPTIONS = [
+      { value: 'US', label: 'United States' },
+      { value: 'CA', label: 'Canada' },
+      { value: 'UK', label: 'United Kingdom' },
+      { value: 'AU', label: 'Australia' },
+      { value: 'SG', label: 'Singapore' },
+      { value: 'NZ', label: 'New Zealand' }
+    ];
+    const REGION_OPTIONS = {
+      US: [
+        "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","District of Columbia",
+        "Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine",
+        "Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada",
+        "New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma",
+        "Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont",
+        "Virginia","Washington","West Virginia","Wisconsin","Wyoming"
+      ],
+      CA: [
+        "Alberta","British Columbia","Manitoba","New Brunswick","Newfoundland and Labrador","Northwest Territories",
+        "Nova Scotia","Nunavut","Ontario","Prince Edward Island","Quebec","Saskatchewan","Yukon"
+      ],
+      UK: [
+        "England","Northern Ireland","Scotland","Wales"
+      ],
+      AU: [
+        "New South Wales","Victoria","Queensland","Western Australia","South Australia",
+        "Tasmania","Australian Capital Territory","Northern Territory"
+      ],
+      SG: [
+        "Singapore"
+      ],
+      NZ: [
+        "Auckland","Bay of Plenty","Canterbury","Gisborne","Hawke's Bay","Manawatu-Whanganui","Marlborough",
+        "Nelson","Northland","Otago","Southland","Taranaki","Tasman","Waikato","Wellington","West Coast"
+      ]
+    };
+
+    const form = document.getElementById('company-form');
+    const nameEl = document.getElementById('company-name');
+    const countryEl = document.getElementById('company-country');
+    const regionEl = document.getElementById('company-region');
+    const statusEl = document.getElementById('settings-status');
+
+    let companyId = null;
+    let session = null;
+
+    const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+
+    const populateCountries = () => {
+      countryEl.innerHTML = '<option value="">Select country</option>';
+      COUNTRY_OPTIONS.forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c.value;
+        opt.textContent = c.label;
+        countryEl.appendChild(opt);
+      });
+    };
+
+    const setRegionOptions = (country, selected = '') => {
+      const opts = REGION_OPTIONS[country] || [];
+      regionEl.innerHTML = '<option value="">Select region</option>';
+      opts.forEach((name) => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        regionEl.appendChild(opt);
+      });
+      if (selected) regionEl.value = selected;
+    };
+
+    const requireAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session) {
+        window.location.href = 'index.html';
+        return null;
+      }
+      return data.session;
+    };
+
+    const loadCompany = async () => {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id,company_name,country,region')
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (error || !data || !data.length) return;
+      const company = data[0];
+      companyId = company.id;
+      nameEl.value = company.company_name || '';
+      countryEl.value = company.country || '';
+      setRegionOptions(company.country, company.region || '');
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setStatus('');
+      if (!session) {
+        window.location.href = 'index.html';
+        return;
+      }
+      const name = nameEl.value.trim();
+      const country = countryEl.value;
+      const region = regionEl.value.trim() || null;
+      if (!name || !country) {
+        setStatus('Company name and country are required.');
+        return;
+      }
+      const payload = {
+        user_id: session.user.id,
+        company_name: name,
+        country,
+        region
+      };
+      try {
+        if (companyId) {
+          const { error } = await supabase.from('companies').update(payload).eq('id', companyId);
+          if (error) throw error;
+        } else {
+          const { data, error } = await supabase.from('companies').insert(payload).select('id').single();
+          if (error) throw error;
+          companyId = data?.id || null;
+        }
+        setStatus('Saved.');
+      } catch (err) {
+        console.warn('Settings save failed', err);
+        setStatus('Save failed. Please try again.');
+      }
+    });
+
+    (async () => {
+      populateCountries();
+      setRegionOptions('');
+      session = await requireAuth();
+      if (!session) return;
+      await loadCompany();
+      countryEl.addEventListener('change', () => setRegionOptions(countryEl.value));
+    })();
+  </script>
+</body>
+</html>
