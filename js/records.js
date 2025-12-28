@@ -257,6 +257,12 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
 
   const reminders = [];
   const filterYear = document.getElementById('filterYear')?.value || '';
+  const filterCountry = document.getElementById('filterCountry')?.value || '';
+  const filterRegion = document.getElementById('filterRegion')?.value || '';
+  const regionLabel = filterCountry
+    ? `${filterCountry}${filterRegion ? ' / ' + filterRegion : ''}`
+    : '';
+  const regionSuffix = regionLabel ? ` (${regionLabel})` : '';
   const pref = typeof window !== 'undefined' ? window.companyReportingPreference : null;
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -278,7 +284,7 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
     for (let m = 1; m <= maxMonth; m += 1) {
       const key = `${targetYear}-${String(m).padStart(2, '0')}`;
       if (!seen.has(key)) {
-        reminders.push({ type: 'missing', text: `You haven’t added electricity data for ${String(m).padStart(2, '0')}/${targetYear}.` });
+        reminders.push({ type: 'missing', text: `You haven’t added electricity data for ${String(m).padStart(2, '0')}/${targetYear}.${regionSuffix}` });
       }
     }
   } else if (uniqueMonths.length) {
@@ -296,7 +302,7 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
     }
     missing.forEach((k) => {
       const [yr, mo] = k.split('-');
-      reminders.push({ type: 'missing', text: `You haven’t added electricity data for ${mo}/${yr}.` });
+      reminders.push({ type: 'missing', text: `You haven’t added electricity data for ${mo}/${yr}.${regionSuffix}` });
     });
   }
 
