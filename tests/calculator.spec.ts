@@ -140,7 +140,7 @@ test.describe('Calculator (index)', () => {
     await fillBaseForm(page, { kwh: 800 });
     await page.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     await expect(page.locator('#result-container')).toHaveClass(/active/);
-    await page.getByRole('button', { name: /Save Scope 2 electricity record/i }).click();
+    await page.getByRole('button', { name: /^Save record$/i }).click();
     await expect(page.locator('#auth-modal')).toHaveClass(/active/);
   });
 });

@@ -72,7 +72,7 @@ test.describe('Session expiry handling', () => {
     await page.waitForTimeout(1500);
     const url = page.url();
     if (url.includes('records.html')) {
-      await expect(page.getByText(/Log in on the main page to view your Scope 2 electricity records|Log in to view history|No Scope 2 electricity records match these filters/i)).toBeVisible();
+      await expect(page.getByText(/Log in on the main page to view your records|Log in to view history|No records match these filters/i)).toBeVisible();
     } else {
       await expect(url).toContain('index.html');
     }

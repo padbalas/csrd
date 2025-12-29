@@ -345,7 +345,7 @@
         <div class="shell">
           <div class="top-row"></div>
           <h1>My Records</h1>
-          <p class="subhead">Your saved Scope 2 electricity emissions.</p>
+          <p class="subhead">Your saved emissions.</p>
         </div>
       </header>
 
@@ -354,17 +354,17 @@
       <h2 style="margin:0;">Carbon Snapshot</h2>
       <div class="summary-grid">
         <div class="summary-card">
-          <div class="label">Total Scope 2 electricity (tCO₂e, location-based)</div>
+          <div class="label">Total Scope 2 electricity</div>
           <div class="value" id="totalEmissions">—</div>
           <div class="unit">tCO₂e</div>
         </div>
         <div class="summary-card">
-          <div class="label">Average per month (tCO₂e, location-based)</div>
+          <div class="label">Average per month</div>
           <div class="value" id="avgEmissions">—</div>
           <div class="unit">tCO₂e</div>
         </div>
         <div class="summary-card">
-          <div class="label">Highest region (location-based tCO₂e)</div>
+          <div class="label">Highest region</div>
           <div class="value" id="topRegion">—</div>
         </div>
         <div class="summary-card">
@@ -381,10 +381,10 @@
         </div>
       </div>
       <!-- Trust note for audit clarity -->
-      <p class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e). <a href="methodology.html">See Methodology</a>.</p>
+      <p class="note">Calculated using location-based factors (tCO₂e). <a href="methodology.html">See Methodology</a>.</p>
     </section>
     <section class="carbon-reminders">
-      <h3>Insights & Reminders (Scope 2 electricity, tCO₂e — location-based)</h3>
+      <h3>Insights & Reminders</h3>
 
       <ul id="reminderList" class="reminder-list">
         <li class="placeholder">Loading insights…</li>
@@ -392,14 +392,14 @@
     </section>
         <section>
           <div class="records-controls">
-            <h2 style="margin:0;">Saved Scope 2 electricity records</h2>
+            <h2 style="margin:0;">Saved records</h2>
             <div class="records-actions">
               <!-- Export respects the current filters to avoid mismatched downloads -->
               <button class="btn secondary" id="records-export-csv" type="button">Export CSV</button>
               <span class="records-status" id="records-export-status"></span>
             </div>
           </div>
-          <div class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e); market-based uses RECs/PPAs where provided. <a href="methodology.html">See Methodology</a>.</div>
+          <div class="note">Calculated using location-based factors (tCO₂e); market-based uses RECs/PPAs where provided. <a href="methodology.html">See Methodology</a>.</div>
           <section class="records-filters">
             <label>
               Reporting year
@@ -445,7 +445,7 @@
         </thead>
         <tbody id="recordsTable"></tbody>
       </table>
-      <p class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e) for display. <a href="methodology.html">See Methodology</a>.</p>
+      <p class="note">Calculated using location-based factors (tCO₂e) for display. <a href="methodology.html">See Methodology</a>.</p>
     </section>
     <footer class="app-footer">
       <!-- Trust signals in footer: methodology, support, and factor freshness -->
@@ -618,7 +618,7 @@
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       if (!session) {
-        showMessage('Log in on the main page to view your Scope 2 electricity records.');
+        showMessage('Log in on the main page to view your records.');
         return;
       }
       const { data, error } = await supabase
@@ -636,7 +636,7 @@
       if (window.renderCarbonSummary) window.renderCarbonSummary();
       if (window.renderCarbonReminders) window.renderCarbonReminders();
       if (!data || !data.length) {
-        showMessage('No Scope 2 electricity records found. Add a record to include it in calculations and exports.');
+        showMessage('No records found. Add a record to include it in calculations and exports.');
       }
     };
 
@@ -763,7 +763,7 @@
         }
         const filtered = window.getFilteredRecords();
         if (!filtered.length) {
-          setExportStatus('No Scope 2 electricity records match these filters. Add a record to include it in calculations and exports.');
+          setExportStatus('No records match these filters. Add a record to include it in calculations and exports.');
           return;
         }
         const companyName = filtered[0]?.companies?.company_name || '';
@@ -784,7 +784,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
         <div>
           <div style="font-weight:700;font-size:1.05rem;">Add record</div>
-          <div style="color:#4b5563;font-size:0.95rem;">Create a single Scope 2 electricity entry without leaving this page.</div>
+          <div style="color:#4b5563;font-size:0.95rem;">Create a single entry without leaving this page.</div>
         </div>
         <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
       </div>
