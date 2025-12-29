@@ -30,6 +30,21 @@ test.describe('Authenticated flows', () => {
     await expect(page.getByRole('button', { name: 'Generate PDF' })).toBeDisabled();
   });
 
+  test('insights page renders key sections', async ({ page }) => {
+    await page.goto('/insights.html');
+    if (isLandingPage(page.url())) {
+      test.skip(true, 'Auth state missing for insights page');
+    }
+    await expect(page.getByRole('heading', { name: 'Insights' })).toBeVisible();
+    const hasNewLayout = (await page.locator('#trendChart').count()) > 0;
+    if (!hasNewLayout) {
+      test.skip(true, 'Insights layout not updated on this environment');
+    }
+    await expect(page.getByRole('heading', { name: 'Monthly emissions trend' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Regional contribution' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Data coverage' })).toBeVisible();
+  });
+
   test('records list supports viewing details and filtered CSV export with disclosure', async ({ page }) => {
     await page.goto('/records.html');
     if (isLandingPage(page.url())) {

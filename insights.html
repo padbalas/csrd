@@ -48,30 +48,27 @@
     }
     h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 36px); letter-spacing: -0.01em; }
     p.muted { color: var(--muted); margin: 0 0 12px; }
-    .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 12px 30px rgba(15,23,42,0.08); }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; /* calm, audit-friendly cards */ }
     .stack { display: grid; gap: 12px; }
     .filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
     label { font-weight: 600; display: block; margin-bottom: 4px; color: var(--muted); }
     select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--line); font-size: 1rem; background: #fff; }
     .kpi { font-weight: 700; }
-    .kpi-grid { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .kpi-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #f8fafc; }
-    .kpi-card .label { color: var(--muted); font-size: 0.9rem; }
-    .kpi-card .value { font-size: 1.3rem; font-weight: 800; margin-top: 6px; }
-    .sparkline { width: 100%; height: 90px; }
-    .sparkline path { stroke: #0f766e; stroke-width: 2; fill: none; }
-    .sparkline circle { fill: #0f766e; }
-    .sparkline .axis { stroke: #cbd5e1; stroke-width: 1; }
-    .sparkline text { fill: #94a3b8; font-size: 10px; }
-    .donut-wrap { display: grid; gap: 16px; grid-template-columns: minmax(160px, 220px) minmax(0, 1fr); align-items: center; }
-    .donut { width: 200px; height: 200px; }
-    .donut circle.bg { stroke: #e5e7eb; }
-    .bars { display: grid; gap: 10px; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin: 0 0 8px; }
+    .metric { font-size: 1.6rem; font-weight: 800; }
+    .metric .unit { font-size: 0.95rem; color: var(--muted); font-weight: 600; margin-left: 6px; }
+    .chart-wrap { display: grid; gap: 8px; }
+    .trend-line { width: 100%; height: 140px; }
+    .trend-line path { stroke: #64748b; stroke-width: 2; fill: none; /* single muted line */ }
+    .trend-line .grid { stroke: #e2e8f0; stroke-width: 1; }
+    .trend-line text { fill: #94a3b8; font-size: 10px; }
+    .ranked-list { display: grid; gap: 10px; }
     .bar-row { display: grid; gap: 6px; }
     .bar-label { display: flex; justify-content: space-between; font-size: 0.95rem; }
     .bar-track { height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
-    .bar-fill { height: 100%; background: #0f766e; border-radius: 999px; }
+    .bar-fill { height: 100%; background: #94a3b8; border-radius: 999px; }
     .status { font-size: 0.95rem; color: var(--muted); min-height: 20px; }
+    .empty { color: var(--muted); font-size: 0.95rem; padding: 8px 0; }
 
     @media (max-width: 980px) {
       .app-layout { flex-direction: column; }
@@ -93,8 +90,7 @@
       .shell { padding: 0 16px 50px; }
       .nav-items { grid-auto-flow: row; }
       .filters { flex-direction: column; align-items: stretch; }
-      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .donut-wrap { grid-template-columns: minmax(0, 1fr); }
+      .trend-line { height: 160px; }
     }
   </style>
 </head>
@@ -135,91 +131,35 @@
         </section>
 
         <section class="card stack">
-          <h3 style="margin:0;">Monthly trend</h3>
-          <div class="kpi-grid">
-            <div class="kpi-card">
-              <div class="label">Total emissions</div>
-              <div class="value" id="trendTotal">—</div>
-            </div>
-            <div class="kpi-card">
-              <div class="label">Latest month</div>
-              <div class="value" id="trendLatest">—</div>
-            </div>
-            <div class="kpi-card">
-              <div class="label">MoM change</div>
-              <div class="value" id="trendMoM">—</div>
-            </div>
-            <div class="kpi-card">
-              <div class="label">Months covered</div>
-              <div class="value" id="trendMonths">—</div>
-            </div>
-          </div>
-          <svg class="sparkline" viewBox="0 0 320 90" preserveAspectRatio="none" aria-label="Monthly trend sparkline">
-            <g id="sparklineAxes">
-              <line id="sparklineYAxis" class="axis" x1="28" y1="10" x2="28" y2="70"></line>
-              <line id="sparklineXAxis" class="axis" x1="28" y1="70" x2="312" y2="70"></line>
-              <text id="sparklineMax" x="4" y="16">—</text>
-              <text id="sparklineMin" x="4" y="70">—</text>
-              <text id="sparklineStart" x="28" y="84">—</text>
-              <text id="sparklineEnd" x="240" y="84">—</text>
-            </g>
-            <path id="sparklinePath" d=""></path>
-            <circle id="sparklineLast" cx="0" cy="0" r="3" />
-          </svg>
-        </section>
-
-        <section class="card stack">
-          <h3 style="margin:0;">Region breakdown</h3>
-          <div class="donut-wrap">
-            <svg class="donut" viewBox="0 0 120 120" aria-label="Region donut chart">
-              <circle class="bg" cx="60" cy="60" r="48" stroke-width="12" fill="none"></circle>
-              <g id="donutSegments"></g>
+          <h3 style="margin:0;">Monthly emissions trend</h3>
+          <p class="subtitle">Location-based Scope 2 (tCO₂e) • Saved records only • Estimates</p>
+          <div class="chart-wrap">
+            <div class="metric" id="trendTotal">—<span class="unit">tCO₂e</span></div>
+            <svg class="trend-line" id="trendChart" viewBox="0 0 320 140" preserveAspectRatio="none" aria-label="Monthly emissions trend">
+              <line class="grid" x1="24" y1="20" x2="312" y2="20"></line>
+              <line class="grid" x1="24" y1="120" x2="312" y2="120"></line>
+              <text id="trendMax" x="4" y="24">—</text>
+              <text id="trendMin" x="4" y="120">—</text>
+              <path id="trendPath" d=""></path>
             </svg>
-            <div class="bars" id="regionBars"></div>
+            <div class="subtitle" id="trendRange">Monthly totals based on saved records</div>
+            <div class="empty" id="trendEmpty" style="display:none;">No electricity data available for this period. Add records to see insights.</div>
           </div>
         </section>
 
         <section class="card stack">
-          <h3 style="margin:0;">Market-based coverage</h3>
-          <div class="kpi-grid">
-            <div class="kpi-card">
-              <div class="label">Coverage</div>
-              <div class="value" id="coveragePct">—</div>
-            </div>
-            <div class="kpi-card">
-              <div class="label">Covered kWh</div>
-              <div class="value" id="coverageKwh">—</div>
-            </div>
-            <div class="kpi-card">
-              <div class="label">Total kWh</div>
-              <div class="value" id="coverageTotalKwh">—</div>
-            </div>
-            <div class="kpi-card">
-              <div class="label">Months covered</div>
-              <div class="value" id="coverageMonths">—</div>
-            </div>
-          </div>
-          <svg class="sparkline" viewBox="0 0 320 90" preserveAspectRatio="none" aria-label="Coverage trend sparkline">
-            <g>
-              <line class="axis" x1="28" y1="10" x2="28" y2="70"></line>
-              <line class="axis" x1="28" y1="70" x2="312" y2="70"></line>
-              <text id="coverageMax" x="4" y="16">—</text>
-              <text id="coverageMin" x="4" y="70">—</text>
-              <text id="coverageStart" x="28" y="84">—</text>
-              <text id="coverageEnd" x="240" y="84">—</text>
-            </g>
-            <path id="coveragePath" d=""></path>
-            <circle id="coverageLast" cx="0" cy="0" r="3" />
-          </svg>
+          <h3 style="margin:0;">Regional contribution</h3>
+          <p class="subtitle">Location-based Scope 2 (tCO₂e) • Saved records only • Estimates</p>
+          <div class="ranked-list" id="regionList"></div>
+          <div class="empty" id="regionEmpty" style="display:none;">No electricity data available for this period. Add records to see insights.</div>
         </section>
 
         <section class="card stack">
-          <h3 style="margin:0;">Data quality</h3>
-          <div class="stack">
-            <div><strong>Missing months</strong> <span class="muted" id="qualityMissing">—</span></div>
-            <div><strong>Outliers</strong> <span class="muted" id="qualityOutliers">—</span></div>
-            <div><strong>Duplicates</strong> <span class="muted" id="qualityDuplicates">—</span></div>
-          </div>
+          <h3 style="margin:0;">Data coverage</h3>
+          <p class="subtitle">Months with saved records • Location-based Scope 2 • Estimates</p>
+          <div class="metric" id="coverageCount">—</div>
+          <div class="subtitle" id="coverageNote">Coverage based on saved records only</div>
+          <div class="empty" id="coverageEmpty" style="display:none;">No electricity data available for this period. Add records to see insights.</div>
         </section>
       </div>
     </div>
@@ -251,30 +191,17 @@
     const yearSelect = document.getElementById('insightYear');
     const signoutBtn = document.getElementById('nav-signout');
     const trendTotal = document.getElementById('trendTotal');
-    const trendLatest = document.getElementById('trendLatest');
-    const trendMoM = document.getElementById('trendMoM');
-    const trendMonths = document.getElementById('trendMonths');
-    const sparklinePath = document.getElementById('sparklinePath');
-    const sparklineLast = document.getElementById('sparklineLast');
-    const sparklineMax = document.getElementById('sparklineMax');
-    const sparklineMin = document.getElementById('sparklineMin');
-    const sparklineStart = document.getElementById('sparklineStart');
-    const sparklineEnd = document.getElementById('sparklineEnd');
-    const donutSegments = document.getElementById('donutSegments');
-    const regionBars = document.getElementById('regionBars');
-    const coveragePct = document.getElementById('coveragePct');
-    const coverageKwh = document.getElementById('coverageKwh');
-    const coverageTotalKwh = document.getElementById('coverageTotalKwh');
-    const coverageMonths = document.getElementById('coverageMonths');
-    const coveragePath = document.getElementById('coveragePath');
-    const coverageLast = document.getElementById('coverageLast');
-    const coverageMax = document.getElementById('coverageMax');
-    const coverageMin = document.getElementById('coverageMin');
-    const coverageStart = document.getElementById('coverageStart');
-    const coverageEnd = document.getElementById('coverageEnd');
-    const qualityMissing = document.getElementById('qualityMissing');
-    const qualityOutliers = document.getElementById('qualityOutliers');
-    const qualityDuplicates = document.getElementById('qualityDuplicates');
+    const trendChart = document.getElementById('trendChart');
+    const trendPath = document.getElementById('trendPath');
+    const trendMax = document.getElementById('trendMax');
+    const trendMin = document.getElementById('trendMin');
+    const trendRange = document.getElementById('trendRange');
+    const trendEmpty = document.getElementById('trendEmpty');
+    const regionList = document.getElementById('regionList');
+    const regionEmpty = document.getElementById('regionEmpty');
+    const coverageCount = document.getElementById('coverageCount');
+    const coverageNote = document.getElementById('coverageNote');
+    const coverageEmpty = document.getElementById('coverageEmpty');
     const statusEl = document.getElementById('insightStatus');
 
     const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
@@ -333,21 +260,6 @@
     const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
     const renderTrend = (records) => {
-      if (!records.length) {
-        trendTotal.textContent = '—';
-        trendLatest.textContent = '—';
-        trendMoM.textContent = '—';
-        trendMonths.textContent = '0';
-        sparklinePath.setAttribute('d', '');
-        sparklineLast.setAttribute('cx', '0');
-        sparklineLast.setAttribute('cy', '0');
-        sparklineMax.textContent = '—';
-        sparklineMin.textContent = '—';
-        sparklineStart.textContent = '—';
-        sparklineEnd.textContent = '—';
-        return;
-      }
-
       const grouped = {};
       records.forEach((r) => {
         const key = `${r.period_year}-${String(r.period_month).padStart(2, '0')}`;
@@ -355,55 +267,46 @@
         grouped[key] += Number(r.location_based_emissions || 0);
       });
       const keys = Object.keys(grouped).sort();
+      if (!keys.length) {
+        trendTotal.textContent = '—';
+        trendPath.setAttribute('d', '');
+        trendMax.textContent = '—';
+        trendMin.textContent = '—';
+        trendRange.textContent = 'Monthly totals based on saved records';
+        trendChart.style.display = 'none'; // hide empty chart per spec
+        trendEmpty.style.display = 'block';
+        return;
+      }
+      trendEmpty.style.display = 'none';
+      trendChart.style.display = 'block';
       const values = keys.map((k) => grouped[k]);
-
       const total = values.reduce((sum, v) => sum + v, 0);
-      const latest = values[values.length - 1];
-      const prev = values.length > 1 ? values[values.length - 2] : null;
-      const mom = prev ? `${(((latest - prev) / prev) * 100).toFixed(0)}%` : '—';
-
-      trendTotal.textContent = total.toFixed(3);
-      trendLatest.textContent = latest.toFixed(3);
-      trendMoM.textContent = mom;
-      trendMonths.textContent = String(values.length);
+      trendTotal.innerHTML = `${total.toFixed(3)}<span class="unit">tCO₂e</span>`;
 
       const max = Math.max(...values);
       const min = Math.min(...values);
       const range = max - min || 1;
-      const width = 320;
-      const height = 90;
-      const left = 28;
+      const left = 24;
       const right = 312;
-      const top = 10;
-      const bottom = 70;
+      const top = 20;
+      const bottom = 120;
       const points = values.map((v, idx) => {
         const x = (idx / (values.length - 1 || 1)) * (right - left) + left;
         const y = bottom - ((v - min) / range) * (bottom - top);
         return [x, y];
       });
       const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-      sparklinePath.setAttribute('d', path);
-      const last = points[points.length - 1];
-      sparklineLast.setAttribute('cx', last[0]);
-      sparklineLast.setAttribute('cy', last[1]);
+      trendPath.setAttribute('d', path);
+      trendMax.textContent = max.toFixed(2);
+      trendMin.textContent = min.toFixed(2);
 
       const firstKey = keys[0].split('-');
       const lastKey = keys[keys.length - 1].split('-');
-      const startLabel = `${monthNames[Number(firstKey[1]) - 1]} ${firstKey[0]}`;
-      const endLabel = `${monthNames[Number(lastKey[1]) - 1]} ${lastKey[0]}`;
-      sparklineMax.textContent = max.toFixed(2);
-      sparklineMin.textContent = min.toFixed(2);
-      sparklineStart.textContent = startLabel;
-      sparklineEnd.textContent = endLabel;
+      trendRange.textContent = `${monthNames[Number(firstKey[1]) - 1]} ${firstKey[0]} – ${monthNames[Number(lastKey[1]) - 1]} ${lastKey[0]} (saved records only)`;
     };
 
     const renderRegions = (records) => {
-      regionBars.innerHTML = '';
-      donutSegments.innerHTML = '';
-      if (!records.length) {
-        regionBars.innerHTML = '<div class="muted">No records for this selection.</div>';
-        return;
-      }
+      regionList.innerHTML = '';
       const totals = {};
       let totalEmissions = 0;
       records.forEach((r) => {
@@ -413,144 +316,36 @@
         totalEmissions += val;
       });
       const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
-      const colors = ['#0f766e','#059669','#10b981','#14b8a6','#0ea5e9','#6366f1'];
-      let offset = 0;
-      const radius = 48;
-      const circumference = 2 * Math.PI * radius;
-
-      sorted.forEach(([label, val], idx) => {
-        const share = totalEmissions ? val / totalEmissions : 0;
-        const dash = share * circumference;
-        const color = colors[idx % colors.length];
-        const segment = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        segment.setAttribute('cx', '60');
-        segment.setAttribute('cy', '60');
-        segment.setAttribute('r', String(radius));
-        segment.setAttribute('fill', 'none');
-        segment.setAttribute('stroke', color);
-        segment.setAttribute('stroke-width', '12');
-        segment.setAttribute('stroke-dasharray', `${dash} ${circumference - dash}`);
-        segment.setAttribute('stroke-dashoffset', String(-offset));
-        segment.setAttribute('stroke-linecap', 'butt');
-        donutSegments.appendChild(segment);
-        offset += dash;
-
+      if (!sorted.length) {
+        regionEmpty.style.display = 'block';
+        regionList.style.display = 'none'; // hide empty list per spec
+        return;
+      }
+      regionEmpty.style.display = 'none';
+      regionList.style.display = 'grid';
+      sorted.forEach(([label, val]) => {
+        const share = totalEmissions ? (val / totalEmissions) * 100 : 0;
         const row = document.createElement('div');
         row.className = 'bar-row';
         row.innerHTML = `
-          <div class="bar-label"><span>${label}</span><span>${(share * 100).toFixed(0)}%</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${(share * 100).toFixed(2)}%;background:${color};"></div></div>
+          <div class="bar-label"><span>${label}</span><span>${share.toFixed(0)}%</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${share.toFixed(2)}%;"></div></div>
         `;
-        regionBars.appendChild(row);
+        regionList.appendChild(row);
       });
     };
 
     const renderCoverage = (records) => {
-      coveragePct.textContent = '—';
-      coverageKwh.textContent = '—';
-      coverageTotalKwh.textContent = '—';
-      coverageMonths.textContent = '0';
-      coveragePath.setAttribute('d', '');
-      coverageLast.setAttribute('cx', '0');
-      coverageLast.setAttribute('cy', '0');
-      coverageMax.textContent = '—';
-      coverageMin.textContent = '—';
-      coverageStart.textContent = '—';
-      coverageEnd.textContent = '—';
-      if (!records.length) return;
-
-      const grouped = {};
-      records.forEach((r) => {
-        const key = `${r.period_year}-${String(r.period_month).padStart(2, '0')}`;
-        grouped[key] = grouped[key] || { total: 0, covered: 0 };
-        grouped[key].total += Number(r.kwh || 0);
-        grouped[key].covered += Number(r.covered_kwh || 0);
-      });
-      const keys = Object.keys(grouped).sort();
-      const totals = keys.map((k) => grouped[k].total);
-      const covered = keys.map((k) => grouped[k].covered);
-      const ratios = totals.map((t, i) => (t > 0 ? covered[i] / t : 0));
-
-      const totalKwh = totals.reduce((sum, v) => sum + v, 0);
-      const totalCovered = covered.reduce((sum, v) => sum + v, 0);
-      const pct = totalKwh ? (totalCovered / totalKwh) * 100 : 0;
-
-      coveragePct.textContent = `${pct.toFixed(0)}%`;
-      coverageKwh.textContent = totalCovered.toFixed(0);
-      coverageTotalKwh.textContent = totalKwh.toFixed(0);
-      coverageMonths.textContent = String(keys.length);
-
-      const max = Math.max(...ratios, 0);
-      const min = Math.min(...ratios, 0);
-      const range = max - min || 1;
-      const width = 320;
-      const left = 28;
-      const right = 312;
-      const top = 10;
-      const bottom = 70;
-      const points = ratios.map((v, idx) => {
-        const x = (idx / (ratios.length - 1 || 1)) * (right - left) + left;
-        const y = bottom - ((v - min) / range) * (bottom - top);
-        return [x, y];
-      });
-      const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-      coveragePath.setAttribute('d', path);
-      const last = points[points.length - 1] || [0, 0];
-      coverageLast.setAttribute('cx', last[0]);
-      coverageLast.setAttribute('cy', last[1]);
-
-      const firstKey = keys[0]?.split('-') || [];
-      const lastKey = keys[keys.length - 1]?.split('-') || [];
-      coverageMax.textContent = `${(max * 100).toFixed(0)}%`;
-      coverageMin.textContent = `${(min * 100).toFixed(0)}%`;
-      coverageStart.textContent = firstKey.length ? `${monthNames[Number(firstKey[1]) - 1]} ${firstKey[0]}` : '—';
-      coverageEnd.textContent = lastKey.length ? `${monthNames[Number(lastKey[1]) - 1]} ${lastKey[0]}` : '—';
-    };
-
-    const renderQuality = (records) => {
-      const year = yearSelect.value;
-      const filtered = year ? records.filter((r) => String(r.period_year) === year) : records;
-      const regions = Array.from(new Set(filtered.map((r) => `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`))).filter(Boolean);
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const targetYear = year ? parseInt(year, 10) : currentYear;
-      const maxMonth = targetYear === currentYear ? now.getMonth() + 1 : 12;
-
-      let missingCount = 0;
-      regions.forEach((label) => {
-        const seen = new Set(
-          filtered
-            .filter((r) => `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}` === label)
-            .map((r) => `${r.period_year}-${String(r.period_month).padStart(2, '0')}`)
-        );
-        for (let m = 1; m <= maxMonth; m += 1) {
-          const key = `${targetYear}-${String(m).padStart(2, '0')}`;
-          if (!seen.has(key)) missingCount += 1;
-        }
-      });
-
-      const monthTotals = {};
-      filtered.forEach((r) => {
-        const key = `${r.period_year}-${String(r.period_month).padStart(2, '0')}`;
-        monthTotals[key] = (monthTotals[key] || 0) + Number(r.location_based_emissions || 0);
-      });
-      const totals = Object.values(monthTotals);
-      const mean = totals.length ? totals.reduce((s, v) => s + v, 0) / totals.length : 0;
-      const variance = totals.length ? totals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / totals.length : 0;
-      const std = Math.sqrt(variance);
-      const outliers = totals.filter((v) => v > mean + std * 2).length;
-
-      const seenKeys = new Set();
-      let dupes = 0;
-      filtered.forEach((r) => {
-        const key = `${r.period_year}-${r.period_month}-${r.calc_country}-${r.calc_region}`;
-        if (seenKeys.has(key)) dupes += 1;
-        else seenKeys.add(key);
-      });
-
-      qualityMissing.textContent = `${missingCount} month${missingCount === 1 ? '' : 's'} missing`;
-      qualityOutliers.textContent = `${outliers} month${outliers === 1 ? '' : 's'} flagged`;
-      qualityDuplicates.textContent = `${dupes} duplicate${dupes === 1 ? '' : 's'}`;
+      const monthSet = new Set(records.map((r) => `${r.period_year}-${String(r.period_month).padStart(2, '0')}`));
+      if (!monthSet.size) {
+        coverageCount.textContent = '—';
+        coverageNote.textContent = 'Coverage based on saved records only';
+        coverageEmpty.style.display = 'block';
+        return;
+      }
+      coverageEmpty.style.display = 'none';
+      coverageCount.textContent = `${monthSet.size} month${monthSet.size === 1 ? '' : 's'}`;
+      coverageNote.textContent = 'Coverage based on saved records only';
     };
 
     const applyFilters = (records) => {
@@ -564,7 +359,6 @@
       renderTrend(filtered);
       renderRegions(filtered);
       renderCoverage(filtered);
-      renderQuality(filtered);
     };
 
     (async () => {
