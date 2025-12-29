@@ -18,7 +18,7 @@ test.describe('Records page (unauthenticated)', () => {
   });
 
   test('shows filters, summary, and non-reporting note', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Carbon Snapshot (YTD)' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Carbon Snapshot/i })).toBeVisible();
     await expect(page.locator('#filterYear')).toBeVisible();
     await expect(page.locator('#filterCountry')).toBeVisible();
     await expect(page.locator('#filterRegion')).toBeVisible();
@@ -29,7 +29,7 @@ test.describe('Records page (unauthenticated)', () => {
   test('side navigation omits Dashboard and highlights My Records', async ({ page }) => {
     const nav = page.locator('.side-nav');
     await expect(nav.getByRole('link', { name: 'My Records' })).toBeVisible();
-    await expect(nav.getByRole('link', { name: 'Export / Reports' })).toBeVisible();
+    await expect(nav.getByRole('link', { name: /Export \/ Reports/i })).toBeVisible();
     await expect(nav.getByRole('link', { name: /Dashboard/i })).toHaveCount(0);
     await expect(nav.getByRole('link', { name: 'My Records' })).toHaveClass(/active/);
   });
@@ -43,6 +43,31 @@ test.describe('Records page (unauthenticated)', () => {
     await expect(
       page.getByText(/Log in on the main page to view your records|History unavailable while offline/i)
     ).toBeVisible();
+  });
+});
+
+test.describe('Records snapshot calculations (local data)', () => {
+  test('coverage reflects 10 unique months', async ({ page }) => {
+    const sampleRecords = Array.from({ length: 10 }, (_, idx) => ({
+      id: `local-${idx + 1}`,
+      period_year: 2024,
+      period_month: idx + 1,
+      kwh: 1000 + idx * 50,
+      location_based_emissions: 0.3 + idx * 0.01,
+      market_based_emissions: null,
+      emission_factor_value: 0.0003,
+      emission_factor_year: 2024,
+      emission_factor_source: 'Test Factors',
+      calc_country: 'US',
+      calc_region: 'California'
+    }));
+
+    await page.addInitScript((records) => {
+      localStorage.setItem('cw_records', JSON.stringify(records));
+    }, sampleRecords);
+
+    await page.goto('/records.html');
+    await expect(page.locator('#recordCount')).toHaveText('10');
   });
 });
 

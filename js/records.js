@@ -26,6 +26,7 @@ const saveRecords = (records = []) => {
 };
 
 const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const CURRENT_YEAR = new Date().getFullYear();
 
 const detectMethod = (row) => (row.market_based_emissions != null ? 'market' : 'location');
 
@@ -68,6 +69,7 @@ const populateFilters = (records) => {
     countries.add(r.calc_country || '—');
     if (r.calc_region) regions.add(r.calc_region);
   });
+  years.add(String(CURRENT_YEAR));
   const yearEl = document.getElementById('filterYear');
   const countryEl = document.getElementById('filterCountry');
   const regionEl = document.getElementById('filterRegion');
@@ -106,16 +108,46 @@ const populateFilters = (records) => {
   }
 };
 
+const setSelectValue = (el, value) => {
+  if (!el || !value) return false;
+  const optionExists = Array.from(el.options).some((opt) => opt.value === value);
+  if (!optionExists) return false;
+  el.value = value;
+  return true;
+};
+
+const applyDefaultFilters = () => {
+  const yearEl = document.getElementById('filterYear');
+  const countryEl = document.getElementById('filterCountry');
+  const regionEl = document.getElementById('filterRegion');
+  const methodEl = document.getElementById('filterMethod');
+  const userSet = (el) => el?.dataset?.userSet === 'true';
+  if (yearEl && !yearEl.value && !userSet(yearEl)) {
+    setSelectValue(yearEl, String(CURRENT_YEAR));
+  }
+  if (methodEl && !methodEl.value && !userSet(methodEl)) {
+    methodEl.value = 'location';
+  }
+  const defaults = typeof window !== 'undefined' ? window.companyDefaults : null;
+  if (countryEl && !countryEl.value && defaults?.country && !userSet(countryEl)) {
+    setSelectValue(countryEl, defaults.country);
+  }
+  if (regionEl && !regionEl.value && defaults?.region && !userSet(regionEl)) {
+    setSelectValue(regionEl, defaults.region);
+  }
+};
+
 const renderRecords = (containerId) => {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const records = getFilteredRecords();
+  const records = loadRecords();
   populateFilters(records);
+  applyDefaultFilters();
   const rows = applyFilters(records);
   container.innerHTML = '';
   if (!rows.length) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="3" style="color:#4b5563;">No records match these filters.</td>`;
+    tr.innerHTML = `<td colspan="3" style="color:#4b5563;">No Scope 2 electricity records match these filters. Add a record to include it in calculations and exports.</td>`;
     container.appendChild(tr);
     return;
   }
@@ -123,10 +155,12 @@ const renderRecords = (containerId) => {
     const tr = document.createElement('tr');
     const monthName = monthNames[(row.period_month || row.month || 1) - 1] || '';
     const region = `${row.calc_country || '—'}${row.calc_region ? ' / ' + row.calc_region : ''}`;
-    const method = detectMethod(row) === 'market' ? 'Market-based' : 'Location-based';
+    const method = detectMethod(row) === 'market'
+      ? 'Market-based Scope 2 electricity (tCO₂e; RECs where provided)'
+      : 'Location-based Scope 2 electricity (tCO₂e)';
     tr.innerHTML = `
       <td>
-        <div class="primary">${formatNumber(row.location_based_emissions || row.emissions || 0, 3)} t CO₂e</div>
+        <div class="primary">${formatNumber(row.location_based_emissions || row.emissions || 0, 3)} tCO₂e</div>
         <div class="secondary">${monthName} ${row.period_year || row.year || ''} · ${region}</div>
       </td>
       <td class="method">${method}</td>
@@ -161,11 +195,11 @@ const buildRecordDetails = (record) => {
     <div style="display:grid;gap:10px;">
       <div><strong>Country / region</strong><br>${record.calc_country || '—'}${record.calc_region ? ' / ' + record.calc_region : ''}</div>
       <div><strong>Electricity (kWh)</strong><br>${formatNumber(record.kwh, 0)}</div>
-      <div><strong>Location-based</strong><br>${formatNumber(record.location_based_emissions, 3)} t CO₂e</div>
-      <div><strong>Market-based</strong><br>${record.market_based_emissions != null ? formatNumber(record.market_based_emissions, 3) + ' t CO₂e' : '—'}</div>
-      <div><strong>Emission factor</strong><br>${formatNumber(record.emission_factor_value, 6)} t CO₂e/kWh</div>
+      <div><strong>Location-based Scope 2 electricity</strong><br>${formatNumber(record.location_based_emissions, 3)} tCO₂e</div>
+      <div><strong>Market-based Scope 2 electricity</strong><br>${record.market_based_emissions != null ? formatNumber(record.market_based_emissions, 3) + ' tCO₂e' : '—'}</div>
+      <div><strong>Emission factor</strong><br>${formatNumber(record.emission_factor_value, 6)} tCO₂e/kWh</div>
       <div><strong>Factor source</strong><br>${record.emission_factor_source} ${record.emission_factor_year}</div>
-      <p style="color:#4b5563;font-size:0.95rem;margin:8px 0 0;">Location-based Scope 2 calculation aligned with the GHG Protocol.</p>
+      <p style="color:#4b5563;font-size:0.95rem;margin:8px 0 0;">Calculated using location-based Scope 2 electricity factors (tCO₂e). <a href="methodology.html">See Methodology</a>.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
         <button class="btn secondary" data-panel-edit="${record.id}" style="padding:10px 12px;">Edit</button>
         <button class="btn secondary" data-panel-delete="${record.id}" style="padding:10px 12px;">Delete</button>
@@ -380,7 +414,7 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
     Object.entries(regions).forEach(([region, val]) => {
       const share = val / total;
       if (share > 0.3) {
-        reminders.push({ type: 'region', text: `${region} contributes ${ (share * 100).toFixed(0) }% of your Scope 2 emissions.` });
+        reminders.push({ type: 'region', text: `${region} contributes ${ (share * 100).toFixed(0) }% of your Scope 2 electricity emissions.` });
       }
     });
   }

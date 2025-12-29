@@ -16,7 +16,7 @@ test.describe('Authenticated flows', () => {
 
   test('records page accessible when signed in', async ({ page }) => {
     await page.goto('/records.html');
-    await expect(page.getByRole('heading', { name: 'Carbon Snapshot (YTD)' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Carbon Snapshot/i })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
   });
 
@@ -25,7 +25,7 @@ test.describe('Authenticated flows', () => {
     if (isLandingPage(page.url())) {
       test.skip(true, 'Auth state missing for exports page');
     }
-    await expect(page.getByRole('heading', { name: 'Export / Reports' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Export \/ Reports/i })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Generate CSV' })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Generate PDF' })).toBeDisabled();
   });
@@ -35,14 +35,14 @@ test.describe('Authenticated flows', () => {
     if (isLandingPage(page.url())) {
       test.skip(true, 'Auth state missing for insights page');
     }
-    await expect(page.getByRole('heading', { name: 'Insights' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Insights/i })).toBeVisible();
     const hasNewLayout = (await page.locator('#trendChart').count()) > 0;
     if (!hasNewLayout) {
       test.skip(true, 'Insights layout not updated on this environment');
     }
-    await expect(page.getByRole('heading', { name: 'Monthly emissions trend' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Regional contribution' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Data coverage' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Monthly Scope 2 electricity trend/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Regional contribution/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Data coverage/i })).toBeVisible();
   });
 
   test('records list supports viewing details and filtered CSV export with disclosure', async ({ page }) => {
@@ -76,7 +76,7 @@ test.describe('Authenticated flows', () => {
     if (!csvPath) test.fail(true, 'Download path not available');
     const content = fs.readFileSync(csvPath!, 'utf-8');
     expect(content).toMatch(/Disclosure/);
-    expect(content).toMatch(/Location-based Scope 2 calculation aligned with the GHG Protocol/);
+    expect(content).toMatch(/Location-based Scope 2 electricity calculation aligned with the GHG Protocol/);
     expect(content).toMatch(/\r\n/); // CRLF line endings
   });
 
@@ -85,7 +85,7 @@ test.describe('Authenticated flows', () => {
     if (isLandingPage(page.url())) {
       test.skip(true, 'Auth state missing for exports page');
     }
-    await expect(page.getByRole('heading', { name: 'Export / Reports' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Export \/ Reports/i })).toBeVisible();
     const status = page.locator('#exportStatus');
 
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
@@ -103,7 +103,7 @@ test.describe('Authenticated flows', () => {
     if (!csvPath) test.fail(true, 'Download path not available');
     const content = fs.readFileSync(csvPath!, 'utf-8');
     expect(content).toMatch(/Disclosure/);
-    expect(content).toMatch(/Location-based Scope 2 calculation aligned with the GHG Protocol/);
+    expect(content).toMatch(/Location-based Scope 2 electricity calculation aligned with the GHG Protocol/);
 
     // CSV should include expected columns
     const headerLine = content.split(/\r?\n/)[0];

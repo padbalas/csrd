@@ -8,7 +8,7 @@ test('exports page redirects or requires auth', async ({ page }) => {
   const currentUrl = page.url();
 
   if (currentUrl.includes('exports.html')) {
-    await expect(page.getByRole('heading', { name: 'Export / Reports' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Export \/ Reports/i })).toBeVisible();
     await expect(page.getByRole('link', { name: 'My Records' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Generate PDF' })).toBeDisabled();
     await expect(page.getByText(/Methodology:/i)).toBeVisible();

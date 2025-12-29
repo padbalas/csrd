@@ -356,10 +356,10 @@
         <button class="btn secondary" id="header-signin">Log in</button>
         <button class="btn secondary" id="header-signout" style="display:none;">Log out</button>
       </div>
-      <h1>Carbon reporting for small teams — without the complexity</h1>
-      <p class="subhead">Calculate Scope 2 emissions in minutes.</p>
+      <h1>Scope 2 electricity reporting for small teams (location-based, tCO₂e) — without the complexity</h1>
+      <p class="subhead">Calculate Scope 2 electricity emissions (tCO₂e, location-based default) in minutes.</p>
       <div class="cta-row">
-        <a class="btn primary" href="#calculator">Start Carbon Calculation</a>
+        <a class="btn primary" href="#calculator">Start Scope 2 electricity calculation (location-based, tCO₂e)</a>
       </div>
     </div>
   </header>
@@ -378,13 +378,13 @@
         </div>
         <div>
           <strong>3) You get a clear estimate</strong>
-          <p class="muted">Location-based by default, with optional market-based if you opt in.</p>
+          <p class="muted">Location-based Scope 2 by default, with optional market-based adjustments if you opt in.</p>
         </div>
       </div>
     </section>
 
     <section id="calculator">
-      <h2>Calculate your monthly Scope 2 emissions</h2>
+      <h2>Calculate your monthly Scope 2 electricity emissions (tCO₂e, location-based default)</h2>
       <p class="muted" style="margin-bottom:8px;">Start by telling us who you are so we can speak your language.</p>
       <form id="carbon-form" class="stack">
         <div class="two-col">
@@ -422,7 +422,7 @@
               <option>May</option><option>June</option><option>July</option><option>August</option>
               <option>September</option><option>October</option><option>November</option><option>December</option>
             </select>
-            <div class="hint">We calculate one month at a time for clarity.</div>
+            <div class="hint">Enter the month electricity was consumed, not when the bill was paid.</div>
           </div>
           <div>
             <label for="year">Billing year</label>
@@ -445,21 +445,21 @@
           </div>
         </div>
         <div class="notice">
-          No portals, no jargon - just a clear Scope 2 estimate. No uploads. Calculate without an account; sign in only to save or export. Uses public EPA/DEFRA factors. Informational, not a filing.
+          No portals, no jargon - just a clear Scope 2 electricity estimate (tCO₂e). No uploads. Calculate without an account; sign in only to save or export. Uses public EPA/DEFRA factors. Informational, not a filing.
         </div>
         <div class="cta-row" style="justify-content:flex-start;">
-          <button type="submit" class="btn primary">See my emissions in minutes</button>
+          <button type="submit" class="btn primary">See my Scope 2 electricity emissions (tCO₂e, location-based default)</button>
         </div>
         <div class="notice" style="margin-top:10px;">
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
             <input type="checkbox" id="market-toggle" style="width:auto;" />
-            Include market-based Scope 2 (RECs / PPAs)
+            Include market-based Scope 2 (using RECs/PPAs where provided)
           </label>
-          <div class="hint" style="margin-top:6px;">Market-based emissions reflect purchased renewable energy instruments such as RECs or PPAs. Optional and off by default.</div>
+          <div class="hint" style="margin-top:6px;">Market-based Scope 2 reflects purchased renewable energy instruments such as RECs or PPAs. Optional and off by default.</div>
           <div id="market-fields" class="stack" style="margin-top:10px; display:none;">
             <div class="two-col">
               <div>
-                <label for="market-type">Instrument type</label>
+                <label for="market-type">Instrument type (market-based Scope 2)</label>
                 <select id="market-type" name="market-type">
                   <option value="">Select instrument</option>
                   <option value="REC">REC</option>
@@ -476,7 +476,7 @@
             </div>
             <div class="two-col">
               <div>
-                <label for="market-year">Reporting year (market-based)</label>
+                <label for="market-year">Reporting year (market-based Scope 2)</label>
                 <select id="market-year" name="market-year"></select>
                 <div class="hint">Must be current or past years only.</div>
               </div>
@@ -486,25 +486,27 @@
       </form>
       <!-- Trust strip anchors methodology without heavy enterprise vibe -->
       <div class="notice" style="margin-top:10px;">
-        <strong>Methodology:</strong> GHG Protocol Scope 2 (location-based) • <strong>Emission factors:</strong> Public, government-issued data (year-stamped) • Estimates only — not legal, tax, or audit advice. Emission factors are updated as new data is released.
+        <!-- Trust anchor: make methodology visible without crowding the UI -->
+        <strong>Methodology:</strong> GHG Protocol Scope 2 electricity (location-based) • <strong>Emission factors:</strong> Public, government-issued data (year-stamped) • Estimates only — not legal, tax, or audit advice. <a href="methodology.html">See Methodology</a>.
       </div>
     </section>
 
     <section id="results">
-      <h2>Your estimate</h2>
+      <h2>Your Scope 2 electricity estimate (tCO₂e — location-based default, market-based where provided)</h2>
       <!-- Pre-calculated example builds trust before interaction -->
       <div class="example">
-        <strong>Example:</strong> 1,850 kWh → 1.42 metric tons CO₂e ≈ driving ~3,500 miles. Check your own month below.
+        <strong>Example:</strong> 1,850 kWh → 1.42 tCO₂e (location-based) ≈ driving ~3,500 miles. For intuition only (non-reporting metric).
       </div>
       <div id="result-container" class="result">
         <div class="grid-3">
           <div class="stat-box">
             <strong id="result-tons">—</strong><br />
-            <span class="muted">Location-based (GHG Protocol)</span>
+            <span class="muted">Location-based Scope 2 electricity (tCO₂e)</span>
           </div>
           <div class="stat-box">
             <strong id="result-compare">—</strong><br />
             <span class="muted">Real-world comparison</span>
+            <div class="muted small">For intuition only (non-reporting metric)</div>
           </div>
           <div class="stat-box">
             <strong id="result-next">—</strong><br />
@@ -512,15 +514,16 @@
           </div>
           <div class="stat-box">
             <strong id="result-market">—</strong><br />
-            <span class="muted">Market-based (GHG Protocol)</span>
+            <span class="muted">Market-based Scope 2 electricity (tCO₂e, RECs/PPAs)</span>
           </div>
         </div>
         <div class="notice" id="calc-details"></div>
         <p class="muted" id="factor-mismatch" style="display:none;"></p>
         <p class="muted" id="interpretation"></p>
+        <p class="muted small">Calculated using location-based Scope 2 electricity factors (tCO₂e); market-based uses RECs/PPAs where provided. <a href="methodology.html">See Methodology</a>.</p>
         <p class="muted" id="disclaimer"><strong>Disclaimer:</strong> CarbonWise provides informational estimates only. This is not legal, audit, or tax advice.</p>
         <div class="notice" id="market-disclaimer" style="display:none;">
-          <strong>Market-based note:</strong> Market-based emissions depend on contractual instruments and are reported separately from location-based emissions. This estimate is based on user-declared renewable energy instruments. CarbonWise does not verify certificates or contracts and does not provide legal, tax, or audit advice.
+          <strong>Market-based note:</strong> Market-based Scope 2 electricity emissions depend on contractual instruments and are reported separately from location-based emissions. This estimate is based on user-declared renewable energy instruments. CarbonWise does not verify certificates or contracts and does not provide legal, tax, or audit advice.
           <div id="market-details" class="muted" style="margin-top:6px;"></div>
         </div>
         <div class="notice" id="compliance-helper">
@@ -528,7 +531,7 @@
           California SB-253 / SB-261 and EU CSRD apply to certain larger companies or those operating in those regions. Many small businesses are not required to report yet. This is high-level guidance only — not legal or audit advice.
         </div>
         <div class="cta-row" style="margin-top:12px; justify-content:flex-start;">
-          <button type="button" class="btn primary" id="save-btn">Save</button>
+          <button type="button" class="btn primary" id="save-btn">Save Scope 2 electricity record (tCO₂e, location-based + market-based)</button>
           <button type="button" class="btn secondary" id="signout-btn" style="display:none;">Log out</button>
         </div>
       </div>
@@ -559,16 +562,16 @@
           <p class="muted">Currently focused on Scope 2 electricity emissions. Scope 1 support planned.</p>
         </div>
         <div>
-          <strong>Exportable ESG summaries</strong>
+          <strong>Exportable Scope 2 electricity summaries (tCO₂e, location-based + market-based)</strong>
           <p class="muted">Share clean, audit-friendly summaries with stakeholders.</p>
         </div>
       </div>
     </section>
 
     <footer>
-      <p>CarbonWise exists to make carbon reporting obvious, private, and fast.</p>
-      <p>Aligned with the GHG Protocol (Scope 2, location-based). Market-based methods and Scope 1 planned. Factors: EPA / DEFRA.</p>
-      <p><a href="mailto:hello@esgrise.com">Contact / feedback</a></p>
+      <!-- Footer trust signals: methodology, support, and factor freshness -->
+      <p><a href="methodology.html">Methodology</a> • <a href="mailto:hello@esgrise.com">Contact / support</a></p>
+      <p class="muted small">Emission factors updated as of 2024.</p>
     </footer>
   </div>
 
@@ -711,7 +714,7 @@
         <button type="button" class="btn secondary" id="view-close" aria-label="Close view modal" style="padding:8px 10px;">×</button>
       </div>
       <div class="stack" id="view-body" style="margin-top:10px;"></div>
-      <p class="muted small" style="margin-top:10px;">Location-based Scope 2 calculation aligned with the GHG Protocol.</p>
+      <p class="muted small" style="margin-top:10px;">Location-based Scope 2 electricity calculation aligned with the GHG Protocol.</p>
     </div>
   </div>
 
@@ -739,7 +742,7 @@
         </div>
         <div class="two-col">
           <div>
-            <label for="edit-market-type">Instrument type (optional)</label>
+            <label for="edit-market-type">Instrument type (market-based Scope 2)</label>
             <select id="edit-market-type">
               <option value="">Select instrument</option>
               <option value="REC">REC</option>
@@ -767,7 +770,7 @@
   <script type="module">
     import { EMISSION_FACTORS, GLOBAL_FALLBACK } from './data/emission-factors.js';
     import { loadRecords, saveRecords, renderRecords, openRecord } from './js/records.js';
-    // Configurable emission factors (metric tons CO2e per kWh)
+    // Configurable emission factors (metric tons CO₂e per kWh)
     // Emission factors imported from a versioned, append-only dataset for easy updates without touching UI/logic.
 
     // Valid regions to keep entries clean and trusted
@@ -799,7 +802,7 @@
         "Nelson","Northland","Otago","Southland","Taranaki","Tasman","Waikato","Wellington","West Coast"
       ]
     };
-    const CAR_MILES_PER_TON = 1 / 0.000404; // ~0.404 kg CO2e per mile
+    const CAR_MILES_PER_TON = 1 / 0.000404; // ~0.404 kg CO₂e per mile
     const AVG_HOME_KWH_MONTH = 877; // US average monthly kWh per home
 
     const form = document.getElementById('carbon-form');
@@ -1321,11 +1324,11 @@
           <div><strong>kWh</strong><br>${formatNumber(record.kwh, 0)}</div>
         </div>
         <div class="two-col">
-          <div><strong>Location-based</strong><br>${formatNumber(record.location_based_emissions, 3)} t CO₂e</div>
-          <div><strong>Market-based</strong><br>${record.market_based_emissions != null ? formatNumber(record.market_based_emissions, 3) + ' t CO₂e' : '—'}</div>
+          <div><strong>Location-based</strong><br>${formatNumber(record.location_based_emissions, 3)} tCO₂e</div>
+          <div><strong>Market-based</strong><br>${record.market_based_emissions != null ? formatNumber(record.market_based_emissions, 3) + ' tCO₂e' : '—'}</div>
         </div>
         <div class="two-col">
-          <div><strong>Emission factor</strong><br>${formatNumber(record.emission_factor_value, 6)} t CO₂e/kWh</div>
+          <div><strong>Emission factor</strong><br>${formatNumber(record.emission_factor_value, 6)} tCO₂e/kWh</div>
           <div><strong>Factor source</strong><br>${record.emission_factor_source} ${record.emission_factor_year}</div>
         </div>
       `;
@@ -1545,6 +1548,9 @@
     // Initialize dropdowns
     populateYears(yearEl);
     populateYears(marketYearEl);
+    // Default to current reporting year per Scope 2 reporting norms.
+    yearEl.value = String(CURRENT_YEAR);
+    marketYearEl.value = String(CURRENT_YEAR);
     syncMonthOptions();
     setRegionOptions('');
     setSignupRegionOptions('');
@@ -1603,7 +1609,7 @@
       const miles = tonsLocation * CAR_MILES_PER_TON;
       const homes = kwh / AVG_HOME_KWH_MONTH;
 
-      tonsEl.textContent = `${formatNumber(tonsLocation, 3)} t CO₂e`;
+      tonsEl.textContent = `${formatNumber(tonsLocation, 3)} tCO₂e`;
       compareEl.textContent = `${formatNumber(tonsLocation * CAR_MILES_PER_TON, 0)} car miles or ${formatNumber(homes, 1)} homes for a month`;
       nextEl.textContent = persona === 'finance'
         ? 'Save this number for your monthly close and share with leadership.'
@@ -1611,15 +1617,15 @@
           ? 'Use this as a directional input in your client’s ESG summary.'
           : 'Track this month-over-month to spot reductions and set targets.';
       resultMarketEl.textContent = marketEnabled
-        ? `${formatNumber(tonsMarket, 3)} t CO₂e`
+        ? `${formatNumber(tonsMarket, 3)} tCO₂e`
         : 'Not provided';
 
-      const factorSentence = `This estimate uses ${factorData.year} ${factorData.source} location-based electricity emission factors for ${factorData.regionLabel} (${formatNumber(factor, 6)} t CO₂e/kWh, version ${factorData.version}).`;
+      const factorSentence = `This estimate uses ${factorData.year} ${factorData.source} location-based electricity emission factors for ${factorData.regionLabel} (${formatNumber(factor, 6)} tCO₂e/kWh, version ${factorData.version}).`;
       calcDetailsEl.textContent = factorSentence;
 
       const isPartialCurrent = year === CURRENT_YEAR && monthNumber === CURRENT_MONTH;
       const partialNote = isPartialCurrent ? ' Partial period estimate: This calculation is based on usage entered for the current month and may change once the billing period is complete.' : '';
-      interpretationEl.textContent = `For ${month} ${year} in ${region}, your electricity use generates about ${formatNumber(tonsLocation, 3)} metric tons CO₂e (location-based).${partialNote}`;
+      interpretationEl.textContent = `For ${month} ${year} in ${region}, your electricity use generates about ${formatNumber(tonsLocation, 3)} tCO₂e (location-based).${partialNote}`;
 
       // Show data currency disclaimer when billing year exceeds factor year
       if (year > factorData.year || (marketEnabled && marketYear > factorData.year)) {

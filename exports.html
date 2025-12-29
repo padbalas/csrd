@@ -57,6 +57,7 @@
     .btn.secondary { background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; }
     .actions { display: flex; gap: 10px; flex-wrap: wrap; }
     .status { font-size: 0.95rem; color: var(--muted); min-height: 20px; }
+    .note { font-size: 0.9rem; color: var(--muted); }
 
     @media (max-width: 980px) {
       .app-layout { flex-direction: column; }
@@ -102,8 +103,8 @@
       <header>
         <div class="shell">
           <div class="top-row"></div>
-          <h1>Export / Reports</h1>
-          <p class="muted">Generate CSV exports for your Scope 2 electricity emissions. Built for handoff to finance and audit teams.</p>
+          <h1>Export / Reports (Scope 2 electricity, tCO₂e — location-based + market-based)</h1>
+          <p class="muted">Generate CSV exports for Scope 2 electricity emissions (tCO₂e, location-based + market-based). Built for handoff to finance and audit teams.</p>
         </div>
       </header>
 
@@ -114,16 +115,17 @@
             <div id="companyName" class="muted">Loading…</div>
           </div>
           <div>
-            <label for="exportYear">Reporting year</label>
+            <label for="exportYear">Reporting year (Scope 2 electricity)</label>
             <select id="exportYear">
               <option value="">All years</option>
             </select>
           </div>
           <div class="actions">
-            <button class="btn primary" id="exportCsv">Generate CSV</button>
-            <button class="btn secondary" id="exportPdf" disabled title="PDF summary coming soon">Generate PDF</button>
+            <button class="btn primary" id="exportCsv">Generate CSV (Scope 2 electricity, tCO₂e — location-based + market-based)</button>
+            <button class="btn secondary" id="exportPdf" disabled title="PDF summary coming soon">Generate PDF (Scope 2 electricity, tCO₂e)</button>
             <span class="status" id="exportStatus"></span>
           </div>
+          <p class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e); market-based uses RECs/PPAs where provided. <a href="methodology.html">See Methodology</a>.</p>
         </section>
 
         <section class="card" style="margin-top:14px;">
@@ -131,14 +133,16 @@
           <ul class="muted" style="padding-left:18px; margin:8px 0 0;">
             <li>Company name and region</li>
             <li>Period (YYYY-MM) and electricity usage (kWh)</li>
-            <li>Location-based and market-based Scope 2 emissions</li>
+            <li>Location-based and market-based Scope 2 electricity emissions (tCO₂e)</li>
             <li>Emission factor value, year, and source</li>
-            <li>Disclosure: “Location-based Scope 2 calculation aligned with the GHG Protocol.”</li>
+            <li>Disclosure: “Location-based Scope 2 electricity calculation aligned with the GHG Protocol.”</li>
           </ul>
         </section>
       </div>
       <footer class="muted" style="text-align:center; padding:16px 0 24px; font-size:0.95rem;">
-        Methodology: <a href="https://esgrise.com/methodology.html">esgrise.com/methodology</a>
+        <!-- Trust signals in footer: methodology, support, and factor freshness -->
+        <div><a href="methodology.html">Methodology</a> • <a href="mailto:hello@esgrise.com">Contact / support</a></div>
+        <div>Emission factors updated as of 2024.</div>
       </footer>
     </div>
   </div>
@@ -173,6 +177,7 @@
     const signoutBtn = document.getElementById('nav-signout');
 
     const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+    const CURRENT_YEAR = new Date().getFullYear();
     const setLoading = (isLoading) => {
       exportCsvBtn.disabled = isLoading;
       exportPdfBtn.disabled = true; // PDF not implemented yet
@@ -208,7 +213,9 @@
     };
 
     const populateYears = (records) => {
-      const years = Array.from(new Set((records || []).map((r) => r.period_year))).filter(Boolean).sort((a, b) => b - a);
+      const years = Array.from(new Set((records || []).map((r) => r.period_year))).filter(Boolean);
+      if (!years.includes(CURRENT_YEAR)) years.push(CURRENT_YEAR);
+      years.sort((a, b) => b - a);
       const current = yearSelect.value;
       yearSelect.innerHTML = '<option value=\"\">All years</option>';
       years.forEach((y) => {
@@ -218,6 +225,10 @@
         yearSelect.appendChild(opt);
       });
       yearSelect.value = current;
+      if (!yearSelect.value) {
+        const hasCurrent = Array.from(yearSelect.options).some((opt) => opt.value === String(CURRENT_YEAR));
+        if (hasCurrent) yearSelect.value = String(CURRENT_YEAR);
+      }
     };
 
     const applyReportingPreference = (company, years) => {
@@ -231,7 +242,7 @@
     };
 
     const toCsv = (records, company) => {
-      const disclosure = 'Location-based Scope 2 calculation aligned with the GHG Protocol.';
+      const disclosure = 'Location-based Scope 2 electricity calculation aligned with the GHG Protocol.';
       const headers = [
         'company_name','period','country','kwh','scope2_location_based_tco2e','scope2_market_based_tco2e','emission_factor_value','emission_factor_year','emission_factor_source'
       ];
@@ -288,7 +299,7 @@
           const year = yearSelect.value;
           const data = await fetchRecords(year);
           if (!data.length) {
-            setStatus('No records for this selection.');
+            setStatus('No Scope 2 electricity records found for this period. Add a record to include it in calculations and exports.');
             setLoading(false);
             return;
           }

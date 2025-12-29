@@ -226,6 +226,7 @@
     }
     .records-actions { display: flex; align-items: center; gap: 8px; }
     .records-status { color: var(--muted); font-size: 0.9rem; }
+    .note { color: var(--muted); font-size: 0.9rem; }
     .records-filters .records-actions { margin-left: auto; }
     .panel-form {
       display: grid;
@@ -265,6 +266,8 @@
       flex-wrap: wrap;
     }
     .panel-status { color: var(--muted); font-size: 0.9rem; }
+    .panel-hint { color: var(--muted); font-size: 0.9rem; }
+    .app-footer { text-align: center; padding: 16px 0 24px; font-size: 0.95rem; color: var(--muted); }
     .bulk-row {
       border: 1px solid #e5e7eb;
       border-radius: 12px;
@@ -341,31 +344,31 @@
       <header>
         <div class="shell">
           <div class="top-row"></div>
-          <h1>My Records</h1>
-          <p class="subhead">Your saved Scope 2 electricity emissions.</p>
+          <h1>My Records (Scope 2 electricity, tCO₂e — location-based + market-based)</h1>
+          <p class="subhead">Your saved Scope 2 electricity emissions (tCO₂e, location-based + market-based).</p>
         </div>
       </header>
 
       <div class="shell">
     <section class="carbon-summary">
-      <h2 style="margin:0;">Carbon Snapshot (YTD)</h2>
+      <h2 style="margin:0;">Carbon Snapshot (YTD, Scope 2 electricity, tCO₂e — location-based)</h2>
       <div class="summary-grid">
         <div class="summary-card">
-          <div class="label">Total Scope 2</div>
+          <div class="label">Total Scope 2 electricity (tCO₂e, location-based)</div>
           <div class="value" id="totalEmissions">—</div>
           <div class="unit">tCO₂e</div>
         </div>
         <div class="summary-card">
-          <div class="label">Avg / Month</div>
+          <div class="label">Average per month (tCO₂e, location-based)</div>
           <div class="value" id="avgEmissions">—</div>
           <div class="unit">tCO₂e</div>
         </div>
         <div class="summary-card">
-          <div class="label">Highest Region</div>
+          <div class="label">Highest region (location-based tCO₂e)</div>
           <div class="value" id="topRegion">—</div>
         </div>
         <div class="summary-card">
-          <div class="label">Coverage</div>
+          <div class="label">Coverage (months with records)</div>
           <div class="value" id="recordCount">—</div>
           <div class="unit">months</div>
         </div>
@@ -377,9 +380,11 @@
           <div class="metric-note">For intuition only (non-reporting metric)</div>
         </div>
       </div>
+      <!-- Trust note for audit clarity -->
+      <p class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e). <a href="methodology.html">See Methodology</a>.</p>
     </section>
     <section class="carbon-reminders">
-      <h3>Insights & Reminders</h3>
+      <h3>Insights & Reminders (Scope 2 electricity, tCO₂e — location-based)</h3>
 
       <ul id="reminderList" class="reminder-list">
         <li class="placeholder">Loading insights…</li>
@@ -387,16 +392,17 @@
     </section>
         <section>
           <div class="records-controls">
-            <h2 style="margin:0;">Saved records</h2>
+            <h2 style="margin:0;">Saved Scope 2 electricity records (tCO₂e — location-based + market-based)</h2>
             <div class="records-actions">
               <!-- Export respects the current filters to avoid mismatched downloads -->
-              <button class="btn secondary" id="records-export-csv" type="button">Export CSV</button>
+              <button class="btn secondary" id="records-export-csv" type="button">Export CSV (Scope 2 electricity, tCO₂e — location-based + market-based)</button>
               <span class="records-status" id="records-export-status"></span>
             </div>
           </div>
+          <div class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e); market-based uses RECs/PPAs where provided. <a href="methodology.html">See Methodology</a>.</div>
           <section class="records-filters">
             <label>
-              Year
+              Reporting year (Scope 2 electricity)
           <select id="filterYear">
             <option value="">All</option>
           </select>
@@ -417,29 +423,35 @@
         </label>
 
         <label>
-          Method
+          Method (Scope 2 electricity, tCO₂e)
           <select id="filterMethod">
             <option value="">All</option>
-            <option value="location">Location-based</option>
-            <option value="market">Market-based</option>
+            <option value="location">Location-based Scope 2 electricity (tCO₂e)</option>
+            <option value="market">Market-based Scope 2 electricity (tCO₂e; RECs where provided)</option>
           </select>
         </label>
         <div class="records-actions">
-          <button class="btn secondary" id="records-add" type="button">Add record</button>
-          <button class="btn secondary" id="records-bulk" type="button">Bulk add</button>
+          <button class="btn secondary" id="records-add" type="button">Add Scope 2 electricity record (tCO₂e, location-based + market-based)</button>
+          <button class="btn secondary" id="records-bulk" type="button">Bulk add Scope 2 electricity records (tCO₂e, location-based + market-based)</button>
         </div>
       </section>
       <table class="table" aria-label="Saved records">
         <thead>
           <tr>
-            <th>Emissions</th>
-            <th>Method</th>
+            <th>Emissions (tCO₂e, location-based Scope 2 electricity)</th>
+            <th>Method (Scope 2 electricity, tCO₂e)</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody id="recordsTable"></tbody>
       </table>
+      <p class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e) for display. <a href="methodology.html">See Methodology</a>.</p>
     </section>
+    <footer class="app-footer">
+      <!-- Trust signals in footer: methodology, support, and factor freshness -->
+      <div><a href="methodology.html">Methodology</a> • <a href="mailto:hello@esgrise.com">Contact / support</a></div>
+      <div>Emission factors updated as of 2024.</div>
+    </footer>
   </div>
 
   <div id="recordPanel" class="slide-panel hidden" aria-live="polite"></div>
@@ -606,7 +618,7 @@
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       if (!session) {
-        showMessage('Log in on the main page to view your records.');
+        showMessage('Log in on the main page to view your Scope 2 electricity records.');
         return;
       }
       const { data, error } = await supabase
@@ -624,7 +636,7 @@
       if (window.renderCarbonSummary) window.renderCarbonSummary();
       if (window.renderCarbonReminders) window.renderCarbonReminders();
       if (!data || !data.length) {
-        showMessage('No records yet. Add one to get started.');
+        showMessage('No Scope 2 electricity records found. Add a record to include it in calculations and exports.');
       }
     };
 
@@ -671,11 +683,16 @@
       if (!supabase) return;
       const { data, error } = await supabase
         .from('companies')
-        .select('reporting_year_preference')
+        .select('reporting_year_preference,country,region')
         .order('created_at', { ascending: true })
         .limit(1);
       if (error || !data || !data.length) return;
-      window.companyReportingPreference = data[0]?.reporting_year_preference || 'all';
+      const company = data[0] || {};
+      window.companyReportingPreference = company.reporting_year_preference || 'all';
+      window.companyDefaults = {
+        country: company.country || '',
+        region: company.region || ''
+      };
     };
 
     const isFuturePeriod = (year, month) => (
@@ -693,7 +710,7 @@
     };
 
     const toCsv = (records, fallbackCompany = '') => {
-      const disclosure = 'Location-based Scope 2 calculation aligned with the GHG Protocol.';
+      const disclosure = 'Location-based Scope 2 electricity calculation aligned with the GHG Protocol.';
       const headers = [
         'company_name','period','country/region','kwh','scope2_location_based_tco2e','scope2_market_based_tco2e','emission_factor_value','emission_factor_year','emission_factor_source'
       ];
@@ -746,7 +763,7 @@
         }
         const filtered = window.getFilteredRecords();
         if (!filtered.length) {
-          setExportStatus('No records match these filters.');
+          setExportStatus('No Scope 2 electricity records match these filters. Add a record to include it in calculations and exports.');
           return;
         }
         const companyName = filtered[0]?.companies?.company_name || '';
@@ -767,7 +784,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
         <div>
           <div style="font-weight:700;font-size:1.05rem;">Add record</div>
-          <div style="color:#4b5563;font-size:0.95rem;">Create a single Scope 2 entry without leaving this page.</div>
+          <div style="color:#4b5563;font-size:0.95rem;">Create a single Scope 2 electricity entry without leaving this page.</div>
         </div>
         <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
       </div>
@@ -792,6 +809,7 @@
             <select id="add-year" required></select>
           </label>
         </div>
+        <div class="panel-hint">Enter the month electricity was consumed, not when the bill was paid.</div>
         <div class="panel-row single">
           <label>
             Electricity (kWh)
@@ -800,11 +818,11 @@
         </div>
         <label class="panel-toggle">
           <input type="checkbox" id="add-market-toggle" />
-          Include market-based Scope 2
+          Include market-based Scope 2 (using RECs where provided)
         </label>
         <div class="panel-row">
           <label>
-            Instrument type (optional)
+            Instrument type (market-based Scope 2)
             <select id="add-market-type">
               <option value="">None</option>
               <option value="REC">REC</option>
@@ -819,12 +837,12 @@
         </div>
         <div class="panel-row single">
           <label>
-            Reporting year (market-based)
+            Reporting year (market-based Scope 2)
             <select id="add-market-year"></select>
           </label>
         </div>
         <div class="panel-actions">
-          <button type="submit" class="btn primary">Save record</button>
+          <button type="submit" class="btn primary">Save Scope 2 electricity record (tCO₂e, location-based + market-based)</button>
         </div>
         <p class="panel-status" id="add-status"></p>
       </form>
@@ -970,11 +988,12 @@
         </div>
         <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
       </div>
+      <div class="panel-hint">Enter the month electricity was consumed, not when the bill was paid.</div>
       <form id="bulk-form" class="panel-form">
         <div id="bulk-rows"></div>
         <div class="panel-actions">
           <button type="button" class="btn secondary" id="bulk-add-row">Add row</button>
-          <button type="submit" class="btn primary">Save rows</button>
+          <button type="submit" class="btn primary">Save Scope 2 electricity rows (tCO₂e, location-based + market-based)</button>
         </div>
         <p class="panel-status" id="bulk-status"></p>
       </form>
@@ -1010,7 +1029,7 @@
             <input type="number" data-field="kwh" min="1" step="any" placeholder="e.g., 1200" />
           </label>
           <label>
-            Instrument type (optional)
+            Instrument type (market-based Scope 2)
             <select data-field="marketType">
               <option value="">None</option>
               <option value="REC">REC</option>
@@ -1025,7 +1044,7 @@
             <input type="number" data-field="covered" min="0" step="any" placeholder="0" />
           </label>
           <label>
-            Reporting year (market-based)
+            Reporting year (market-based Scope 2)
             <select data-field="marketYear"></select>
           </label>
         </div>
@@ -1283,6 +1302,7 @@
       attachHandlers();
       document.querySelectorAll('.records-filters select').forEach((el) => {
         el.addEventListener('change', () => {
+          el.dataset.userSet = 'true';
           if (window.renderRecords) window.renderRecords('recordsTable');
           if (window.renderCarbonSummary) window.renderCarbonSummary();
           if (window.renderCarbonReminders) window.renderCarbonReminders();
@@ -1292,11 +1312,15 @@
       if (supabase) {
         await refreshRecords();
         await loadCompanyPreference();
+        if (window.renderRecords) window.renderRecords('recordsTable');
+        if (window.renderCarbonSummary) window.renderCarbonSummary();
         if (window.renderCarbonReminders) window.renderCarbonReminders();
         supabase.auth.onAuthStateChange((_event) => {
           if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED' || _event === 'SIGNED_OUT') {
             refreshRecords();
             loadCompanyPreference().then(() => {
+              if (window.renderRecords) window.renderRecords('recordsTable');
+              if (window.renderCarbonSummary) window.renderCarbonSummary();
               if (window.renderCarbonReminders) window.renderCarbonReminders();
             });
           }
