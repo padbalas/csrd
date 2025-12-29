@@ -40,9 +40,11 @@
     .kpi-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #f8fafc; }
     .kpi-card .label { color: var(--muted); font-size: 0.9rem; }
     .kpi-card .value { font-size: 1.3rem; font-weight: 800; margin-top: 6px; }
-    .sparkline { width: 100%; height: 80px; }
+    .sparkline { width: 100%; height: 90px; }
     .sparkline path { stroke: #0f766e; stroke-width: 2; fill: none; }
     .sparkline circle { fill: #0f766e; }
+    .sparkline .axis { stroke: #cbd5e1; stroke-width: 1; }
+    .sparkline text { fill: #94a3b8; font-size: 10px; }
     .donut-wrap { display: grid; gap: 16px; grid-template-columns: minmax(160px, 220px) minmax(0, 1fr); align-items: center; }
     .donut { width: 200px; height: 200px; }
     .donut circle.bg { stroke: #e5e7eb; }
@@ -133,7 +135,15 @@
               <div class="value" id="trendMonths">—</div>
             </div>
           </div>
-          <svg class="sparkline" viewBox="0 0 320 80" preserveAspectRatio="none" aria-label="Monthly trend sparkline">
+          <svg class="sparkline" viewBox="0 0 320 90" preserveAspectRatio="none" aria-label="Monthly trend sparkline">
+            <g id="sparklineAxes">
+              <line id="sparklineYAxis" class="axis" x1="28" y1="10" x2="28" y2="70"></line>
+              <line id="sparklineXAxis" class="axis" x1="28" y1="70" x2="312" y2="70"></line>
+              <text id="sparklineMax" x="4" y="16">—</text>
+              <text id="sparklineMin" x="4" y="70">—</text>
+              <text id="sparklineStart" x="28" y="84">—</text>
+              <text id="sparklineEnd" x="240" y="84">—</text>
+            </g>
             <path id="sparklinePath" d=""></path>
             <circle id="sparklineLast" cx="0" cy="0" r="3" />
           </svg>
@@ -183,6 +193,10 @@
     const trendMonths = document.getElementById('trendMonths');
     const sparklinePath = document.getElementById('sparklinePath');
     const sparklineLast = document.getElementById('sparklineLast');
+    const sparklineMax = document.getElementById('sparklineMax');
+    const sparklineMin = document.getElementById('sparklineMin');
+    const sparklineStart = document.getElementById('sparklineStart');
+    const sparklineEnd = document.getElementById('sparklineEnd');
     const donutSegments = document.getElementById('donutSegments');
     const regionBars = document.getElementById('regionBars');
     const statusEl = document.getElementById('insightStatus');
@@ -240,6 +254,8 @@
       yearSelect.value = current;
     };
 
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
     const renderTrend = (records) => {
       if (!records.length) {
         trendTotal.textContent = '—';
@@ -249,6 +265,10 @@
         sparklinePath.setAttribute('d', '');
         sparklineLast.setAttribute('cx', '0');
         sparklineLast.setAttribute('cy', '0');
+        sparklineMax.textContent = '—';
+        sparklineMin.textContent = '—';
+        sparklineStart.textContent = '—';
+        sparklineEnd.textContent = '—';
         return;
       }
 
@@ -275,10 +295,14 @@
       const min = Math.min(...values);
       const range = max - min || 1;
       const width = 320;
-      const height = 80;
+      const height = 90;
+      const left = 28;
+      const right = 312;
+      const top = 10;
+      const bottom = 70;
       const points = values.map((v, idx) => {
-        const x = (idx / (values.length - 1 || 1)) * (width - 8) + 4;
-        const y = height - ((v - min) / range) * (height - 16) - 8;
+        const x = (idx / (values.length - 1 || 1)) * (right - left) + left;
+        const y = bottom - ((v - min) / range) * (bottom - top);
         return [x, y];
       });
       const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
@@ -286,6 +310,15 @@
       const last = points[points.length - 1];
       sparklineLast.setAttribute('cx', last[0]);
       sparklineLast.setAttribute('cy', last[1]);
+
+      const firstKey = keys[0].split('-');
+      const lastKey = keys[keys.length - 1].split('-');
+      const startLabel = `${monthNames[Number(firstKey[1]) - 1]} ${firstKey[0]}`;
+      const endLabel = `${monthNames[Number(lastKey[1]) - 1]} ${lastKey[0]}`;
+      sparklineMax.textContent = max.toFixed(2);
+      sparklineMin.textContent = min.toFixed(2);
+      sparklineStart.textContent = startLabel;
+      sparklineEnd.textContent = endLabel;
     };
 
     const renderRegions = (records) => {
