@@ -170,6 +170,49 @@
             <div class="bars" id="regionBars"></div>
           </div>
         </section>
+
+        <section class="card stack">
+          <h3 style="margin:0;">Market-based coverage</h3>
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="label">Coverage</div>
+              <div class="value" id="coveragePct">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Covered kWh</div>
+              <div class="value" id="coverageKwh">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Total kWh</div>
+              <div class="value" id="coverageTotalKwh">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Months covered</div>
+              <div class="value" id="coverageMonths">—</div>
+            </div>
+          </div>
+          <svg class="sparkline" viewBox="0 0 320 90" preserveAspectRatio="none" aria-label="Coverage trend sparkline">
+            <g>
+              <line class="axis" x1="28" y1="10" x2="28" y2="70"></line>
+              <line class="axis" x1="28" y1="70" x2="312" y2="70"></line>
+              <text id="coverageMax" x="4" y="16">—</text>
+              <text id="coverageMin" x="4" y="70">—</text>
+              <text id="coverageStart" x="28" y="84">—</text>
+              <text id="coverageEnd" x="240" y="84">—</text>
+            </g>
+            <path id="coveragePath" d=""></path>
+            <circle id="coverageLast" cx="0" cy="0" r="3" />
+          </svg>
+        </section>
+
+        <section class="card stack">
+          <h3 style="margin:0;">Data quality</h3>
+          <div class="stack">
+            <div><strong>Missing months</strong> <span class="muted" id="qualityMissing">—</span></div>
+            <div><strong>Outliers</strong> <span class="muted" id="qualityOutliers">—</span></div>
+            <div><strong>Duplicates</strong> <span class="muted" id="qualityDuplicates">—</span></div>
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -211,6 +254,19 @@
     const sparklineEnd = document.getElementById('sparklineEnd');
     const donutSegments = document.getElementById('donutSegments');
     const regionBars = document.getElementById('regionBars');
+    const coveragePct = document.getElementById('coveragePct');
+    const coverageKwh = document.getElementById('coverageKwh');
+    const coverageTotalKwh = document.getElementById('coverageTotalKwh');
+    const coverageMonths = document.getElementById('coverageMonths');
+    const coveragePath = document.getElementById('coveragePath');
+    const coverageLast = document.getElementById('coverageLast');
+    const coverageMax = document.getElementById('coverageMax');
+    const coverageMin = document.getElementById('coverageMin');
+    const coverageStart = document.getElementById('coverageStart');
+    const coverageEnd = document.getElementById('coverageEnd');
+    const qualityMissing = document.getElementById('qualityMissing');
+    const qualityOutliers = document.getElementById('qualityOutliers');
+    const qualityDuplicates = document.getElementById('qualityDuplicates');
     const statusEl = document.getElementById('insightStatus');
 
     const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
@@ -246,7 +302,7 @@
     const fetchRecords = async () => {
       const { data, error } = await supabase
         .from('scope2_records')
-        .select('period_year,period_month,location_based_emissions,calc_country,calc_region')
+        .select('period_year,period_month,kwh,covered_kwh,market_instrument_type,location_based_emissions,calc_country,calc_region')
         .order('period_year', { ascending: false })
         .order('period_month', { ascending: false });
       if (error) throw error;
@@ -381,6 +437,114 @@
       });
     };
 
+    const renderCoverage = (records) => {
+      coveragePct.textContent = '—';
+      coverageKwh.textContent = '—';
+      coverageTotalKwh.textContent = '—';
+      coverageMonths.textContent = '0';
+      coveragePath.setAttribute('d', '');
+      coverageLast.setAttribute('cx', '0');
+      coverageLast.setAttribute('cy', '0');
+      coverageMax.textContent = '—';
+      coverageMin.textContent = '—';
+      coverageStart.textContent = '—';
+      coverageEnd.textContent = '—';
+      if (!records.length) return;
+
+      const grouped = {};
+      records.forEach((r) => {
+        const key = `${r.period_year}-${String(r.period_month).padStart(2, '0')}`;
+        grouped[key] = grouped[key] || { total: 0, covered: 0 };
+        grouped[key].total += Number(r.kwh || 0);
+        grouped[key].covered += Number(r.covered_kwh || 0);
+      });
+      const keys = Object.keys(grouped).sort();
+      const totals = keys.map((k) => grouped[k].total);
+      const covered = keys.map((k) => grouped[k].covered);
+      const ratios = totals.map((t, i) => (t > 0 ? covered[i] / t : 0));
+
+      const totalKwh = totals.reduce((sum, v) => sum + v, 0);
+      const totalCovered = covered.reduce((sum, v) => sum + v, 0);
+      const pct = totalKwh ? (totalCovered / totalKwh) * 100 : 0;
+
+      coveragePct.textContent = `${pct.toFixed(0)}%`;
+      coverageKwh.textContent = totalCovered.toFixed(0);
+      coverageTotalKwh.textContent = totalKwh.toFixed(0);
+      coverageMonths.textContent = String(keys.length);
+
+      const max = Math.max(...ratios, 0);
+      const min = Math.min(...ratios, 0);
+      const range = max - min || 1;
+      const width = 320;
+      const left = 28;
+      const right = 312;
+      const top = 10;
+      const bottom = 70;
+      const points = ratios.map((v, idx) => {
+        const x = (idx / (ratios.length - 1 || 1)) * (right - left) + left;
+        const y = bottom - ((v - min) / range) * (bottom - top);
+        return [x, y];
+      });
+      const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+      coveragePath.setAttribute('d', path);
+      const last = points[points.length - 1] || [0, 0];
+      coverageLast.setAttribute('cx', last[0]);
+      coverageLast.setAttribute('cy', last[1]);
+
+      const firstKey = keys[0]?.split('-') || [];
+      const lastKey = keys[keys.length - 1]?.split('-') || [];
+      coverageMax.textContent = `${(max * 100).toFixed(0)}%`;
+      coverageMin.textContent = `${(min * 100).toFixed(0)}%`;
+      coverageStart.textContent = firstKey.length ? `${monthNames[Number(firstKey[1]) - 1]} ${firstKey[0]}` : '—';
+      coverageEnd.textContent = lastKey.length ? `${monthNames[Number(lastKey[1]) - 1]} ${lastKey[0]}` : '—';
+    };
+
+    const renderQuality = (records) => {
+      const year = yearSelect.value;
+      const filtered = year ? records.filter((r) => String(r.period_year) === year) : records;
+      const regions = Array.from(new Set(filtered.map((r) => `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`))).filter(Boolean);
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const targetYear = year ? parseInt(year, 10) : currentYear;
+      const maxMonth = targetYear === currentYear ? now.getMonth() + 1 : 12;
+
+      let missingCount = 0;
+      regions.forEach((label) => {
+        const seen = new Set(
+          filtered
+            .filter((r) => `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}` === label)
+            .map((r) => `${r.period_year}-${String(r.period_month).padStart(2, '0')}`)
+        );
+        for (let m = 1; m <= maxMonth; m += 1) {
+          const key = `${targetYear}-${String(m).padStart(2, '0')}`;
+          if (!seen.has(key)) missingCount += 1;
+        }
+      });
+
+      const monthTotals = {};
+      filtered.forEach((r) => {
+        const key = `${r.period_year}-${String(r.period_month).padStart(2, '0')}`;
+        monthTotals[key] = (monthTotals[key] || 0) + Number(r.location_based_emissions || 0);
+      });
+      const totals = Object.values(monthTotals);
+      const mean = totals.length ? totals.reduce((s, v) => s + v, 0) / totals.length : 0;
+      const variance = totals.length ? totals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / totals.length : 0;
+      const std = Math.sqrt(variance);
+      const outliers = totals.filter((v) => v > mean + std * 2).length;
+
+      const seenKeys = new Set();
+      let dupes = 0;
+      filtered.forEach((r) => {
+        const key = `${r.period_year}-${r.period_month}-${r.calc_country}-${r.calc_region}`;
+        if (seenKeys.has(key)) dupes += 1;
+        else seenKeys.add(key);
+      });
+
+      qualityMissing.textContent = `${missingCount} month${missingCount === 1 ? '' : 's'} missing`;
+      qualityOutliers.textContent = `${outliers} month${outliers === 1 ? '' : 's'} flagged`;
+      qualityDuplicates.textContent = `${dupes} duplicate${dupes === 1 ? '' : 's'}`;
+    };
+
     const applyFilters = (records) => {
       const year = yearSelect.value;
       if (!year) return records;
@@ -391,6 +555,8 @@
       const filtered = applyFilters(records);
       renderTrend(filtered);
       renderRegions(filtered);
+      renderCoverage(filtered);
+      renderQuality(filtered);
     };
 
     (async () => {
