@@ -395,7 +395,7 @@
             <h2 style="margin:0;">Saved Scope 2 electricity records (tCO₂e — location-based + market-based)</h2>
             <div class="records-actions">
               <!-- Export respects the current filters to avoid mismatched downloads -->
-              <button class="btn secondary" id="records-export-csv" type="button">Export CSV (Scope 2 electricity, tCO₂e — location-based + market-based)</button>
+              <button class="btn secondary" id="records-export-csv" type="button">Export CSV</button>
               <span class="records-status" id="records-export-status"></span>
             </div>
           </div>
@@ -423,16 +423,16 @@
         </label>
 
         <label>
-          Method (Scope 2 electricity, tCO₂e)
+          Method
           <select id="filterMethod">
             <option value="">All</option>
-            <option value="location">Location-based Scope 2 electricity (tCO₂e)</option>
-            <option value="market">Market-based Scope 2 electricity (tCO₂e; RECs where provided)</option>
+            <option value="location">Location-based</option>
+            <option value="market">Market-based</option>
           </select>
         </label>
         <div class="records-actions">
-          <button class="btn secondary" id="records-add" type="button">Add Scope 2 electricity record (tCO₂e, location-based + market-based)</button>
-          <button class="btn secondary" id="records-bulk" type="button">Bulk add Scope 2 electricity records (tCO₂e, location-based + market-based)</button>
+          <button class="btn secondary" id="records-add" type="button">Add record</button>
+          <button class="btn secondary" id="records-bulk" type="button">Bulk add</button>
         </div>
       </section>
       <table class="table" aria-label="Saved records">
@@ -842,7 +842,7 @@
           </label>
         </div>
         <div class="panel-actions">
-          <button type="submit" class="btn primary">Save Scope 2 electricity record (tCO₂e, location-based + market-based)</button>
+          <button type="submit" class="btn primary">Save record</button>
         </div>
         <p class="panel-status" id="add-status"></p>
       </form>
@@ -993,7 +993,7 @@
         <div id="bulk-rows"></div>
         <div class="panel-actions">
           <button type="button" class="btn secondary" id="bulk-add-row">Add row</button>
-          <button type="submit" class="btn primary">Save Scope 2 electricity rows (tCO₂e, location-based + market-based)</button>
+          <button type="submit" class="btn primary">Save rows</button>
         </div>
         <p class="panel-status" id="bulk-status"></p>
       </form>
