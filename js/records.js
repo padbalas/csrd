@@ -123,7 +123,10 @@ const applyDefaultFilters = () => {
   const methodEl = document.getElementById('filterMethod');
   const userSet = (el) => el?.dataset?.userSet === 'true';
   if (yearEl && !yearEl.value && !userSet(yearEl)) {
-    setSelectValue(yearEl, String(CURRENT_YEAR));
+    const pref = typeof window !== 'undefined' ? window.companyReportingPreference : null;
+    const preferredYear = pref === 'previous' ? CURRENT_YEAR - 1 : pref === 'current' ? CURRENT_YEAR : null;
+    const didSet = preferredYear ? setSelectValue(yearEl, String(preferredYear)) : false;
+    if (!didSet) setSelectValue(yearEl, String(CURRENT_YEAR));
   }
   if (methodEl && !methodEl.value && !userSet(methodEl)) {
     methodEl.value = 'location';
