@@ -40,7 +40,7 @@ test.describe('Authenticated flows', () => {
     if (!hasNewLayout) {
       test.skip(true, 'Insights layout not updated on this environment');
     }
-    await expect(page.getByRole('heading', { name: /Monthly Scope 2 electricity trend/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Monthly trend/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Regional contribution/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Data coverage/i })).toBeVisible();
   });

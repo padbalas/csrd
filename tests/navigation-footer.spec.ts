@@ -20,7 +20,7 @@ test.describe('Global privacy and footer copy', () => {
   test('basic responsive sanity at mobile width', async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /Scope 2 electricity reporting/i }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Carbon reporting/i }).first()).toBeVisible();
     await page.close();
   });
 
