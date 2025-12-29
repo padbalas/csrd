@@ -55,6 +55,13 @@
       padding-top: 12px;
       border-top: 1px solid rgba(148, 163, 184, 0.2);
     }
+    .nav-item.logout {
+      background: transparent;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #e5e7eb;
+      text-align: left;
+      width: 100%;
+    }
     .nav-item {
       display: block;
       padding: 10px 12px;
@@ -327,7 +334,7 @@
         <a href="exports.html" class="nav-item" data-nav="export">Export / Reports</a>
         <a href="settings.html" class="nav-item" data-nav="settings">Settings</a>
         <div class="nav-footer">
-          <button class="nav-item" id="records-signout" type="button">Log out</button>
+          <button class="nav-item logout" id="nav-signout" type="button">Log out</button>
         </div>
       </nav>
     </aside>
@@ -462,7 +469,7 @@
     import { EMISSION_FACTORS, GLOBAL_FALLBACK } from './data/emission-factors.js';
     const recordsTable = document.getElementById('recordsTable');
     const recordPanel = document.getElementById('recordPanel');
-    const signoutBtn = document.getElementById('records-signout');
+    const signoutBtn = document.getElementById('nav-signout');
     const exportBtn = document.getElementById('records-export-csv');
     const exportStatus = document.getElementById('records-export-status');
     const addBtn = document.getElementById('records-add');

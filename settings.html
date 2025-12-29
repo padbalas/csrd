@@ -18,11 +18,19 @@
     body { margin: 0; background: var(--bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
     .app-layout { display: flex; min-height: 100vh; background: var(--bg); }
     .side-nav { width: 230px; padding: 24px 18px; background: #0b1220; color: #e5e7eb; border-right: 1px solid #111827; position: sticky; top: 0; height: 100vh; box-sizing: border-box; }
-    .nav-items { display: grid; gap: 6px; }
+    .nav-items { display: flex; flex-direction: column; gap: 6px; height: 100%; }
     .nav-item { display: block; padding: 10px 12px; border-radius: 10px; color: #e5e7eb; text-decoration: none; font-weight: 600; }
     .nav-item:hover:not(.disabled) { background: rgba(255,255,255,0.08); }
     .nav-item.active { background: rgba(34,197,94,0.18); color: #fff; border: 1px solid rgba(34,197,94,0.4); }
     .nav-item.disabled { opacity: 0.5; cursor: default; }
+    .nav-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(148, 163, 184, 0.2); }
+    .nav-item.logout {
+      background: transparent;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #e5e7eb;
+      text-align: left;
+      width: 100%;
+    }
     .app-content { flex: 1; min-width: 0; }
     header { padding: 32px 20px 12px; color: #0f172a; }
     .shell { max-width: 900px; margin: 0 auto; padding: 0 20px 60px; }
@@ -74,6 +82,9 @@
         <a href="insights.html" class="nav-item" data-nav="insights">Insights</a>
         <a href="exports.html" class="nav-item" data-nav="export">Export / Reports</a>
         <a href="settings.html" class="nav-item active" data-nav="settings">Settings</a>
+        <div class="nav-footer">
+          <button class="nav-item logout" id="nav-signout" type="button">Log out</button>
+        </div>
       </nav>
     </aside>
     <div class="app-content">
@@ -188,6 +199,7 @@
     const regionEl = document.getElementById('company-region');
     const reportingEl = document.getElementById('company-reporting-year');
     const statusEl = document.getElementById('settings-status');
+    const signoutBtn = document.getElementById('nav-signout');
 
     let companyId = null;
     let session = null;
@@ -288,6 +300,13 @@
       await loadCompany();
       countryEl.addEventListener('change', () => setRegionOptions(countryEl.value));
     })();
+
+    if (signoutBtn) {
+      signoutBtn.addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
+      });
+    }
   </script>
 </body>
 </html>
