@@ -23,7 +23,7 @@
     .nav-item:hover:not(.disabled) { background: rgba(255,255,255,0.08); }
     .nav-item.active { background: rgba(34,197,94,0.18); color: #fff; border: 1px solid rgba(34,197,94,0.4); }
     .nav-item.disabled { opacity: 0.5; cursor: default; }
-    .nav-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(148, 163, 184, 0.2); }
+    .nav-footer { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(148, 163, 184, 0.2); }
     .nav-item.logout {
       background: transparent;
       border: 1px solid rgba(148, 163, 184, 0.35);
@@ -44,6 +44,7 @@
       font-weight: 600;
       font-size: 0.9rem;
       margin-bottom: 16px;
+      text-decoration: none;
     }
     h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 36px); letter-spacing: -0.01em; }
     p.muted { color: var(--muted); margin: 0 0 12px; }
@@ -86,7 +87,7 @@
 <body>
   <div class="app-layout">
     <aside class="side-nav">
-      <div class="nav-brand">CarbonWise</div>
+      <a class="nav-brand" href="index.html">CarbonWise</a>
       <nav class="nav-items">
         <a href="records.html" class="nav-item" data-nav="records">My Records</a>
         <a href="insights.html" class="nav-item" data-nav="insights">Insights</a>
