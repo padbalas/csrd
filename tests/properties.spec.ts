@@ -46,16 +46,16 @@ test.describe('Calculator properties (PBT)', () => {
           const form = calcForm(page);
           await selectBaseFields(page, year, monthIndex, kwh);
 
-          await form.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
-          await form.getByLabel('Instrument type', { exact: true }).selectOption({ value: 'REC' });
+          await form.getByLabel(/Include market-based Scope 2/i).check();
+          await form.getByLabel(/Instrument type/i).selectOption({ value: 'REC' });
           await form.getByLabel('Covered electricity (kWh)').fill(String(covered));
-          const marketYearSelect = form.getByLabel('Reporting year (market-based)');
+          const marketYearSelect = form.getByLabel(/Reporting year \(market-based/i);
           const marketOptions = await marketYearSelect.locator('option').allTextContents();
           const marketYear = marketOptions.includes(String(year)) ? String(year) : marketOptions[0];
           await marketYearSelect.selectOption(marketYear);
 
           // Run calculation
-          const saveBtn = form.getByRole('button', { name: 'See my emissions in minutes' });
+          const saveBtn = form.getByRole('button', { name: /See my Scope 2 electricity emissions/i });
           await saveBtn.click();
 
           // If covered > total, expect either validation or clamping
@@ -97,7 +97,7 @@ test.describe('Calculator properties (PBT)', () => {
         async ({ kwh, monthIndex, year }) => {
           await page.goto('/');
           await selectBaseFields(page, year, monthIndex, kwh);
-          await calcForm(page).getByRole('button', { name: 'See my emissions in minutes' }).click();
+          await calcForm(page).getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
           await page.waitForFunction(() => document.querySelector('#result-container')?.classList.contains('active'), { timeout: 5000 }).catch(() => null);
           const isActive = await page.locator('#result-container').evaluate((el) => el.classList.contains('active'));
           if (!isActive) return;
@@ -119,7 +119,7 @@ test.describe('Calculator properties (PBT)', () => {
           await page.goto('/');
           await selectBaseFields(page, currentYear, futureIndex, 1000);
           // Expect no active result when future month is chosen
-          await calcForm(page).getByRole('button', { name: 'See my emissions in minutes' }).click();
+          await calcForm(page).getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
           const isActive = await page.locator('#result-container').evaluate((el) => el.classList.contains('active'));
           expect(isActive).toBeFalsy();
         }
@@ -142,7 +142,7 @@ test.describe('Calculator properties (PBT)', () => {
           // First run with lower kWh
           await page.goto('/');
           await selectBaseFields(page, year, monthIndex, kwhA);
-          await calcForm(page).getByRole('button', { name: 'See my emissions in minutes' }).click();
+          await calcForm(page).getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
           await page.waitForFunction(() => document.querySelector('#result-container')?.classList.contains('active'), { timeout: 5000 }).catch(() => null);
           const isActiveA = await page.locator('#result-container').evaluate((el) => el.classList.contains('active'));
           if (!isActiveA) return;
@@ -152,7 +152,7 @@ test.describe('Calculator properties (PBT)', () => {
           // Run again with higher kWh
           await page.goto('/');
           await selectBaseFields(page, year, monthIndex, kwhB);
-          await calcForm(page).getByRole('button', { name: 'See my emissions in minutes' }).click();
+          await calcForm(page).getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
           await page.waitForFunction(() => document.querySelector('#result-container')?.classList.contains('active'), { timeout: 5000 }).catch(() => null);
           const isActiveB = await page.locator('#result-container').evaluate((el) => el.classList.contains('active'));
           if (!isActiveB) return;
@@ -179,14 +179,14 @@ test.describe('Calculator properties (PBT)', () => {
           // Force factor mismatch by setting billing year > factor year; market year matches billing
           await selectBaseFields(page, activityYear, monthIndex, 500);
           const form = calcForm(page);
-          await form.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
-          await form.getByLabel('Instrument type', { exact: true }).selectOption({ value: 'REC' });
+          await form.getByLabel(/Include market-based Scope 2/i).check();
+          await form.getByLabel(/Instrument type/i).selectOption({ value: 'REC' });
           await form.getByLabel('Covered electricity (kWh)').fill('50');
-          const marketYearSelect = form.getByLabel('Reporting year (market-based)');
+          const marketYearSelect = form.getByLabel(/Reporting year \(market-based/i);
           const marketOptions = await marketYearSelect.locator('option').allTextContents();
           const marketYear = marketOptions.includes(String(activityYear)) ? String(activityYear) : marketOptions[0];
           await marketYearSelect.selectOption(marketYear);
-          await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+          await form.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
           const mismatchText = await page.locator('#factor-mismatch').textContent();
           if (!mismatchText) return;
           expect(mismatchText).toMatch(/most recent available data|published with a delay/i);
@@ -210,14 +210,14 @@ test.describe('Calculator properties (PBT)', () => {
           await page.goto('/');
           await selectBaseFields(page, year, monthIndex, kwh);
           const form = calcForm(page);
-          await form.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
-          await form.getByLabel('Instrument type', { exact: true }).selectOption({ value: 'REC' });
+          await form.getByLabel(/Include market-based Scope 2/i).check();
+          await form.getByLabel(/Instrument type/i).selectOption({ value: 'REC' });
           await form.getByLabel('Covered electricity (kWh)').fill(String(covered));
-          const marketYearSelect = form.getByLabel('Reporting year (market-based)');
+          const marketYearSelect = form.getByLabel(/Reporting year \(market-based/i);
           const marketOptions = await marketYearSelect.locator('option').allTextContents();
           const marketYear = marketOptions.includes(String(year)) ? String(year) : marketOptions[0];
           await marketYearSelect.selectOption(marketYear);
-          await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+          await form.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
           await page.waitForFunction(() => document.querySelector('#result-container')?.classList.contains('active'), { timeout: 5000 }).catch(() => null);
           const isActive = await page.locator('#result-container').evaluate((el) => el.classList.contains('active'));
           if (!isActive) return;
@@ -245,14 +245,14 @@ test.describe('Calculator properties (PBT)', () => {
           await page.goto('/');
           await selectBaseFields(page, year, monthIndex, kwh);
           const form = calcForm(page);
-          await form.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
-          await form.getByLabel('Instrument type', { exact: true }).selectOption({ value: 'REC' });
+          await form.getByLabel(/Include market-based Scope 2/i).check();
+          await form.getByLabel(/Instrument type/i).selectOption({ value: 'REC' });
           await form.getByLabel('Covered electricity (kWh)').fill(String(covered));
-          const marketYearSelect = form.getByLabel('Reporting year (market-based)');
+          const marketYearSelect = form.getByLabel(/Reporting year \(market-based/i);
           const marketOptions = await marketYearSelect.locator('option').allTextContents();
           const marketYear = marketOptions.includes(String(year)) ? String(year) : marketOptions[0];
           await marketYearSelect.selectOption(marketYear);
-          await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+          await form.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
           const details = await page.locator('#market-details').textContent();
           if (details) {
             const match = details.match(/Covered kWh: ([\d,]+)/i);

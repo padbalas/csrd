@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const mobileViewport = { width: 390, height: 844 };
 
 const pages = [
-  { path: '/', heading: /Carbon reporting/i },
+  { path: '/', heading: /Scope 2 electricity reporting/i },
   { path: '/records.html', heading: /My Records/i },
   { path: '/exports.html', heading: /Export \/ Reports/i },
   { path: '/methodology.html', heading: /Methodology/i },
@@ -21,7 +21,7 @@ test.describe('Mobile viewport smoke checks', () => {
       } catch {}
 
       if (redirectedToLanding) {
-        await expect(page.getByRole('heading', { name: /Carbon reporting/i })).toBeVisible();
+        await expect(page.getByRole('heading', { name: /Scope 2 electricity reporting/i })).toBeVisible();
       } else {
         await expect(page.getByRole('heading', { name: heading })).toBeVisible();
       }

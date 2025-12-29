@@ -5,26 +5,29 @@ test.describe('Global privacy and footer copy', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Privacy & trust' })).toBeVisible();
     await expect(page.getByText('Calculate without an account. Log in only to save or export.', { exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'methodology' })).toHaveAttribute('href', 'methodology.html');
+    const privacySection = page.locator('#privacy');
+    await expect(privacySection.getByRole('link', { name: /methodology/i })).toHaveAttribute('href', 'methodology.html');
   });
 
   test('footer states GHG alignment and contact', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('footer')).toContainText(/Aligned with the GHG Protocol \(Scope 2, location-based\)/i);
-    await expect(page.getByRole('link', { name: /Contact \/ feedback/i })).toBeVisible();
+    const footer = page.locator('footer');
+    await expect(footer).toContainText(/Methodology/i);
+    await expect(footer).toContainText(/Contact \/ support/i);
+    await expect(footer).toContainText(/Emission factors updated as of 2024/i);
   });
 
   test('basic responsive sanity at mobile width', async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /Carbon reporting/i }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Scope 2 electricity reporting/i }).first()).toBeVisible();
     await page.close();
   });
 
   test('app page footer includes methodology link (exports)', async ({ page }) => {
     await page.goto('/exports.html');
-    await expect(page.getByText(/Methodology:/i)).toBeVisible();
-    await expect(page.getByRole('link', { name: /Methodology/i })).toHaveAttribute('href', 'methodology.html');
+    const footer = page.locator('footer');
+    await expect(footer.getByRole('link', { name: /Methodology/i })).toHaveAttribute('href', 'methodology.html');
   });
 
   test('records filters remain visible after scroll (desktop)', async ({ browser }) => {

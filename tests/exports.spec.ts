@@ -10,8 +10,8 @@ test('exports page redirects or requires auth', async ({ page }) => {
   if (currentUrl.includes('exports.html')) {
     await expect(page.getByRole('heading', { name: /Export \/ Reports/i })).toBeVisible();
     await expect(page.getByRole('link', { name: 'My Records' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Generate PDF' })).toBeDisabled();
-    await expect(page.getByText(/Methodology:/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Generate PDF/i })).toBeDisabled();
+    await expect(page.locator('footer').getByRole('link', { name: /Methodology/i })).toBeVisible();
 
     // If year options exist, try generating and verify CRLF line endings and disclosure
     const yearOptions = await page.locator('#exportYear option').all();
@@ -23,7 +23,7 @@ test('exports page redirects or requires auth', async ({ page }) => {
     }
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Generate CSV' }).click()
+      page.getByRole('button', { name: /Generate CSV/i }).click()
     ]);
     const csvPath = await download.path();
     if (csvPath) {

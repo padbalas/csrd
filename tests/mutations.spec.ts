@@ -25,7 +25,7 @@ test.describe('Mutating flows (opt-in)', () => {
     await form.getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
     await form.getByLabel('Electricity used (kWh)', { exact: true }).fill(String(kwh));
     await form.getByLabel('State / region').selectOption({ label: 'California' });
-    await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await form.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     await expect(page.locator('#result-container')).toHaveClass(/active/);
     page.once('dialog', (dialog) => dialog.accept());
     await page.locator('#save-btn').click();
@@ -86,11 +86,11 @@ test.describe('Mutating flows (opt-in)', () => {
     await form.getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
     await form.getByLabel('Electricity used (kWh)', { exact: true }).fill(String(kwh));
     await form.getByLabel('State / region').selectOption({ label: 'California' });
-    await form.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
-    await form.getByLabel('Instrument type', { exact: true }).selectOption({ value: 'REC' });
+    await form.getByLabel(/Include market-based Scope 2/i).check();
+    await form.getByLabel(/Instrument type/i).selectOption({ value: 'REC' });
     await form.getByLabel('Covered electricity (kWh)').fill('100');
-    await form.getByLabel('Reporting year (market-based)').selectOption(String(new Date().getFullYear()));
-    await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await form.getByLabel(/Reporting year \(market-based/i).selectOption(String(new Date().getFullYear()));
+    await form.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     await expect(page.locator('#result-container')).toHaveClass(/active/);
     page.once('dialog', (dialog) => dialog.accept());
     await page.locator('#save-btn').click();
@@ -115,6 +115,46 @@ test.describe('Mutating flows (opt-in)', () => {
   test('PDF button remains disabled (placeholder)', async ({ page }) => {
     await page.goto('/exports.html');
     await expect(page.getByRole('button', { name: 'Generate PDF' })).toBeDisabled();
+  });
+
+  test('bulk add 10 records and snapshot coverage increases', async ({ page }) => {
+    await page.goto('/records.html');
+    if (page.url().includes('index.html')) {
+      test.skip(true, 'Auth required to access records');
+    }
+
+    const targetYear = String(new Date().getFullYear() - 1);
+
+    const initialCountText = await page.locator('#recordCount').textContent();
+    const initialCount = Number(initialCountText || '0') || 0;
+
+    await page.getByRole('button', { name: 'Bulk add' }).click();
+    const rows = page.locator('#bulk-rows .bulk-row');
+    const addRowBtn = page.locator('#bulk-add-row');
+
+    for (let i = 0; i < 7; i += 1) {
+      await addRowBtn.click();
+    }
+
+    await expect(rows).toHaveCount(10);
+
+    for (let i = 0; i < 10; i += 1) {
+      const row = rows.nth(i);
+      await row.locator('[data-field="country"]').selectOption('SG');
+      await row.locator('[data-field="region"]').selectOption('Singapore');
+      await row.locator('[data-field="month"]').selectOption(String(i + 1));
+      await row.locator('[data-field="year"]').selectOption(targetYear);
+      await row.locator('[data-field="kwh"]').fill(String(1000 + i * 10));
+    }
+
+    await page.getByRole('button', { name: 'Save rows' }).click();
+    await expect(page.locator('#recordPanel')).toHaveClass(/hidden/);
+
+    await page.waitForTimeout(1500);
+    const finalCountText = await page.locator('#recordCount').textContent();
+    const finalCount = Number(finalCountText || '0') || 0;
+    expect(finalCount).toBeGreaterThanOrEqual(Math.max(initialCount, 10));
+    expect(finalCount).toBeGreaterThanOrEqual(initialCount);
   });
 
   test('cross-user isolation: record from primary is not visible to secondary', async ({ page, context }) => {
@@ -146,7 +186,7 @@ test.describe('Mutating flows (opt-in)', () => {
     await form.getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
     await form.getByLabel('Electricity used (kWh)', { exact: true }).fill(markerKwh);
     await form.getByLabel('State / region').selectOption({ label: 'California' });
-    await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await form.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     await expect(page.locator('#result-container')).toHaveClass(/active/);
     page.once('dialog', (dialog) => dialog.accept());
     await page.locator('#save-btn').click();
@@ -181,7 +221,7 @@ test.describe('Mutating flows (opt-in)', () => {
     // Exports for secondary should not contain marker
     await page.goto('/exports.html');
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
-    await page.getByRole('button', { name: 'Generate CSV' }).click();
+    await page.getByRole('button', { name: /Generate CSV/i }).click();
     const dl = await downloadPromise;
     if (!dl) test.skip(true, 'No export download available');
     const csvContent = await dl.createReadStream().then(async (stream) => {

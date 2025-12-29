@@ -10,7 +10,7 @@ test.describe('Records page (unauthenticated)', () => {
     const url = page.url();
     if (url.includes('records.html')) {
       await expect(
-        page.getByText(/Log in on the main page to view your records|History unavailable while offline/i)
+        page.getByText(/Log in on the main page to view your Scope 2 electricity records|History unavailable while offline/i)
       ).toBeVisible();
     } else {
       await expect(url).toContain('index.html');
@@ -35,13 +35,13 @@ test.describe('Records page (unauthenticated)', () => {
   });
 
   test('shows export control on records list', async ({ page }) => {
-    await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Export CSV/i })).toBeVisible();
   });
 
   test('prompts for access when not signed in', async ({ page }) => {
     // The page should indicate records are unavailable without signing in
     await expect(
-      page.getByText(/Log in on the main page to view your records|History unavailable while offline/i)
+      page.getByText(/Log in on the main page to view your Scope 2 electricity records|History unavailable while offline/i)
     ).toBeVisible();
   });
 });
@@ -67,6 +67,7 @@ test.describe('Records snapshot calculations (local data)', () => {
     }, sampleRecords);
 
     await page.goto('/records.html');
+    await page.locator('#filterYear').selectOption('2024');
     await expect(page.locator('#recordCount')).toHaveText('10');
   });
 });

@@ -47,7 +47,7 @@ test('unauthenticated calculate avoids Supabase writes', async ({ page }) => {
   await form.getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
   await form.getByLabel('Electricity used (kWh)', { exact: true }).fill('500');
   await form.getByLabel('State / region').selectOption({ label: 'California' });
-  await form.getByRole('button', { name: 'See my emissions in minutes' }).click();
+  await form.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
   // No Supabase REST or auth calls should occur during unauthenticated calculation
   expect(requests.length).toBe(0);
 });
@@ -72,7 +72,7 @@ test.describe('Session expiry handling', () => {
     await page.waitForTimeout(1500);
     const url = page.url();
     if (url.includes('records.html')) {
-      await expect(page.getByText(/Log in on the main page to view your records|Log in to view history/i)).toBeVisible();
+      await expect(page.getByText(/Log in on the main page to view your Scope 2 electricity records|Log in to view history/i)).toBeVisible();
     } else {
       await expect(url).toContain('index.html');
     }
@@ -107,7 +107,7 @@ test.describe('Export scope checks (opt-in, needs fixtures)', () => {
     // Download all years
     const [allDl] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Generate CSV' }).click()
+      page.getByRole('button', { name: /Generate CSV/i }).click()
     ]);
     const allContent = fs.readFileSync(await allDl.path() as string, 'utf-8');
     const allRows = allContent.trim().split(/\r?\n/).filter((line) => line && !line.startsWith('"Disclosure"')).length;
@@ -118,7 +118,7 @@ test.describe('Export scope checks (opt-in, needs fixtures)', () => {
     await page.locator('#exportYear').selectOption(firstYear);
     const [yearDl] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Generate CSV' }).click()
+      page.getByRole('button', { name: /Generate CSV/i }).click()
     ]);
     const yearContent = fs.readFileSync(await yearDl.path() as string, 'utf-8');
     const yearRows = yearContent.trim().split(/\r?\n/).filter((line) => line && !line.startsWith('"Disclosure"')).length;
@@ -137,7 +137,7 @@ test.describe('Export scope checks (opt-in, needs fixtures)', () => {
     const companyDisplay = await page.locator('#companyName').textContent();
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Generate CSV' }).click()
+      page.getByRole('button', { name: /Generate CSV/i }).click()
     ]);
     const csv = fs.readFileSync(await download.path() as string, 'utf-8');
     const lines = csv.split(/\r?\n/).filter(Boolean);

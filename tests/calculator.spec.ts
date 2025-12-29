@@ -35,11 +35,11 @@ test.describe('Calculator (index)', () => {
     // Market-based fields stay hidden until toggled
     const marketFields = page.locator('#market-fields');
     await expect(marketFields).toBeHidden();
-    await page.getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
+    await page.getByLabel(/Include market-based Scope 2/i).check();
     await expect(marketFields).toBeVisible();
-    await expect(calcForm(page).getByLabel('Instrument type', { exact: true })).toBeVisible();
+    await expect(calcForm(page).getByLabel(/Instrument type/i)).toBeVisible();
     await expect(calcForm(page).getByLabel('Covered electricity (kWh)')).toBeVisible();
-    await expect(calcForm(page).getByLabel('Reporting year (market-based)')).toBeVisible();
+    await expect(calcForm(page).getByLabel(/Reporting year \(market-based/i)).toBeVisible();
   });
 
   test('billing year selector excludes future years', async ({ page }) => {
@@ -60,7 +60,7 @@ test.describe('Calculator (index)', () => {
     const futureMonthValue = await futureMonthName.textContent();
     await calcForm(page).getByLabel('Billing month').selectOption({ label: futureMonthValue || '' });
     const dialogPromise = page.waitForEvent('dialog');
-    await page.getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await page.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     const dialog = await dialogPromise;
     expect(dialog.message()).toMatch(/Future months are not supported/i);
     await dialog.dismiss();
@@ -68,32 +68,32 @@ test.describe('Calculator (index)', () => {
 
   test('calculates location-based result and keeps market as not provided when toggle is off', async ({ page }) => {
     await fillBaseForm(page, { kwh: 1200 });
-    await page.getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await page.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     await expect(page.locator('#result-container')).toHaveClass(/active/);
     await expect(page.locator('#result-tons')).not.toHaveText('—');
     await expect(page.locator('#result-market')).toHaveText(/Not provided/i);
-    await expect(page.locator('#calc-details')).toContainText(/t CO₂e\/kWh/i);
+    await expect(page.locator('#calc-details')).toContainText(/tCO₂e\/kWh/i);
   });
 
   test('market-based validation prevents covered kWh above total', async ({ page }) => {
     await stubAlerts(page);
     await fillBaseForm(page, { kwh: 1000 });
-    await calcForm(page).getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
-    await calcForm(page).getByLabel('Instrument type', { exact: true }).selectOption({ value: 'REC' });
+    await calcForm(page).getByLabel(/Include market-based Scope 2/i).check();
+    await calcForm(page).getByLabel(/Instrument type/i).selectOption({ value: 'REC' });
     await calcForm(page).getByLabel('Covered electricity (kWh)').fill('1500'); // exceeds total
-    await calcForm(page).getByLabel('Reporting year (market-based)').selectOption(String(new Date().getFullYear()));
-    await calcForm(page).getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await calcForm(page).getByLabel(/Reporting year \(market-based/i).selectOption(String(new Date().getFullYear()));
+    await calcForm(page).getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     const alerts = await page.evaluate(() => window.__alerts || []);
     expect(alerts.join(' ')).toMatch(/cannot exceed total electricity used/i);
   });
 
   test('market-based calculation shows market result and disclaimer', async ({ page }) => {
     await fillBaseForm(page, { kwh: 1000 });
-    await calcForm(page).getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
-    await calcForm(page).getByLabel('Instrument type', { exact: true }).selectOption({ value: 'REC' });
+    await calcForm(page).getByLabel(/Include market-based Scope 2/i).check();
+    await calcForm(page).getByLabel(/Instrument type/i).selectOption({ value: 'REC' });
     await calcForm(page).getByLabel('Covered electricity (kWh)').fill('200');
-    await calcForm(page).getByLabel('Reporting year (market-based)').selectOption(String(new Date().getFullYear()));
-    await page.getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await calcForm(page).getByLabel(/Reporting year \(market-based/i).selectOption(String(new Date().getFullYear()));
+    await page.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     await expect(page.locator('#result-container')).toHaveClass(/active/);
     await expect(page.locator('#result-market')).not.toHaveText(/Not provided/i);
     await expect(page.locator('#market-disclaimer')).toBeVisible();
@@ -108,7 +108,7 @@ test.describe('Calculator (index)', () => {
     await calcForm(page).getByLabel('Billing year').selectOption(String(new Date().getFullYear()));
     await calcForm(page).getByLabel('Electricity used (kWh)', { exact: true }).fill('0');
     await calcForm(page).getByLabel('State / region').selectOption({ label: 'California' });
-    await calcForm(page).getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await calcForm(page).getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     const alerts = await page.evaluate(() => window.__alerts || []);
     if (!alerts.length) {
       test.skip(true, 'No alert shown for zero kWh; skipping failure to avoid flakiness');
@@ -118,7 +118,7 @@ test.describe('Calculator (index)', () => {
 
     // Now use valid kWh and expect factor sentence and comparison populated
     await calcForm(page).getByLabel('Electricity used (kWh)', { exact: true }).fill('500');
-    await calcForm(page).getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await calcForm(page).getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     await expect(page.locator('#result-container')).toHaveClass(/active/);
     await expect(page.locator('#result-compare')).not.toHaveText('—');
     await expect(page.locator('#calc-details')).toContainText(/emission factors/i);
@@ -126,11 +126,11 @@ test.describe('Calculator (index)', () => {
 
   test('location and market values render together when market is enabled', async ({ page }) => {
     await fillBaseForm(page, { kwh: 750 });
-    await calcForm(page).getByLabel('Include market-based Scope 2 (RECs / PPAs)').check();
-    await calcForm(page).getByLabel('Instrument type').selectOption({ value: 'REC' });
+    await calcForm(page).getByLabel(/Include market-based Scope 2/i).check();
+    await calcForm(page).getByLabel(/Instrument type/i).selectOption({ value: 'REC' });
     await calcForm(page).getByLabel('Covered electricity (kWh)').fill('100');
-    await calcForm(page).getByLabel('Reporting year (market-based)').selectOption(String(new Date().getFullYear()));
-    await page.getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await calcForm(page).getByLabel(/Reporting year \(market-based/i).selectOption(String(new Date().getFullYear()));
+    await page.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     await expect(page.locator('#result-container')).toHaveClass(/active/);
     await expect(page.locator('#result-tons')).not.toHaveText('—');
     await expect(page.locator('#result-market')).not.toHaveText('—');
@@ -138,9 +138,9 @@ test.describe('Calculator (index)', () => {
 
   test('save triggers auth prompt when not signed in', async ({ page }) => {
     await fillBaseForm(page, { kwh: 800 });
-    await page.getByRole('button', { name: 'See my emissions in minutes' }).click();
+    await page.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     await expect(page.locator('#result-container')).toHaveClass(/active/);
-    await page.getByRole('button', { name: /^Save$/ }).click();
+    await page.getByRole('button', { name: /Save Scope 2 electricity record/i }).click();
     await expect(page.locator('#auth-modal')).toHaveClass(/active/);
   });
 });

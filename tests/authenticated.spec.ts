@@ -26,7 +26,7 @@ test.describe('Authenticated flows', () => {
       test.skip(true, 'Auth state missing for exports page');
     }
     await expect(page.getByRole('heading', { name: /Export \/ Reports/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Generate CSV' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: /Generate CSV/i })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Generate PDF' })).toBeDisabled();
   });
 
@@ -61,7 +61,7 @@ test.describe('Authenticated flows', () => {
 
     // Export CSV and confirm disclosure present
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
-    await page.getByRole('button', { name: 'Export CSV' }).click();
+    await page.getByRole('button', { name: /Export CSV/i }).click();
     const download = await downloadPromise;
     if (!download) {
       const status = page.locator('#records-export-status');
@@ -89,7 +89,7 @@ test.describe('Authenticated flows', () => {
     const status = page.locator('#exportStatus');
 
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
-    await page.getByRole('button', { name: 'Generate CSV' }).click();
+    await page.getByRole('button', { name: /Generate CSV/i }).click();
     const download = await downloadPromise;
     if (!download) {
       const statusText = (await status.textContent())?.trim() || '';
