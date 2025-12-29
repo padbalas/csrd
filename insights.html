@@ -267,14 +267,38 @@
         yearSelect.appendChild(opt);
       });
       yearSelect.value = current;
-      if (!yearSelect.value) {
-        const hasCurrent = Array.from(yearSelect.options).some((opt) => opt.value === String(CURRENT_YEAR));
-        if (hasCurrent) yearSelect.value = String(CURRENT_YEAR);
+      const userSet = yearSelect.dataset.userSet === 'true';
+      if (!yearSelect.value && !userSet) {
+        const hasPreferred = preferredYear
+          ? Array.from(yearSelect.options).some((opt) => opt.value === String(preferredYear))
+          : false;
+        if (hasPreferred) {
+          yearSelect.value = String(preferredYear);
+        } else {
+          const hasCurrent = Array.from(yearSelect.options).some((opt) => opt.value === String(CURRENT_YEAR));
+          if (hasCurrent) yearSelect.value = String(CURRENT_YEAR);
+        }
+        yearSelect.dataset.defaulted = 'true';
+      } else if (!userSet && yearSelect.dataset.defaulted === 'true' && preferredYear) {
+        const hasPreferred = Array.from(yearSelect.options).some((opt) => opt.value === String(preferredYear));
+        if (hasPreferred) yearSelect.value = String(preferredYear);
       }
     };
 
     const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const CURRENT_YEAR = new Date().getFullYear();
+    let preferredYear = null;
+
+    const loadCompanyPreference = async () => {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('reporting_year_preference')
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (error || !data || !data.length) return;
+      const pref = data[0]?.reporting_year_preference || null;
+      preferredYear = pref === 'previous' ? CURRENT_YEAR - 1 : pref === 'current' ? CURRENT_YEAR : null;
+    };
 
     const renderTrend = (records) => {
       const grouped = {};
@@ -384,6 +408,7 @@
       if (!session) return;
       try {
         const records = await fetchRecords();
+        await loadCompanyPreference();
         saveRecords(records);
         populateYears(records);
         renderAll(records);
@@ -391,13 +416,15 @@
       } catch (err) {
         console.warn('Insights load error', err);
         const cached = loadRecords();
+        await loadCompanyPreference();
         populateYears(cached);
         renderAll(cached);
         setStatus('Showing cached data.');
       }
-    })();
+  })();
 
     yearSelect.addEventListener('change', () => {
+      yearSelect.dataset.userSet = 'true';
       const records = loadRecords();
       renderAll(records);
     });
