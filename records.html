@@ -606,7 +606,11 @@
     let supabase = null;
     const initSupabase = async () => {
       try {
-        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+        const supabaseModule = await Promise.race([
+          import('https://esm.sh/@supabase/supabase-js@2'),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase import timeout')), 1500))
+        ]);
+        const { createClient } = supabaseModule;
         supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       } catch (err) {
         console.warn('Supabase client failed to load on records page', err);
