@@ -435,6 +435,7 @@
           <button class="btn secondary" id="records-bulk" type="button">Bulk add</button>
         </div>
       </section>
+      <p class="note" id="records-auth-status">Log in on the main page to view your records.</p>
       <table class="table" aria-label="Saved records">
         <thead>
           <tr>
@@ -477,6 +478,7 @@
     import { EMISSION_FACTORS, GLOBAL_FALLBACK } from './data/emission-factors.js';
     const recordsTable = document.getElementById('recordsTable');
     const recordPanel = document.getElementById('recordPanel');
+    const authStatusEl = document.getElementById('records-auth-status');
     const signoutBtn = document.getElementById('nav-signout');
     const exportBtn = document.getElementById('records-export-csv');
     const exportStatus = document.getElementById('records-export-status');
@@ -593,7 +595,14 @@
       }
       return selectFinalFactor(GLOBAL_FALLBACK, billingYear) || GLOBAL_FALLBACK[0];
     };
+    const setAuthStatus = (msg) => {
+      if (!authStatusEl) return;
+      authStatusEl.textContent = msg || '';
+      authStatusEl.style.display = msg ? 'block' : 'none';
+    };
+
     const showMessage = (msg) => {
+      setAuthStatus(msg);
       if (!recordsTable) return;
       recordsTable.innerHTML = `<tr><td colspan="7" style="color:#4b5563;">${msg}</td></tr>`;
     };
@@ -625,6 +634,7 @@
         showMessage('Log in on the main page to view your records.');
         return;
       }
+      setAuthStatus('');
       const { data, error } = await supabase
         .from('scope2_records')
         .select('id,period_year,period_month,kwh,location_based_emissions,market_based_emissions,emission_factor_source,emission_factor_year,emission_factor_value,calc_country,calc_region,market_instrument_type,covered_kwh,companies(company_name,country,region)')
