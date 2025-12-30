@@ -32,14 +32,13 @@
       <p class="muted">How CarbonWise calculates Scope 2 electricity emissions (tCO₂e), including optional user-declared market-based adjustments and early access Scope 1 estimates.</p>
     </header>
 
-    <!-- Scope coverage clarity -->
     <section>
-      <h2>1. Scope Covered</h2>
-      <p>CarbonWise supports Scope 2 greenhouse gas emissions from purchased electricity. Scope 2 calculations use the location-based method by default, and optional market-based adjustments may be applied when users provide information. Additional scopes or market-based capabilities may be added in the future.</p>
+      <h2>1. Overview</h2>
+      <p>CarbonWise supports Scope 2 greenhouse gas emissions from purchased electricity and an early access Scope 1 module for stationary natural gas combustion. Scope 2 uses the location-based method by default, with optional market-based adjustments when users provide information.</p>
     </section>
 
     <section id="scope-1">
-      <h2>Scope 1 (Stationary combustion — Natural gas)</h2>
+      <h2>2. Scope 1 (Stationary combustion — Natural gas)</h2>
       <p>CarbonWise provides an early access, opt-in Scope 1 estimate for stationary combustion of natural gas at owned or controlled facilities. This module is designed for small teams starting basic reporting.</p>
       <p><strong>What is included</strong></p>
       <p class="muted">Stationary combustion only, natural gas, owned/controlled facilities, and heating/boilers/furnaces/generators with regular metered usage.</p>
@@ -53,52 +52,58 @@
       <p class="muted">Scope 1 covers direct fuel combustion at owned or controlled facilities, while Scope 2 covers indirect emissions from purchased electricity. They are reported separately.</p>
     </section>
 
+    <section>
+      <h2>3. Scope 2 (Purchased electricity)</h2>
+      <p>Scope 2 covers indirect emissions from purchased electricity. CarbonWise estimates location-based Scope 2 by multiplying electricity usage by the grid emission factor for the selected location.</p>
+      <p class="muted">Market-based Scope 2 adjustments are optional and based on user-declared coverage from instruments such as RECs or PPAs.</p>
+    </section>
+
     <!-- Plain-language inputs and formula -->
     <section>
-      <h2>2. Calculation Method</h2>
+      <h2>4. Scope 2 Calculation Method</h2>
       <p>Calculations use the information you provide: electricity used in kilowatt-hours and your country or region. Location-based emissions are estimated by multiplying your electricity usage by the grid emission factor for that location.</p>
     </section>
 
     <!-- Factor sourcing overview -->
     <section>
-      <h2>3. Emission Factors</h2>
+      <h2>5. Scope 2 Emission Factors</h2>
       <p>Emission factors represent average grid emissions intensity for a country or region. They vary by geography, are sourced from publicly available, government-issued datasets, and are year-stamped.</p>
     </section>
 
     <!-- Timing and year alignment explanation -->
     <section>
-      <h2>4. Emission Factor Year & Timing</h2>
+      <h2>6. Scope 2 Emission Factor Year & Timing</h2>
       <p>Grid emission factors are published after the year they describe. CarbonWise may use the most recently available factor even if it does not match the activity year. This timing gap can create a mismatch between the billing period and the factor year.</p>
     </section>
 
     <!-- Location-based default clarity -->
     <section>
-      <h2>5. Location-Based Scope 2</h2>
+      <h2>7. Location-Based Scope 2</h2>
       <p>Location-based Scope 2 reflects average emissions from the grid where electricity is used. It does not account for contractual renewable energy purchases. This is the default method used by CarbonWise.</p>
     </section>
 
     <!-- Market-based option clarity -->
     <section>
-      <h2>6. Market-Based Scope 2 (RECs / PPAs)</h2>
+      <h2>8. Market-Based Scope 2 (RECs / PPAs)</h2>
       <p>CarbonWise supports optional, user-declared market-based Scope 2 adjustments. Users may specify the portion of electricity covered by instruments such as Renewable Energy Certificates (RECs) or Power Purchase Agreements (PPAs). Covered electricity is treated as market-based; uncovered electricity continues to use location-based emission factors.</p>
       <p class="muted">CarbonWise does not verify certificates, contracts, or registry claims. All market-based inputs are user-declared. Market-based results are estimates intended for internal reporting and preparation.</p>
     </section>
 
     <!-- Precision and comparability note -->
     <section>
-      <h2>7. Precision, Rounding, and Comparability</h2>
+      <h2>9. Precision, Rounding, and Comparability</h2>
       <p>Calculations retain reasonable numeric precision. Results may differ from other tools because of emission factor selection, year alignment, or rounding conventions.</p>
     </section>
 
     <!-- Intended use statement -->
     <section>
-      <h2>8. Intended Use & Limitations</h2>
+      <h2>10. Intended Use & Limitations</h2>
       <p>CarbonWise supports internal reporting, planning, and disclosure preparation. It does not replace third-party verification or formal assurance, and users remain responsible for final reporting decisions.</p>
     </section>
 
     <!-- Updates transparency -->
     <section>
-      <h2>9. Updates & Changes</h2>
+      <h2>11. Updates & Changes</h2>
       <p>Emission factors and methodology may be updated as new data becomes available. Significant changes will be documented so you can understand what changed and why.</p>
     </section>
 
