@@ -128,6 +128,25 @@
           <p class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e); market-based uses RECs/PPAs where provided. <a href="methodology.html">See Methodology</a>.</p>
         </section>
 
+        <section class="card stack" style="margin-top:14px;">
+          <div>
+            <h2 style="margin:0 0 6px;">Scope 1 (Stationary combustion — Natural gas)</h2>
+            <p class="muted">Early access export for Scope 1 natural gas entries saved on this device.</p>
+          </div>
+          <div>
+            <label for="scope1ExportYear">Reporting year</label>
+            <select id="scope1ExportYear">
+              <option value="">All years</option>
+            </select>
+          </div>
+          <div class="actions">
+            <button class="btn primary" id="exportScope1Csv">Generate Scope 1 CSV</button>
+            <span class="status" id="scope1ExportStatus"></span>
+          </div>
+          <p class="note">Scope 1 emissions are estimates based on user-provided fuel data. Results may be partial and do not represent full Scope 1 coverage.</p>
+          <p class="note">Methodology: <a href="methodology.html#scope-1">See Scope 1 methodology</a>.</p>
+        </section>
+
         <section class="card" style="margin-top:14px;">
           <h3 style="margin-top:0;">What’s included</h3>
           <ul class="muted" style="padding-left:18px; margin:8px 0 0;">
@@ -147,183 +166,6 @@
     </div>
   </div>
 
-  <script>
-    (function setActiveNav() {
-      const path = window.location.pathname;
-      document.querySelectorAll('.nav-item').forEach((link) => {
-        const href = link.getAttribute('href');
-        if (href && path.includes(href)) {
-          link.classList.add('active');
-        }
-      });
-      document.querySelectorAll('.nav-item.disabled').forEach((link) => {
-        link.addEventListener('click', (e) => e.preventDefault());
-      });
-    })();
-  </script>
-
-  <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-    const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
-    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const companyNameEl = document.getElementById('companyName');
-    const yearSelect = document.getElementById('exportYear');
-    const exportCsvBtn = document.getElementById('exportCsv');
-    const exportPdfBtn = document.getElementById('exportPdf');
-    const statusEl = document.getElementById('exportStatus');
-    const signoutBtn = document.getElementById('nav-signout');
-
-    const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
-    const CURRENT_YEAR = new Date().getFullYear();
-    const setLoading = (isLoading) => {
-      exportCsvBtn.disabled = isLoading;
-      exportPdfBtn.disabled = true; // PDF not implemented yet
-    };
-
-    const requireAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data?.session) {
-        window.location.href = 'index.html';
-        return null;
-      }
-      return data.session;
-    };
-
-    const fetchCompany = async () => {
-      const { data, error } = await supabase.from('companies').select('company_name,country,region,reporting_year_preference').limit(1).single();
-      if (error) return null;
-      return data;
-    };
-
-    const fetchRecords = async (year = '') => {
-      let query = supabase
-        .from('scope2_records')
-        .select('period_year,period_month,kwh,location_based_emissions,market_based_emissions,emission_factor_value,emission_factor_year,emission_factor_source,calc_country,calc_region,companies(company_name,country,region)')
-        .order('period_year', { ascending: false })
-        .order('period_month', { ascending: false });
-      if (year) {
-        query = query.eq('period_year', year);
-      }
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
-    };
-
-    const populateYears = (records) => {
-      const years = Array.from(new Set((records || []).map((r) => r.period_year))).filter(Boolean);
-      if (!years.includes(CURRENT_YEAR)) years.push(CURRENT_YEAR);
-      years.sort((a, b) => b - a);
-      const current = yearSelect.value;
-      yearSelect.innerHTML = '<option value=\"\">All years</option>';
-      years.forEach((y) => {
-        const opt = document.createElement('option');
-        opt.value = y;
-        opt.textContent = y;
-        yearSelect.appendChild(opt);
-      });
-      yearSelect.value = current;
-      if (!yearSelect.value) {
-        const hasCurrent = Array.from(yearSelect.options).some((opt) => opt.value === String(CURRENT_YEAR));
-        if (hasCurrent) yearSelect.value = String(CURRENT_YEAR);
-      }
-    };
-
-    const applyReportingPreference = (company, years) => {
-      const pref = company?.reporting_year_preference || 'all';
-      const now = new Date().getFullYear();
-      const targetYear = pref === 'current' ? now : pref === 'previous' ? now - 1 : null;
-      if (!targetYear) return;
-      if (years.includes(targetYear)) {
-        yearSelect.value = String(targetYear);
-      }
-    };
-
-    const toCsv = (records, company) => {
-      const disclosure = 'Location-based Scope 2 electricity calculation aligned with the GHG Protocol.';
-      const headers = [
-        'company_name','period','country','kwh','scope2_location_based_tco2e','scope2_market_based_tco2e','emission_factor_value','emission_factor_year','emission_factor_source'
-      ];
-      const rows = records.map((r) => {
-        const period = `${r.period_year}-${String(r.period_month).padStart(2, '0')}`;
-        const country = `${r.calc_country || ''}${r.calc_region ? ' / ' + r.calc_region : ''}`;
-        return [
-          r.companies?.company_name || company?.company_name || '',
-          period,
-          country,
-          r.kwh ?? '',
-          r.location_based_emissions ?? '',
-          r.market_based_emissions ?? '',
-          r.emission_factor_value ?? '',
-          r.emission_factor_year ?? '',
-          r.emission_factor_source ?? ''
-        ];
-      });
-      rows.push(['Disclosure', disclosure]);
-      const csv = [headers, ...rows]
-        .map((row) => row.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
-        .join('\r\n'); // Use CRLF for better compatibility with spreadsheet apps
-      return csv;
-    };
-
-    const downloadCsv = (csv, filename = 'carbonwise_scope2.csv') => {
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    };
-
-    const init = async () => {
-      setStatus('Checking access…');
-      const session = await requireAuth();
-      if (!session) return;
-      const [company, records] = await Promise.all([fetchCompany(), fetchRecords('')]);
-      if (company) companyNameEl.textContent = `${company.company_name} (${company.country || ''}${company.region ? ' / ' + company.region : ''})`;
-      else companyNameEl.textContent = 'Company not set';
-      populateYears(records);
-      const years = Array.from(new Set((records || []).map((r) => r.period_year))).filter(Boolean);
-      applyReportingPreference(company, years);
-      setStatus('');
-
-      exportCsvBtn.addEventListener('click', async () => {
-        setLoading(true);
-        setStatus('Generating CSV…');
-        try {
-          const year = yearSelect.value;
-          const data = await fetchRecords(year);
-          if (!data.length) {
-            setStatus('No Scope 2 electricity records found for this period. Add a record to include it in calculations and exports.');
-            setLoading(false);
-            return;
-          }
-          const csv = toCsv(data, company);
-          const namePart = year ? `${year}` : 'all-years';
-          downloadCsv(csv, `carbonwise_scope2_${namePart}.csv`);
-          setStatus('CSV generated.');
-        } catch (err) {
-          console.warn('CSV export error', err);
-          setStatus('Could not generate CSV right now. Please try again.');
-        } finally {
-          setLoading(false);
-        }
-      });
-    };
-
-    init();
-
-    if (signoutBtn) {
-      signoutBtn.addEventListener('click', async () => {
-        await supabase.auth.signOut();
-        window.location.href = 'index.html';
-      });
-    }
-  </script>
+  <script type="module" src="js/exports.js"></script>
 </body>
 </html>

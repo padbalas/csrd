@@ -91,3 +91,55 @@ export const EMISSION_FACTORS = {
 export const GLOBAL_FALLBACK = [
   { factor: 0.000450, year: 2022, source: "Public average", published_date: "2023-01-01", status: "final", version: "v2022.1" }
 ];
+
+// Scope 1 natural gas stationary combustion factors (tCO2e per unit), versioned and immutable per publication.
+export const SCOPE1_NATURAL_GAS_FACTORS = {
+  US: {
+    default: {
+      therms: { factor: 0.005306, year: 2023, source: "US EPA Stationary Combustion", basis: "tCO2e/therm" },
+      m3: { factor: 0.001930, year: 2023, source: "US EPA Stationary Combustion", basis: "tCO2e/m3" },
+      "kwh-eq": { factor: 0.000181, year: 2023, source: "US EPA Stationary Combustion", basis: "tCO2e/kWh-eq" }
+    }
+  },
+  CA: {
+    default: {
+      therms: { factor: 0.005310, year: 2023, source: "Canada NIR", basis: "tCO2e/therm" },
+      m3: { factor: 0.001920, year: 2023, source: "Canada NIR", basis: "tCO2e/m3" },
+      "kwh-eq": { factor: 0.000182, year: 2023, source: "Canada NIR", basis: "tCO2e/kWh-eq" }
+    }
+  },
+  UK: {
+    default: {
+      therms: { factor: 0.005370, year: 2023, source: "UK DEFRA", basis: "tCO2e/therm" },
+      m3: { factor: 0.001940, year: 2023, source: "UK DEFRA", basis: "tCO2e/m3" },
+      "kwh-eq": { factor: 0.000183, year: 2023, source: "UK DEFRA", basis: "tCO2e/kWh-eq" }
+    }
+  },
+  AU: {
+    default: {
+      therms: { factor: 0.005400, year: 2023, source: "Australia NGA", basis: "tCO2e/therm" },
+      m3: { factor: 0.001970, year: 2023, source: "Australia NGA", basis: "tCO2e/m3" },
+      "kwh-eq": { factor: 0.000184, year: 2023, source: "Australia NGA", basis: "tCO2e/kWh-eq" }
+    }
+  },
+  SG: {
+    default: {
+      therms: { factor: 0.005330, year: 2023, source: "Singapore NEA", basis: "tCO2e/therm" },
+      m3: { factor: 0.001930, year: 2023, source: "Singapore NEA", basis: "tCO2e/m3" },
+      "kwh-eq": { factor: 0.000182, year: 2023, source: "Singapore NEA", basis: "tCO2e/kWh-eq" }
+    }
+  },
+  NZ: {
+    default: {
+      therms: { factor: 0.005250, year: 2023, source: "New Zealand MBIE", basis: "tCO2e/therm" },
+      m3: { factor: 0.001900, year: 2023, source: "New Zealand MBIE", basis: "tCO2e/m3" },
+      "kwh-eq": { factor: 0.000179, year: 2023, source: "New Zealand MBIE", basis: "tCO2e/kWh-eq" }
+    }
+  }
+};
+
+export const SCOPE1_NATURAL_GAS_DEFAULT = {
+  therms: { factor: 0.005300, year: 2022, source: "Public average", basis: "tCO2e/therm" },
+  m3: { factor: 0.001920, year: 2022, source: "Public average", basis: "tCO2e/m3" },
+  "kwh-eq": { factor: 0.000181, year: 2022, source: "Public average", basis: "tCO2e/kWh-eq" }
+};
