@@ -339,7 +339,7 @@
       if (data?.session?.user?.recovery_sent_at) {
         enterRecoveryMode(data.session);
       }
-      supabase.auth.onAuthStateChange((_event, session) => {
+      supabase.auth.onAuthStateChange(async (_event, session) => {
         setSessionUI(session);
         if (session) {
           if (session.user?.recovery_sent_at || _event === 'PASSWORD_RECOVERY') {
@@ -351,7 +351,8 @@
             handleSaveFlow();
           }
           if (appState.scope1Saving && appState.scope1PendingEntry) {
-            saveScope1Entry(appState.scope1PendingEntry);
+            await saveScope1Entry(appState.scope1PendingEntry);
+            return;
           }
           if (typeof refreshScope1Entries === 'function') {
             refreshScope1Entries();
