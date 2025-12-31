@@ -912,7 +912,6 @@
     // Kick off auth session detection on load (safe if supabase fails to load)
     initSupabaseClient().then(() => initAuth());
 
-    const SCOPE1_TOGGLE_KEY = 'scope1_v1_beta_enabled';
     const SCOPE1_DISCLOSURE = 'Scope 1 emissions are estimates based on user-provided fuel data. Results may be partial and do not represent full Scope 1 coverage.';
     const SCOPE1_UNITS = [
       { value: 'therms', label: 'Therms (US)' },
@@ -932,8 +931,6 @@
       NZ: 'New Zealand'
     };
 
-    const scope1Toggle = document.getElementById('scope1-toggle');
-    const scope1Teaser = document.getElementById('scope1-teaser');
     const scope1Body = document.getElementById('scope1-body');
     const scope1Form = document.getElementById('scope1-form');
     const scope1Month = document.getElementById('scope1-month');
@@ -960,29 +957,6 @@
       opt.value = value;
       opt.textContent = label;
       return opt;
-    };
-
-    const setScope1Visibility = (enabled) => {
-      if (!scope1Body || !scope1Teaser) return;
-      scope1Body.classList.toggle('active', enabled);
-      scope1Teaser.style.display = enabled ? 'none' : 'block';
-      if (!enabled && scope1Results) scope1Results.classList.remove('active');
-    };
-
-    const saveScope1Toggle = (enabled) => {
-      try {
-        localStorage.setItem(SCOPE1_TOGGLE_KEY, enabled ? 'true' : 'false');
-      } catch {
-        /* ignore localStorage errors */
-      }
-    };
-
-    const loadScope1Toggle = () => {
-      try {
-        return localStorage.getItem(SCOPE1_TOGGLE_KEY) === 'true';
-      } catch {
-        return false;
-      }
     };
 
     const populateScope1Years = () => {
@@ -1175,20 +1149,12 @@
     };
 
     const initScope1Module = () => {
-      if (!scope1Toggle || !scope1Body || !scope1Teaser) return;
+      if (!scope1Body) return;
       populateScope1Years();
       syncScope1MonthOptions();
       setScope1RegionOptions(scope1Country?.value || '');
-      const enabled = loadScope1Toggle();
-      scope1Toggle.checked = enabled;
-      setScope1Visibility(enabled);
+      scope1Body.classList.add('active');
       scope1Disclosure.textContent = SCOPE1_DISCLOSURE;
-
-      scope1Toggle.addEventListener('change', (event) => {
-        const isEnabled = event.target.checked;
-        saveScope1Toggle(isEnabled);
-        setScope1Visibility(isEnabled);
-      });
 
       scope1Year?.addEventListener('change', syncScope1MonthOptions);
       scope1Country?.addEventListener('change', (event) => {

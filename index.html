@@ -391,9 +391,10 @@
         <button class="btn secondary" id="header-signout" style="display:none;">Log out</button>
       </div>
       <h1>Carbon reporting for small teams - without the complexity</h1>
-      <p class="subhead">Calculate Scope 2 electricity emissions in minutes.</p>
+      <p class="subhead">Calculate Scope 1 and Scope 2 emissions in minutes.</p>
       <div class="cta-row">
         <a class="btn primary" href="#calculator">Start Scope 2 electricity calculation</a>
+        <a class="btn secondary" href="#scope1">Start Scope 1 natural gas calculation</a>
       </div>
     </div>
   </header>
@@ -403,8 +404,8 @@
       <h2>How CarbonWise works</h2>
       <div class="grid-3">
         <div>
-          <strong>1) You enter electricity usage</strong>
-          <p class="muted">Country/region, billing month, and kWh. Nothing personal.</p>
+          <strong>1) You enter Scope 1 or Scope 2 activity data</strong>
+          <p class="muted">Natural gas quantity or electricity kWh, plus billing month and location.</p>
         </div>
         <div>
           <strong>2) CarbonWise applies public emission factors</strong>
@@ -412,7 +413,7 @@
         </div>
         <div>
           <strong>3) You get a clear estimate</strong>
-          <p class="muted">Location-based by default, with optional market-based adjustments if you opt in.</p>
+          <p class="muted">Scope 2 defaults to location-based, with optional market-based adjustments.</p>
         </div>
       </div>
     </section>
@@ -575,20 +576,11 @@
     <section id="scope1" class="scope1-card">
       <div class="scope1-header">
         <div>
-          <h2>Scope 1 (Stationary combustion — Natural gas)</h2>
-          <p class="muted small">Optional module for stationary fuel estimates.</p>
+          <h2>Calculate your monthly Scope 1 (Stationary combustion — Natural gas)</h2>
+          <p class="muted small">Estimate Scope 1 natural gas emissions in minutes.</p>
         </div>
-        <label class="scope1-toggle">
-          <input type="checkbox" id="scope1-toggle" />
-          <span>Enable Scope 1</span>
-        </label>
       </div>
-      <div id="scope1-teaser" class="scope1-teaser">
-        <p class="muted">Supports basic Scope 1 reporting for stationary natural gas use</p>
-        <p class="muted">Designed for small teams and early-stage reporting</p>
-        <p class="muted">Not a complete Scope 1 inventory</p>
-      </div>
-      <div id="scope1-body" class="scope1-body">
+      <div id="scope1-body" class="scope1-body active">
         <div class="two-col">
           <div>
             <h3 style="margin-top:0;">Included</h3>
@@ -701,8 +693,8 @@
         <li>No uploads. We never ask for bills or PDFs.</li>
         <li>Calculate without an account. Log in only to save or export.</li>
         <li>We only store what you save to your account. No extra personal data.</li>
-        <li>Emission factors from EPA / DEFRA — transparent and explainable.</li>
-        <li>See our calculation methodology and disclosures at <a href="methodology.html">methodology</a>.</li>
+        <li>Scope 2 electricity factors from EPA / DEFRA — transparent and explainable.</li>
+        <li>Scope 1 natural gas factors from public government sources — transparent and explainable.</li>
       </ul>
     </section>
 
