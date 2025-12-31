@@ -1178,3 +1178,35 @@
     };
 
     initScope1Module();
+
+    const initCalculatorTabs = () => {
+      const buttons = Array.from(document.querySelectorAll('[data-tab-target]'));
+      const panels = Array.from(document.querySelectorAll('.tab-panel'));
+      if (!buttons.length || !panels.length) return;
+
+      const setActive = (tab) => {
+        buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tabTarget === tab));
+        panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.tab === tab));
+      };
+
+      buttons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tab = btn.dataset.tabTarget;
+          setActive(tab);
+        });
+      });
+
+      const syncWithHash = () => {
+        const hash = window.location.hash;
+        if (hash === '#scope1') {
+          setActive('scope1');
+          return;
+        }
+        setActive('scope2');
+      };
+
+      syncWithHash();
+      window.addEventListener('hashchange', syncWithHash);
+    };
+
+    initCalculatorTabs();

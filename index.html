@@ -361,6 +361,33 @@
       background: #d1fae5;
       box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
     }
+    .tab-header {
+      display: inline-flex;
+      gap: 8px;
+      padding: 6px;
+      border-radius: 12px;
+      background: #f1f5f9;
+      border: 1px solid #e5e7eb;
+      margin: 6px 0 16px;
+      flex-wrap: wrap;
+    }
+    .tab-button {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .tab-button.active {
+      background: #ffffff;
+      color: var(--ink);
+      border-color: #cbd5e1;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
     .slide-panel {
       position: fixed;
       top: 0;
@@ -419,9 +446,14 @@
     </section>
 
     <section id="calculator">
-      <h2>Calculate your monthly Scope 2 electricity emissions</h2>
-      <p class="muted" style="margin-bottom:8px;">Start by telling us who you are so we can speak your language.</p>
-      <form id="carbon-form" class="stack">
+      <h2>Calculate your monthly emissions</h2>
+      <p class="muted" style="margin-bottom:8px;">Choose Scope 1 or Scope 2, then enter your monthly activity data.</p>
+      <div class="tab-header">
+        <button type="button" class="tab-button active" data-tab-target="scope2">Scope 2 electricity</button>
+        <button type="button" class="tab-button" data-tab-target="scope1">Scope 1 natural gas</button>
+      </div>
+      <div class="tab-panel active" data-tab="scope2">
+        <form id="carbon-form" class="stack">
         <div class="two-col">
           <div>
             <label for="persona">Who are you?</label>
@@ -518,60 +550,61 @@
             </div>
           </div>
         </div>
-      </form>
-      <!-- Trust strip anchors methodology without heavy enterprise vibe -->
-      <div class="notice" style="margin-top:10px;">
-        <!-- Trust anchor: make methodology visible without crowding the UI -->
-        <strong>Methodology:</strong> GHG Protocol Scope 2 electricity (location-based) • <strong>Emission factors:</strong> Public, government-issued data (year-stamped) • Estimates only — not legal, tax, or audit advice. <a href="methodology.html">See Methodology</a>.
-      </div>
-    </section>
+        </form>
+        <!-- Trust strip anchors methodology without heavy enterprise vibe -->
+        <div class="notice" style="margin-top:10px;">
+          <!-- Trust anchor: make methodology visible without crowding the UI -->
+          <strong>Methodology:</strong> GHG Protocol Scope 2 electricity (location-based) • <strong>Emission factors:</strong> Public, government-issued data (year-stamped) • Estimates only — not legal, tax, or audit advice. <a href="methodology.html">See Methodology</a>.
+        </div>
 
-    <section id="results">
-      <h2>Your Scope 2 electricity estimate</h2>
-      <!-- Pre-calculated example builds trust before interaction -->
-      <div class="example">
-        <strong>Example:</strong> 1,850 kWh → 1.42 tCO₂e ≈ driving ~3,500 miles. For intuition only (non-reporting metric).
+        <section id="results">
+          <h2>Your Scope 2 electricity estimate</h2>
+          <!-- Pre-calculated example builds trust before interaction -->
+          <div class="example">
+            <strong>Example:</strong> 1,850 kWh → 1.42 tCO₂e ≈ driving ~3,500 miles. For intuition only (non-reporting metric).
+          </div>
+          <div id="result-container" class="result">
+            <div class="grid-3">
+              <div class="stat-box">
+                <strong id="result-tons">—</strong><br />
+                <span class="muted">Location-based Scope 2 electricity (tCO₂e)</span>
+              </div>
+              <div class="stat-box">
+                <strong id="result-compare">—</strong><br />
+                <span class="muted">Real-world comparison</span>
+                <div class="muted small">For intuition only (non-reporting metric)</div>
+              </div>
+              <div class="stat-box">
+                <strong id="result-next">—</strong><br />
+                <span class="muted">What to do next</span>
+              </div>
+              <div class="stat-box">
+                <strong id="result-market">—</strong><br />
+                <span class="muted">Market-based Scope 2 electricity (tCO₂e, RECs/PPAs)</span>
+              </div>
+            </div>
+            <div class="notice" id="calc-details"></div>
+            <p class="muted" id="factor-mismatch" style="display:none;"></p>
+            <p class="muted" id="interpretation"></p>
+            <p class="muted small">Calculated using location-based Scope 2 electricity factors (tCO₂e); market-based uses RECs/PPAs where provided. <a href="methodology.html">See Methodology</a>.</p>
+            <p class="muted" id="disclaimer"><strong>Disclaimer:</strong> CarbonWise provides informational estimates only. This is not legal, audit, or tax advice.</p>
+            <div class="notice" id="market-disclaimer" style="display:none;">
+              <strong>Market-based note:</strong> Market-based Scope 2 electricity emissions depend on contractual instruments and are reported separately from location-based emissions. This estimate is based on user-declared renewable energy instruments. CarbonWise does not verify certificates or contracts and does not provide legal, tax, or audit advice.
+              <div id="market-details" class="muted" style="margin-top:6px;"></div>
+            </div>
+            <div class="notice" id="compliance-helper">
+              <strong>Compliance context (plain English):</strong><br />
+              California SB-253 / SB-261 and EU CSRD apply to certain larger companies or those operating in those regions. Many small businesses are not required to report yet. This is high-level guidance only — not legal, audit, or tax advice.
+            </div>
+            <div class="cta-row" style="margin-top:12px; justify-content:flex-start;">
+              <button type="button" class="btn primary" id="save-btn">Save record</button>
+              <button type="button" class="btn secondary" id="signout-btn" style="display:none;">Log out</button>
+            </div>
+          </div>
+          <div id="placeholder" class="muted">Your results will appear here after you calculate.</div>
+        </section>
       </div>
-      <div id="result-container" class="result">
-        <div class="grid-3">
-          <div class="stat-box">
-            <strong id="result-tons">—</strong><br />
-            <span class="muted">Location-based Scope 2 electricity (tCO₂e)</span>
-          </div>
-          <div class="stat-box">
-            <strong id="result-compare">—</strong><br />
-            <span class="muted">Real-world comparison</span>
-            <div class="muted small">For intuition only (non-reporting metric)</div>
-          </div>
-          <div class="stat-box">
-            <strong id="result-next">—</strong><br />
-            <span class="muted">What to do next</span>
-          </div>
-          <div class="stat-box">
-            <strong id="result-market">—</strong><br />
-            <span class="muted">Market-based Scope 2 electricity (tCO₂e, RECs/PPAs)</span>
-          </div>
-        </div>
-        <div class="notice" id="calc-details"></div>
-        <p class="muted" id="factor-mismatch" style="display:none;"></p>
-        <p class="muted" id="interpretation"></p>
-        <p class="muted small">Calculated using location-based Scope 2 electricity factors (tCO₂e); market-based uses RECs/PPAs where provided. <a href="methodology.html">See Methodology</a>.</p>
-        <p class="muted" id="disclaimer"><strong>Disclaimer:</strong> CarbonWise provides informational estimates only. This is not legal, audit, or tax advice.</p>
-        <div class="notice" id="market-disclaimer" style="display:none;">
-          <strong>Market-based note:</strong> Market-based Scope 2 electricity emissions depend on contractual instruments and are reported separately from location-based emissions. This estimate is based on user-declared renewable energy instruments. CarbonWise does not verify certificates or contracts and does not provide legal, tax, or audit advice.
-          <div id="market-details" class="muted" style="margin-top:6px;"></div>
-        </div>
-        <div class="notice" id="compliance-helper">
-          <strong>Compliance context (plain English):</strong><br />
-          California SB-253 / SB-261 and EU CSRD apply to certain larger companies or those operating in those regions. Many small businesses are not required to report yet. This is high-level guidance only — not legal or audit advice.
-        </div>
-        <div class="cta-row" style="margin-top:12px; justify-content:flex-start;">
-          <button type="button" class="btn primary" id="save-btn">Save record</button>
-          <button type="button" class="btn secondary" id="signout-btn" style="display:none;">Log out</button>
-        </div>
-      </div>
-      <div id="placeholder" class="muted">Your results will appear here after you calculate.</div>
-    </section>
+      <div class="tab-panel" data-tab="scope1">
 
     <section id="scope1" class="scope1-card">
       <div class="scope1-header">
@@ -684,6 +717,8 @@
             <button type="button" class="btn primary" id="scope1-save" disabled>Save Scope 1 record</button>
           </div>
         </div>
+      </div>
+    </section>
       </div>
     </section>
 
