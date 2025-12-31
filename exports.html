@@ -90,8 +90,8 @@
     <aside class="side-nav">
       <a class="nav-brand" href="index.html">CarbonWise</a>
       <nav class="nav-items">
-        <a href="records.html" class="nav-item" data-nav="records">Scope 2 Records</a>
-        <a href="index.html#scope1" class="nav-item" data-nav="scope1-records">Scope 1 Records</a>
+        <a href="records.html" class="nav-item" data-nav="records">My Records</a>
+        <a href="scope1.html" class="nav-item" data-nav="scope1">Scope 1 Records</a>
         <a href="insights.html" class="nav-item" data-nav="insights">Insights</a>
         <a href="exports.html" class="nav-item active" data-nav="export">Export / Reports</a>
         <a href="settings.html" class="nav-item" data-nav="settings">Settings</a>
@@ -112,8 +112,8 @@
       <div class="shell">
         <section class="card stack">
           <div>
-            <h2 style="margin:0 0 6px;">Scope 2 (Purchased electricity)</h2>
-            <p class="muted">Export location-based and optional market-based Scope 2 electricity results.</p>
+            <label>Company</label>
+            <div id="companyName" class="muted">Loading…</div>
           </div>
           <div>
             <label for="exportYear">Reporting year</label>
@@ -122,7 +122,7 @@
             </select>
           </div>
           <div class="actions">
-            <button class="btn primary" id="exportCsv">Generate CSV (Scope 2)</button>
+            <button class="btn primary" id="exportCsv">Generate CSV</button>
             <button class="btn secondary" id="exportPdf" disabled title="PDF summary coming soon">Generate PDF</button>
             <span class="status" id="exportStatus"></span>
           </div>
@@ -132,7 +132,7 @@
         <section class="card stack" style="margin-top:14px;">
           <div>
             <h2 style="margin:0 0 6px;">Scope 1 (Stationary combustion — Natural gas)</h2>
-            <p class="muted">Early access export for Scope 1 natural gas entries saved on this device.</p>
+            <p class="muted">Export Scope 1 natural gas entries saved to your account.</p>
           </div>
           <div>
             <label for="scope1ExportYear">Reporting year</label>

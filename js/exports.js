@@ -4,11 +4,10 @@ const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supaba
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const SCOPE1_STORAGE_KEY = 'scope1_v1_entries';
 const SCOPE1_DISCLOSURE = 'Scope 1 emissions are estimates based on user-provided fuel data. Results may be partial and do not represent full Scope 1 coverage.';
 const SCOPE1_UNIT_LABELS = {
   therms: 'Therms (US)',
-  m3: 'Cubic meters (m³)',
+  m3: 'Cubic meters (m3)',
   'kwh-eq': 'kWh-equivalent'
 };
 
@@ -106,47 +105,23 @@ const applyReportingPreference = (company, years) => {
   }
 };
 
-const sanitizeScope1Entry = (raw) => {
-  if (!raw || typeof raw !== 'object') return null;
-  const periodYear = parseInt(raw.period_year, 10);
-  const periodMonth = parseInt(raw.period_month, 10);
-  const quantity = Number(raw.quantity);
-  const unitValue = String(raw.unit || '').trim();
-  if (!periodYear || !periodMonth || periodMonth < 1 || periodMonth > 12) return null;
-  if (!Number.isFinite(quantity) || quantity < 0) return null;
-  if (!SCOPE1_UNIT_LABELS[unitValue]) return null;
-  const emissions = Number(raw.emissions);
-  const factorValue = Number(raw.factor_value);
-  const factorYear = Number(raw.factor_year);
-  return {
-    period_year: periodYear,
-    period_month: periodMonth,
-    quantity,
-    unit: unitValue,
-    unit_label: SCOPE1_UNIT_LABELS[unitValue],
-    emissions: Number.isFinite(emissions) ? emissions : null,
-    factor_value: Number.isFinite(factorValue) ? factorValue : null,
-    factor_year: Number.isFinite(factorYear) ? factorYear : null,
-    factor_source: String(raw.factor_source || '').trim(),
-    factor_basis: String(raw.factor_basis || '').trim(),
-    factor_label: String(raw.factor_label || '').trim()
-  };
-};
-
-const loadScope1Entries = () => {
-  try {
-    const raw = localStorage.getItem(SCOPE1_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map(sanitizeScope1Entry).filter(Boolean);
-  } catch {
-    return [];
+const fetchScope1Records = async (year = '') => {
+  let query = supabase
+    .from('scope1_records')
+    .select('period_year,period_month,quantity,unit,emissions,factor_value,factor_year,factor_source')
+    .order('period_year', { ascending: false })
+    .order('period_month', { ascending: false });
+  if (year) {
+    query = query.eq('period_year', year);
   }
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
 };
 
-const populateScope1Years = (entries) => {
+const populateScope1Years = (records) => {
   if (!scope1YearSelect) return;
-  const years = Array.from(new Set((entries || []).map((r) => r.period_year))).filter(Boolean);
+  const years = Array.from(new Set((records || []).map((r) => r.period_year))).filter(Boolean);
   if (!years.includes(CURRENT_YEAR)) years.push(CURRENT_YEAR);
   years.sort((a, b) => b - a);
   const current = scope1YearSelect.value;
@@ -206,7 +181,7 @@ const toScope1Csv = (entries) => {
       'Natural gas',
       period,
       entry.quantity ?? '',
-      entry.unit_label ?? '',
+      SCOPE1_UNIT_LABELS[entry.unit] || entry.unit || '',
       entry.emissions ?? '',
       entry.factor_value ?? '',
       entry.factor_year ?? '',
@@ -257,8 +232,13 @@ const init = async () => {
   applyReportingPreference(company, years);
   setStatus('');
 
-  const scope1Entries = loadScope1Entries();
-  populateScope1Years(scope1Entries);
+  try {
+    const scope1Records = await fetchScope1Records('');
+    populateScope1Years(scope1Records);
+  } catch (err) {
+    console.warn('Scope 1 records load failed', err);
+    populateScope1Years([]);
+  }
 
   if (exportCsvBtn) {
     exportCsvBtn.addEventListener('click', async () => {
@@ -286,19 +266,18 @@ const init = async () => {
   }
 
   if (scope1ExportBtn) {
-    scope1ExportBtn.addEventListener('click', () => {
+    scope1ExportBtn.addEventListener('click', async () => {
       setScope1Loading(true);
       setScope1Status('Generating Scope 1 CSV…');
       try {
-        const entries = loadScope1Entries();
         const year = scope1YearSelect?.value || '';
-        const filtered = year ? entries.filter((entry) => String(entry.period_year) === String(year)) : entries;
-        if (!filtered.length) {
-          setScope1Status('No Scope 1 entries found for this period. Add an entry on the calculator page to include it in exports.');
+        const entries = await fetchScope1Records(year);
+        if (!entries.length) {
+          setScope1Status('No Scope 1 entries found for this period. Add a record to include it in exports.');
           setScope1Loading(false);
           return;
         }
-        const csv = toScope1Csv(filtered);
+        const csv = toScope1Csv(entries);
         const namePart = year ? `${year}` : 'all-years';
         downloadCsv(csv, `carbonwise_scope1_${namePart}.csv`);
         setScope1Status('Scope 1 CSV generated.');

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CarbonWise | Scope 1 Records</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #4b5563;
+      --line: #e5e7eb;
+      --card: #ffffff;
+      --accent: #0f766e;
+      --accent-soft: #e0f2f1;
+      --bg: #f7f8fb;
+      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .app-layout {
+      display: flex;
+      min-height: 100vh;
+      background: var(--bg);
+    }
+    .side-nav {
+      width: 230px;
+      padding: 24px 18px;
+      background: #0b1220;
+      color: #e5e7eb;
+      border-right: 1px solid #111827;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    .nav-items {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      height: 100%;
+    }
+    .nav-footer {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .nav-item.logout {
+      background: transparent;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #e5e7eb;
+      text-align: left;
+      width: 100%;
+    }
+    .nav-item {
+      display: block;
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: #e5e7eb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .nav-item:hover:not(.disabled) {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .nav-item.active {
+      background: rgba(34, 197, 94, 0.18);
+      color: #ffffff;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+    .nav-item.disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .app-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+    header { padding: 32px 20px 12px; color: var(--ink); }
+    header .shell { padding-bottom: 0; }
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(34px, 4vw, 46px);
+      letter-spacing: -0.015em;
+      line-height: 1.2;
+    }
+    .subhead {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 680px;
+      margin: 0 0 18px;
+    }
+    .nav-brand {
+      display: inline-block;
+      padding: 6px 10px;
+      background: #e0f2f1;
+      color: #0f766e;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      text-decoration: none;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      color: inherit;
+    }
+    .btn.primary { background: #22c55e; color: #0f172a; }
+    .btn.secondary { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+    section {
+      margin-top: 26px;
+      padding: 22px 20px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 16px 44px rgba(15, 23, 42, 0.08);
+    }
+    h2 { margin: 0 0 10px; font-size: 1.6rem; letter-spacing: -0.01em; }
+    .muted { color: var(--muted); }
+    .metric-note { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+    .table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .table th, .table td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+    .table th { font-weight: 700; font-size: 0.95rem; color: var(--muted); }
+    .table td { font-size: 0.95rem; }
+    .summary-block {
+      margin-top: 20px;
+      padding: 18px 16px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .summary-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .summary-card .label { color: var(--muted); font-size: 0.95rem; }
+    .summary-card .value { font-weight: 800; font-size: 1.3rem; margin-top: 6px; }
+    .summary-card .unit { color: var(--muted); font-size: 0.9rem; }
+    .records-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .records-filters {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      background: var(--bg);
+      flex-wrap: wrap;
+    }
+    .records-filters label {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .records-filters select {
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      min-width: 140px;
+    }
+    .records-actions { display: flex; align-items: center; gap: 8px; }
+    .records-status { color: var(--muted); font-size: 0.9rem; }
+    .note { color: var(--muted); font-size: 0.9rem; }
+    .records-filters .records-actions { margin-left: auto; }
+    .panel-form {
+      display: grid;
+      gap: 12px;
+    }
+    .panel-row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .panel-row.single {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .panel-form label {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .panel-form input,
+    .panel-form select {
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+    }
+    .panel-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .panel-status { color: var(--muted); font-size: 0.9rem; }
+    .panel-hint { color: var(--muted); font-size: 0.9rem; }
+    .app-footer { text-align: center; padding: 16px 0 24px; font-size: 0.95rem; color: var(--muted); }
+    .bulk-row {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+    .bulk-row-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .slide-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(420px, 100%);
+      height: 100%;
+      background: #fff;
+      box-shadow: -8px 0 24px rgba(15, 23, 42, 0.1);
+      border-left: 1px solid #e5e7eb;
+      padding: 16px;
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      z-index: 1000;
+    }
+    .slide-panel.active { transform: translateX(0); }
+    .hidden { display: none; }
+
+    @media (max-width: 980px) {
+      .app-layout { flex-direction: column; }
+      .side-nav {
+        width: 100%;
+        height: auto;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        border-right: none;
+        border-bottom: 1px solid #111827;
+      }
+      .nav-items { grid-auto-flow: column; grid-auto-columns: minmax(120px, 1fr); }
+      header { padding: 56px 20px 32px; }
+      .btn { padding: 12px 14px; }
+    }
+
+    @media (max-width: 680px) {
+      .shell { padding: 0 16px 60px; }
+      .nav-items { grid-auto-flow: row; }
+      .records-controls { flex-direction: column; align-items: flex-start; }
+      .records-filters { position: static; padding: 8px 0 12px; }
+      .records-filters label { min-width: 140px; }
+      .records-filters select { width: 100%; min-width: 0; }
+      .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="side-nav">
+      <a class="nav-brand" href="index.html">CarbonWise</a>
+      <nav class="nav-items">
+        <a href="records.html" class="nav-item" data-nav="records">My Records</a>
+        <a href="scope1.html" class="nav-item active" data-nav="scope1">Scope 1 Records</a>
+        <a href="insights.html" class="nav-item" data-nav="insights">Insights</a>
+        <a href="exports.html" class="nav-item" data-nav="export">Export / Reports</a>
+        <a href="settings.html" class="nav-item" data-nav="settings">Settings</a>
+        <div class="nav-footer">
+          <button class="nav-item logout" id="nav-signout" type="button">Log out</button>
+        </div>
+      </nav>
+    </aside>
+    <div class="app-content">
+      <header>
+        <div class="shell">
+          <h1>Scope 1 Records</h1>
+          <p class="subhead">Natural gas entries saved for reporting and exports.</p>
+        </div>
+      </header>
+
+      <div class="shell">
+        <section class="summary-block">
+          <h2 style="margin:0;">Scope 1 Snapshot</h2>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="label">Total Scope 1</div>
+              <div class="value" id="scope1Total">—</div>
+              <div class="unit">tCO2e</div>
+            </div>
+            <div class="summary-card">
+              <div class="label">Average per month</div>
+              <div class="value" id="scope1Avg">—</div>
+              <div class="unit">tCO2e</div>
+            </div>
+            <div class="summary-card">
+              <div class="label">Highest region</div>
+              <div class="value" id="scope1TopRegion">—</div>
+            </div>
+            <div class="summary-card">
+              <div class="label">Coverage (months with records)</div>
+              <div class="value" id="scope1Count">—</div>
+              <div class="unit">months</div>
+            </div>
+          </div>
+          <p class="note">Scope 1 estimates are based on user-provided fuel data. <a href="methodology.html#scope-1">See Methodology</a>.</p>
+        </section>
+
+        <section>
+          <div class="records-controls">
+            <h2 style="margin:0;">Saved Scope 1 records</h2>
+            <div class="records-actions">
+              <button class="btn secondary" id="scope1-export-csv" type="button">Export CSV</button>
+              <span class="records-status" id="scope1-export-status"></span>
+            </div>
+          </div>
+          <div class="note">Stationary combustion — natural gas only. <a href="methodology.html#scope-1">See Methodology</a>.</div>
+          <section class="records-filters">
+            <label>
+              Reporting year
+              <select id="filterYear">
+                <option value="">All</option>
+              </select>
+            </label>
+            <label>
+              Country
+              <select id="filterCountry">
+                <option value="">All</option>
+              </select>
+            </label>
+            <label>
+              Region
+              <select id="filterRegion">
+                <option value="">All</option>
+              </select>
+            </label>
+            <div class="records-actions">
+              <button class="btn secondary" id="scope1-add" type="button">Add record</button>
+              <button class="btn secondary" id="scope1-bulk" type="button">Bulk add</button>
+            </div>
+          </section>
+          <table class="table" aria-label="Saved Scope 1 records">
+            <thead>
+              <tr>
+                <th>Emissions</th>
+                <th>Details</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="scope1Table"></tbody>
+          </table>
+          <p class="note">Calculated using stationary combustion factors (tCO2e). <a href="methodology.html#scope-1">See Methodology</a>.</p>
+        </section>
+      </div>
+      <footer class="app-footer">
+        <div><a href="methodology.html">Methodology</a> • <a href="mailto:hello@esgrise.com">Contact / support</a></div>
+        <div>Emission factors updated as of 2024.</div>
+      </footer>
+    </div>
+  </div>
+
+  <div id="scope1Panel" class="slide-panel hidden" aria-live="polite"></div>
+
+  <script type="module" src="./js/scope1.js"></script>
+</body>
+</html>

@@ -128,7 +128,9 @@
       editingRecordId: null,
       authView: 'signin',
       authLoading: false,
-      historyRevealed: false
+      historyRevealed: false,
+      scope1Saving: false,
+      scope1PendingEntry: null
     };
 
     // Supabase client config (replace placeholders or set window.SUPABASE_URL / window.SUPABASE_ANON_KEY)
@@ -331,6 +333,9 @@
       if (!supabase) return;
       const { data } = await supabase.auth.getSession();
       setSessionUI(data?.session || null);
+      if (data?.session && typeof refreshScope1Entries === 'function') {
+        refreshScope1Entries();
+      }
       if (data?.session?.user?.recovery_sent_at) {
         enterRecoveryMode(data.session);
       }
@@ -344,6 +349,12 @@
           if (appState.saving) {
             // Continue save flow after auth
             handleSaveFlow();
+          }
+          if (appState.scope1Saving && appState.scope1PendingEntry) {
+            saveScope1Entry(appState.scope1PendingEntry);
+          }
+          if (typeof refreshScope1Entries === 'function') {
+            refreshScope1Entries();
           }
           // Redirect only on new sign-in events to avoid bouncing when intentionally visiting the calculator
           if (_event === 'SIGNED_IN' && !window.location.pathname.endsWith('records.html')) {
@@ -900,12 +911,11 @@
     // Kick off auth session detection on load (safe if supabase fails to load)
     initSupabaseClient().then(() => initAuth());
 
-    const SCOPE1_STORAGE_KEY = 'scope1_v1_entries';
     const SCOPE1_TOGGLE_KEY = 'scope1_v1_beta_enabled';
     const SCOPE1_DISCLOSURE = 'Scope 1 emissions are estimates based on user-provided fuel data. Results may be partial and do not represent full Scope 1 coverage.';
     const SCOPE1_UNITS = [
       { value: 'therms', label: 'Therms (US)' },
-      { value: 'm3', label: 'Cubic meters (m³)' },
+      { value: 'm3', label: 'Cubic meters (m3)' },
       { value: 'kwh-eq', label: 'kWh-equivalent' }
     ];
     const SCOPE1_UNIT_LABELS = SCOPE1_UNITS.reduce((acc, unit) => {
@@ -1028,66 +1038,31 @@
       return { ...factorData, label };
     };
 
-    const sanitizeScope1Entry = (raw) => {
-      if (!raw || typeof raw !== 'object') return null;
-      const periodYear = parseInt(raw.period_year, 10);
-      const periodMonth = parseInt(raw.period_month, 10);
-      const quantity = Number(raw.quantity);
-      const unitValue = String(raw.unit || '').trim();
-      const country = String(raw.country || '').trim();
-      const region = String(raw.region || '').trim();
-      const notes = String(raw.notes || '').trim().slice(0, 240);
-      if (!periodYear || !periodMonth || periodMonth < 1 || periodMonth > 12) return null;
-      if (!Number.isFinite(quantity) || quantity < 0) return null;
-      if (!SCOPE1_UNIT_LABELS[unitValue]) return null;
-      if (!country) return null;
-      const emissions = Number(raw.emissions);
-      const factorValue = Number(raw.factor_value);
-      const factorYear = Number(raw.factor_year);
-      const factorSource = String(raw.factor_source || '').trim();
-      const factorBasis = String(raw.factor_basis || '').trim();
-      const factorLabel = String(raw.factor_label || '').trim();
-      return {
-        id: String(raw.id || ''),
-        period_year: periodYear,
-        period_month: periodMonth,
-        country,
-        region,
-        quantity,
-        unit: unitValue,
-        unit_label: SCOPE1_UNIT_LABELS[unitValue],
-        notes,
-        emissions: Number.isFinite(emissions) ? emissions : null,
-        factor_value: Number.isFinite(factorValue) ? factorValue : null,
-        factor_year: Number.isFinite(factorYear) ? factorYear : null,
-        factor_source: factorSource,
-        factor_basis: factorBasis,
-        factor_label: factorLabel
-      };
-    };
-
-    const loadScope1Entries = () => {
-      try {
-        const raw = localStorage.getItem(SCOPE1_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(parsed)) return [];
-        return parsed.map(sanitizeScope1Entry).filter(Boolean);
-      } catch {
+    const fetchScope1Entries = async () => {
+      if (!supabase || !appState.session) return [];
+      const { data, error } = await supabase
+        .from('scope1_records')
+        .select('id,period_year,period_month,country,region,quantity,unit,notes,emissions,factor_value,factor_year,factor_source,factor_basis,factor_label,created_at')
+        .order('period_year', { ascending: false })
+        .order('period_month', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.warn('Scope 1 load failed', error);
         return [];
       }
-    };
-
-    const saveScope1Entries = (entries) => {
-      try {
-        localStorage.setItem(SCOPE1_STORAGE_KEY, JSON.stringify(entries));
-      } catch {
-        /* ignore localStorage errors */
-      }
+      return data || [];
     };
 
     const renderScope1Entries = (entries) => {
       if (!scope1EntriesList) return;
       clearChildren(scope1EntriesList);
+      if (!appState.session) {
+        const empty = document.createElement('div');
+        empty.className = 'muted small';
+        empty.textContent = 'Log in to view your Scope 1 entries.';
+        scope1EntriesList.appendChild(empty);
+        return;
+      }
       if (!entries.length) {
         const empty = document.createElement('div');
         empty.className = 'muted small';
@@ -1104,7 +1079,8 @@
         const period = `${entry.period_year}-${String(entry.period_month).padStart(2, '0')}`;
         const location = `${SCOPE1_COUNTRY_LABELS[entry.country] || entry.country}${entry.region ? ' / ' + entry.region : ''}`;
         const emissionsLabel = entry.emissions != null ? `${formatNumber(entry.emissions, 3)} tCO₂e` : '—';
-        title.textContent = `${period} • ${formatNumber(entry.quantity, 2)} ${entry.unit_label} • ${emissionsLabel}`;
+        const unitLabel = SCOPE1_UNIT_LABELS[entry.unit] || entry.unit || '';
+        title.textContent = `${period} • ${formatNumber(entry.quantity, 2)} ${unitLabel} • ${emissionsLabel}`;
         const meta = document.createElement('div');
         meta.className = 'scope1-entry-meta';
         meta.textContent = `${location}${entry.notes ? ' • ' + entry.notes : ''}`;
@@ -1116,10 +1092,15 @@
         removeBtn.type = 'button';
         removeBtn.className = 'btn secondary';
         removeBtn.textContent = 'Remove';
-        removeBtn.addEventListener('click', () => {
-          const updated = loadScope1Entries().filter((rowEntry) => rowEntry.id !== entry.id);
-          saveScope1Entries(updated);
-          renderScope1Entries(updated);
+        removeBtn.addEventListener('click', async () => {
+          const confirmDelete = confirm('Delete this Scope 1 entry?');
+          if (!confirmDelete) return;
+          const { error } = await supabase.from('scope1_records').delete().eq('id', entry.id);
+          if (error) {
+            alert('Delete failed. Please try again.');
+            return;
+          }
+          refreshScope1Entries();
         });
         actions.appendChild(removeBtn);
 
@@ -1128,6 +1109,16 @@
         scope1EntriesList.appendChild(row);
       });
     };
+
+    async function refreshScope1Entries() {
+      if (!scope1EntriesList) return;
+      if (!appState.session) {
+        renderScope1Entries([]);
+        return;
+      }
+      const entries = await fetchScope1Entries();
+      renderScope1Entries(entries);
+    }
 
     const showScope1Status = (message) => {
       if (!scope1Status) return;
@@ -1143,7 +1134,51 @@
       scope1Results.classList.add('active');
     };
 
-    const handleScope1Submit = (event) => {
+    const saveScope1Entry = async (entry) => {
+      if (!supabase) {
+        showScope1Status('Supabase unavailable. Please retry when online.');
+        return;
+      }
+      if (!appState.session) {
+        showScope1Status('Log in to save Scope 1 entries.');
+        return;
+      }
+      appState.scope1Saving = false;
+      appState.scope1PendingEntry = null;
+      if (!appState.companyId) {
+        appState.companyId = await getOrCreateCompany();
+        if (!appState.companyId) return;
+      }
+      const payload = {
+        user_id: appState.session.user.id,
+        company_id: appState.companyId,
+        period_year: entry.period_year,
+        period_month: entry.period_month,
+        country: entry.country,
+        region: entry.region || null,
+        quantity: entry.quantity,
+        unit: entry.unit,
+        notes: entry.notes || null,
+        emissions: entry.emissions,
+        factor_value: entry.factor_value,
+        factor_year: entry.factor_year,
+        factor_source: entry.factor_source,
+        factor_basis: entry.factor_basis,
+        factor_label: entry.factor_label
+      };
+      const { error } = await supabase
+        .from('scope1_records')
+        .upsert([payload], { onConflict: 'user_id,company_id,period_year,period_month,country,region' });
+      if (error) {
+        showScope1Status('Save failed. Please try again.');
+        return;
+      }
+      updateScope1Results(entry);
+      showScope1Status('Scope 1 entry added.');
+      refreshScope1Entries();
+    };
+
+    const handleScope1Submit = async (event) => {
       event.preventDefault();
       showScope1Status('');
       const errors = [];
@@ -1181,14 +1216,12 @@
 
       const emissions = quantityVal * factorData.factor;
       const entry = {
-        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
         period_year: yearVal,
         period_month: monthVal,
         country: countryVal,
         region: regionVal,
         quantity: quantityVal,
         unit: unitVal,
-        unit_label: SCOPE1_UNIT_LABELS[unitVal],
         notes: notesVal,
         emissions,
         factor_value: factorData.factor,
@@ -1198,11 +1231,16 @@
         factor_label: factorData.label
       };
 
-      const updated = [entry, ...loadScope1Entries()];
-      saveScope1Entries(updated);
-      renderScope1Entries(updated);
-      updateScope1Results(entry);
-      showScope1Status('Scope 1 entry added.');
+      if (!appState.session) {
+        authModalTitle.textContent = 'Log in to save Scope 1 entries';
+        authModalDesc.textContent = 'Log in to save Scope 1 results to your account.';
+        openAuthModal('signin');
+        appState.scope1Saving = true;
+        appState.scope1PendingEntry = entry;
+        return;
+      }
+
+      await saveScope1Entry(entry);
     };
 
     const initScope1Module = () => {
@@ -1214,7 +1252,7 @@
       scope1Toggle.checked = enabled;
       setScope1Visibility(enabled);
       scope1Disclosure.textContent = SCOPE1_DISCLOSURE;
-      renderScope1Entries(loadScope1Entries());
+      refreshScope1Entries();
 
       scope1Toggle.addEventListener('change', (event) => {
         const isEnabled = event.target.checked;

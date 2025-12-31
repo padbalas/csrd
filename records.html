@@ -331,8 +331,8 @@
     <aside class="side-nav">
       <a class="nav-brand" href="index.html">CarbonWise</a>
       <nav class="nav-items">
-        <a href="records.html" class="nav-item" data-nav="records">Scope 2 Records</a>
-        <a href="index.html#scope1" class="nav-item" data-nav="scope1-records">Scope 1 Records</a>
+        <a href="records.html" class="nav-item" data-nav="records">My Records</a>
+        <a href="scope1.html" class="nav-item" data-nav="scope1">Scope 1 Records</a>
         <a href="insights.html" class="nav-item" data-nav="insights">Insights</a>
         <a href="exports.html" class="nav-item" data-nav="export">Export / Reports</a>
         <a href="settings.html" class="nav-item" data-nav="settings">Settings</a>
@@ -436,7 +436,6 @@
           <button class="btn secondary" id="records-bulk" type="button">Bulk add</button>
         </div>
       </section>
-      <p class="note" id="records-auth-status">Log in on the main page to view your records.</p>
       <table class="table" aria-label="Saved records">
         <thead>
           <tr>
@@ -479,7 +478,6 @@
     import { EMISSION_FACTORS, GLOBAL_FALLBACK } from './data/emission-factors.js';
     const recordsTable = document.getElementById('recordsTable');
     const recordPanel = document.getElementById('recordPanel');
-    const authStatusEl = document.getElementById('records-auth-status');
     const signoutBtn = document.getElementById('nav-signout');
     const exportBtn = document.getElementById('records-export-csv');
     const exportStatus = document.getElementById('records-export-status');
@@ -596,14 +594,7 @@
       }
       return selectFinalFactor(GLOBAL_FALLBACK, billingYear) || GLOBAL_FALLBACK[0];
     };
-    const setAuthStatus = (msg) => {
-      if (!authStatusEl) return;
-      authStatusEl.textContent = msg || '';
-      authStatusEl.style.display = msg ? 'block' : 'none';
-    };
-
     const showMessage = (msg) => {
-      setAuthStatus(msg);
       if (!recordsTable) return;
       recordsTable.innerHTML = `<tr><td colspan="7" style="color:#4b5563;">${msg}</td></tr>`;
     };
@@ -616,11 +607,7 @@
     let supabase = null;
     const initSupabase = async () => {
       try {
-        const supabaseModule = await Promise.race([
-          import('https://esm.sh/@supabase/supabase-js@2'),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase import timeout')), 1500))
-        ]);
-        const { createClient } = supabaseModule;
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
         supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       } catch (err) {
         console.warn('Supabase client failed to load on records page', err);
@@ -635,7 +622,6 @@
         showMessage('Log in on the main page to view your records.');
         return;
       }
-      setAuthStatus('');
       const { data, error } = await supabase
         .from('scope2_records')
         .select('id,period_year,period_month,kwh,location_based_emissions,market_based_emissions,emission_factor_source,emission_factor_year,emission_factor_value,calc_country,calc_region,market_instrument_type,covered_kwh,companies(company_name,country,region)')
