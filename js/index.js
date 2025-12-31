@@ -1169,6 +1169,7 @@
       };
 
       appState.scope1PendingEntry = entry;
+      updateScope1Results(entry);
       showScope1Status('Scope 1 estimate ready. Review and save below.');
     };
 
