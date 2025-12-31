@@ -26,12 +26,12 @@ test.describe('Records page (unauthenticated)', () => {
     await expect(page.getByText('For intuition only (non-reporting metric)')).toBeVisible();
   });
 
-  test('side navigation omits Dashboard and highlights My Records', async ({ page }) => {
+  test('side navigation omits Dashboard and highlights Scope 2 Records', async ({ page }) => {
     const nav = page.locator('.side-nav');
-    await expect(nav.getByRole('link', { name: 'My Records' })).toBeVisible();
+    await expect(nav.getByRole('link', { name: 'Scope 2 Records' })).toBeVisible();
     await expect(nav.getByRole('link', { name: /Export \/ Reports/i })).toBeVisible();
     await expect(nav.getByRole('link', { name: /Dashboard/i })).toHaveCount(0);
-    await expect(nav.getByRole('link', { name: 'My Records' })).toHaveClass(/active/);
+    await expect(nav.getByRole('link', { name: 'Scope 2 Records' })).toHaveClass(/active/);
   });
 
   test('shows export control on records list', async ({ page }) => {

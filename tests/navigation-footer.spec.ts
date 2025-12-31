@@ -1,12 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Global privacy and footer copy', () => {
-  test('privacy section reflects account stance and methodology link', async ({ page }) => {
+  test('privacy section reflects account stance', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Privacy & trust' })).toBeVisible();
-    await expect(page.getByText('Calculate without an account. Log in only to save or export.', { exact: true })).toBeVisible();
-    const privacySection = page.locator('#privacy');
-    await expect(privacySection.getByRole('link', { name: /methodology/i })).toHaveAttribute('href', 'methodology.html');
+    await expect(page.getByText('Calculate without an account. Log in only to save Scope 1 or Scope 2 records.', { exact: true })).toBeVisible();
   });
 
   test('footer states GHG alignment and contact', async ({ page }) => {

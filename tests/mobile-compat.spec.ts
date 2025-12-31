@@ -4,9 +4,9 @@ const mobileViewport = { width: 390, height: 844 };
 
 const pages = [
   { path: '/', heading: /Carbon reporting/i },
-  { path: '/records.html', heading: /My Records/i },
+  { path: '/records.html', heading: /Scope 2 Records/i },
   { path: '/exports.html', heading: /Export \/ Reports/i },
-  { path: '/methodology.html', heading: /Methodology/i },
+  { path: '/methodology.html', heading: /Methodology & Disclosures/i },
 ];
 
 test.describe('Mobile viewport smoke checks', () => {
