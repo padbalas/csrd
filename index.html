@@ -362,23 +362,28 @@
       box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
     }
     .tab-header {
-      display: inline-flex;
+      display: flex;
       gap: 8px;
-      padding: 6px;
-      border-radius: 12px;
+      padding: 8px;
+      border-radius: 14px;
       background: #f1f5f9;
       border: 1px solid #e5e7eb;
       margin: 6px 0 16px;
       flex-wrap: wrap;
+      width: 100%;
     }
     .tab-button {
       border: 1px solid transparent;
       background: transparent;
       color: var(--muted);
-      padding: 8px 12px;
-      border-radius: 10px;
-      font-weight: 700;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 1rem;
       cursor: pointer;
+      flex: 1;
+      min-width: 220px;
+      text-align: center;
     }
     .tab-button.active {
       background: #ffffff;
@@ -421,7 +426,7 @@
       <p class="subhead">Calculate Scope 1 and Scope 2 emissions in minutes.</p>
       <div class="cta-row">
         <a class="btn primary" href="#calculator">Start Scope 2 electricity calculation</a>
-        <a class="btn secondary" href="#scope1">Start Scope 1 natural gas calculation</a>
+        <a class="btn secondary" href="#scope1" id="cta-scope1">Start Scope 1 natural gas calculation</a>
       </div>
     </div>
   </header>

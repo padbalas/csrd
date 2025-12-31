@@ -1207,6 +1207,20 @@
 
       syncWithHash();
       window.addEventListener('hashchange', syncWithHash);
+
+      const scope1Cta = document.getElementById('cta-scope1');
+      if (scope1Cta) {
+        scope1Cta.addEventListener('click', (e) => {
+          e.preventDefault();
+          setActive('scope1');
+          const scope1Section = document.getElementById('scope1');
+          if (scope1Section) {
+            scope1Section.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            window.location.hash = '#scope1';
+          }
+        });
+      }
     };
 
     initCalculatorTabs();
