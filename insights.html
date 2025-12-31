@@ -71,6 +71,38 @@
     .empty { color: var(--muted); font-size: 0.95rem; padding: 8px 0; }
     .note { color: var(--muted); font-size: 0.9rem; }
     .app-footer { text-align: center; padding: 16px 0 24px; font-size: 0.95rem; color: var(--muted); }
+    .tab-header {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 14px;
+      background: #f1f5f9;
+      border: 1px solid #e5e7eb;
+      margin: 0 0 16px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .tab-button {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      flex: 1;
+      min-width: 220px;
+      text-align: center;
+    }
+    .tab-button.active {
+      background: #ffffff;
+      color: var(--ink);
+      border-color: #cbd5e1;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
     @media (max-width: 980px) {
       .app-layout { flex-direction: column; }
@@ -116,11 +148,15 @@
         <div class="shell">
           <div class="top-row"></div>
           <h1>Insights</h1>
-          <p class="muted">Monthly trends and regional contributors based on saved records.</p>
+          <p class="muted">Monthly trends and regional contributors for Scope 1 and Scope 2 records.</p>
         </div>
       </header>
 
       <div class="shell stack">
+        <div class="tab-header">
+          <button type="button" class="tab-button active" data-tab-target="scope2">Scope 2 electricity</button>
+          <button type="button" class="tab-button" data-tab-target="scope1">Scope 1 natural gas</button>
+        </div>
         <section class="card">
           <div class="filters">
             <div>
@@ -133,40 +169,79 @@
           </div>
         </section>
 
-        <section class="card stack">
-          <h3 style="margin:0;">Monthly trend</h3>
-          <p class="subtitle">Location-based Scope 2 (tCO₂e) • Saved records only • Estimates</p>
-          <div class="chart-wrap">
-            <div class="metric" id="trendTotal">—<span class="unit">tCO₂e</span></div>
-            <svg class="trend-line" id="trendChart" viewBox="0 0 320 140" preserveAspectRatio="none" aria-label="Monthly emissions trend">
-              <line class="grid" x1="24" y1="20" x2="312" y2="20"></line>
-              <line class="grid" x1="24" y1="120" x2="312" y2="120"></line>
-              <text id="trendMax" x="4" y="24">—</text>
-              <text id="trendMin" x="4" y="120">—</text>
-              <path id="trendPath" d=""></path>
-            </svg>
-            <div class="subtitle" id="trendRange">Monthly totals based on saved records</div>
-            <div class="empty" id="trendEmpty" style="display:none;">No electricity records found for this period. Add a record to include it in calculations and exports.</div>
-          </div>
-          <div class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e). <a href="methodology.html">See Methodology</a>.</div>
-        </section>
+        <div class="tab-panel active" data-tab="scope2">
+          <section class="card stack">
+            <h3 style="margin:0;">Monthly trend</h3>
+            <p class="subtitle">Location-based Scope 2 (tCO₂e) • Saved records only • Estimates</p>
+            <div class="chart-wrap">
+              <div class="metric" id="trendTotal">—<span class="unit">tCO₂e</span></div>
+              <svg class="trend-line" id="trendChart" viewBox="0 0 320 140" preserveAspectRatio="none" aria-label="Monthly emissions trend">
+                <line class="grid" x1="24" y1="20" x2="312" y2="20"></line>
+                <line class="grid" x1="24" y1="120" x2="312" y2="120"></line>
+                <text id="trendMax" x="4" y="24">—</text>
+                <text id="trendMin" x="4" y="120">—</text>
+                <path id="trendPath" d=""></path>
+              </svg>
+              <div class="subtitle" id="trendRange">Monthly totals based on saved records</div>
+              <div class="empty" id="trendEmpty" style="display:none;">No electricity records found for this period. Add a record to include it in calculations and exports.</div>
+            </div>
+            <div class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e). <a href="methodology.html">See Methodology</a>.</div>
+          </section>
 
-        <section class="card stack">
-          <h3 style="margin:0;">Regional contribution</h3>
-          <p class="subtitle">Location-based Scope 2 (tCO₂e) • Saved records only • Estimates</p>
-          <div class="ranked-list" id="regionList"></div>
-          <div class="empty" id="regionEmpty" style="display:none;">No electricity records found for this period. Add a record to include it in calculations and exports.</div>
-          <div class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e). <a href="methodology.html">See Methodology</a>.</div>
-        </section>
+          <section class="card stack">
+            <h3 style="margin:0;">Regional contribution</h3>
+            <p class="subtitle">Location-based Scope 2 (tCO₂e) • Saved records only • Estimates</p>
+            <div class="ranked-list" id="regionList"></div>
+            <div class="empty" id="regionEmpty" style="display:none;">No electricity records found for this period. Add a record to include it in calculations and exports.</div>
+            <div class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e). <a href="methodology.html">See Methodology</a>.</div>
+          </section>
 
-        <section class="card stack">
-          <h3 style="margin:0;">Data coverage</h3>
-          <p class="subtitle">Months with saved records • Location-based Scope 2 • Estimates</p>
-          <div class="metric" id="coverageCount">—</div>
-          <div class="subtitle" id="coverageNote">Coverage based on saved records only</div>
-          <div class="empty" id="coverageEmpty" style="display:none;">No electricity records found for this period. Add a record to include it in calculations and exports.</div>
-          <div class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e). <a href="methodology.html">See Methodology</a>.</div>
-        </section>
+          <section class="card stack">
+            <h3 style="margin:0;">Data coverage</h3>
+            <p class="subtitle">Months with saved records • Location-based Scope 2 • Estimates</p>
+            <div class="metric" id="coverageCount">—</div>
+            <div class="subtitle" id="coverageNote">Coverage based on saved records only</div>
+            <div class="empty" id="coverageEmpty" style="display:none;">No electricity records found for this period. Add a record to include it in calculations and exports.</div>
+            <div class="note">Calculated using location-based Scope 2 electricity factors (tCO₂e). <a href="methodology.html">See Methodology</a>.</div>
+          </section>
+        </div>
+
+        <div class="tab-panel" data-tab="scope1">
+          <section class="card stack">
+            <h3 style="margin:0;">Monthly trend</h3>
+            <p class="subtitle">Scope 1 (tCO₂e) • Saved records only • Estimates</p>
+            <div class="chart-wrap">
+              <div class="metric" id="scope1TrendTotal">—<span class="unit">tCO₂e</span></div>
+              <svg class="trend-line" id="scope1TrendChart" viewBox="0 0 320 140" preserveAspectRatio="none" aria-label="Monthly emissions trend">
+                <line class="grid" x1="24" y1="20" x2="312" y2="20"></line>
+                <line class="grid" x1="24" y1="120" x2="312" y2="120"></line>
+                <text id="scope1TrendMax" x="4" y="24">—</text>
+                <text id="scope1TrendMin" x="4" y="120">—</text>
+                <path id="scope1TrendPath" d=""></path>
+              </svg>
+              <div class="subtitle" id="scope1TrendRange">Monthly totals based on saved records</div>
+              <div class="empty" id="scope1TrendEmpty" style="display:none;">No Scope 1 records found for this period. Add a record to include it in calculations and exports.</div>
+            </div>
+            <div class="note">Calculated using Scope 1 stationary combustion factors (tCO₂e). <a href="methodology.html#scope-1">See Methodology</a>.</div>
+          </section>
+
+          <section class="card stack">
+            <h3 style="margin:0;">Regional contribution</h3>
+            <p class="subtitle">Scope 1 (tCO₂e) • Saved records only • Estimates</p>
+            <div class="ranked-list" id="scope1RegionList"></div>
+            <div class="empty" id="scope1RegionEmpty" style="display:none;">No Scope 1 records found for this period. Add a record to include it in calculations and exports.</div>
+            <div class="note">Calculated using Scope 1 stationary combustion factors (tCO₂e). <a href="methodology.html#scope-1">See Methodology</a>.</div>
+          </section>
+
+          <section class="card stack">
+            <h3 style="margin:0;">Data coverage</h3>
+            <p class="subtitle">Months with saved records • Scope 1 • Estimates</p>
+            <div class="metric" id="scope1CoverageCount">—</div>
+            <div class="subtitle" id="scope1CoverageNote">Coverage based on saved records only</div>
+            <div class="empty" id="scope1CoverageEmpty" style="display:none;">No Scope 1 records found for this period. Add a record to include it in calculations and exports.</div>
+            <div class="note">Calculated using Scope 1 stationary combustion factors (tCO₂e). <a href="methodology.html#scope-1">See Methodology</a>.</div>
+          </section>
+        </div>
       </div>
       <footer class="app-footer">
         <!-- Trust signals in footer: methodology, support, and factor freshness -->
@@ -213,7 +288,21 @@
     const coverageCount = document.getElementById('coverageCount');
     const coverageNote = document.getElementById('coverageNote');
     const coverageEmpty = document.getElementById('coverageEmpty');
+    const scope1TrendTotal = document.getElementById('scope1TrendTotal');
+    const scope1TrendChart = document.getElementById('scope1TrendChart');
+    const scope1TrendPath = document.getElementById('scope1TrendPath');
+    const scope1TrendMax = document.getElementById('scope1TrendMax');
+    const scope1TrendMin = document.getElementById('scope1TrendMin');
+    const scope1TrendRange = document.getElementById('scope1TrendRange');
+    const scope1TrendEmpty = document.getElementById('scope1TrendEmpty');
+    const scope1RegionList = document.getElementById('scope1RegionList');
+    const scope1RegionEmpty = document.getElementById('scope1RegionEmpty');
+    const scope1CoverageCount = document.getElementById('scope1CoverageCount');
+    const scope1CoverageNote = document.getElementById('scope1CoverageNote');
+    const scope1CoverageEmpty = document.getElementById('scope1CoverageEmpty');
     const statusEl = document.getElementById('insightStatus');
+    const tabButtons = Array.from(document.querySelectorAll('[data-tab-target]'));
+    const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
 
     const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
 
@@ -249,6 +338,16 @@
       const { data, error } = await supabase
         .from('scope2_records')
         .select('period_year,period_month,kwh,covered_kwh,market_instrument_type,location_based_emissions,calc_country,calc_region')
+        .order('period_year', { ascending: false })
+        .order('period_month', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    };
+
+    const fetchScope1Records = async () => {
+      const { data, error } = await supabase
+        .from('scope1_records')
+        .select('period_year,period_month,country,region,emissions')
         .order('period_year', { ascending: false })
         .order('period_month', { ascending: false });
       if (error) throw error;
@@ -301,29 +400,41 @@
       preferredYear = pref === 'previous' ? CURRENT_YEAR - 1 : pref === 'current' ? CURRENT_YEAR : null;
     };
 
-    const renderTrend = (records) => {
+    const renderTrend = (records, elements) => {
+      const {
+        trendTotalEl,
+        trendChartEl,
+        trendPathEl,
+        trendMaxEl,
+        trendMinEl,
+        trendRangeEl,
+        trendEmptyEl,
+        totalField,
+        emptyMessage
+      } = elements;
       const grouped = {};
       records.forEach((r) => {
         const key = `${r.period_year}-${String(r.period_month).padStart(2, '0')}`;
         grouped[key] = grouped[key] || 0;
-        grouped[key] += Number(r.location_based_emissions || 0);
+        grouped[key] += Number(r[totalField] || 0);
       });
       const keys = Object.keys(grouped).sort();
       if (!keys.length) {
-        trendTotal.textContent = '—';
-        trendPath.setAttribute('d', '');
-        trendMax.textContent = '—';
-        trendMin.textContent = '—';
-        trendRange.textContent = 'Monthly totals based on saved records';
-        trendChart.style.display = 'none'; // hide empty chart per spec
-        trendEmpty.style.display = 'block';
+        trendTotalEl.textContent = '—';
+        trendPathEl.setAttribute('d', '');
+        trendMaxEl.textContent = '—';
+        trendMinEl.textContent = '—';
+        trendRangeEl.textContent = 'Monthly totals based on saved records';
+        trendChartEl.style.display = 'none'; // hide empty chart per spec
+        trendEmptyEl.style.display = 'block';
+        if (emptyMessage) trendEmptyEl.textContent = emptyMessage;
         return;
       }
-      trendEmpty.style.display = 'none';
-      trendChart.style.display = 'block';
+      trendEmptyEl.style.display = 'none';
+      trendChartEl.style.display = 'block';
       const values = keys.map((k) => grouped[k]);
       const total = values.reduce((sum, v) => sum + v, 0);
-      trendTotal.innerHTML = `${total.toFixed(3)}<span class="unit">tCO₂e</span>`;
+      trendTotalEl.innerHTML = `${total.toFixed(3)}<span class="unit">tCO₂e</span>`;
 
       const max = Math.max(...values);
       const min = Math.min(...values);
@@ -338,33 +449,42 @@
         return [x, y];
       });
       const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-      trendPath.setAttribute('d', path);
-      trendMax.textContent = max.toFixed(2);
-      trendMin.textContent = min.toFixed(2);
+      trendPathEl.setAttribute('d', path);
+      trendMaxEl.textContent = max.toFixed(2);
+      trendMinEl.textContent = min.toFixed(2);
 
       const firstKey = keys[0].split('-');
       const lastKey = keys[keys.length - 1].split('-');
-      trendRange.textContent = `${monthNames[Number(firstKey[1]) - 1]} ${firstKey[0]} – ${monthNames[Number(lastKey[1]) - 1]} ${lastKey[0]} (saved records only)`;
+      trendRangeEl.textContent = `${monthNames[Number(firstKey[1]) - 1]} ${firstKey[0]} – ${monthNames[Number(lastKey[1]) - 1]} ${lastKey[0]} (saved records only)`;
     };
 
-    const renderRegions = (records) => {
-      regionList.innerHTML = '';
+    const renderRegions = (records, elements) => {
+      const {
+        listEl,
+        emptyEl,
+        labelFieldCountry,
+        labelFieldRegion,
+        totalField,
+        emptyMessage
+      } = elements;
+      listEl.innerHTML = '';
       const totals = {};
       let totalEmissions = 0;
       records.forEach((r) => {
-        const label = `${r.calc_country || '—'}${r.calc_region ? ' / ' + r.calc_region : ''}`;
-        const val = Number(r.location_based_emissions || 0);
+        const label = `${r[labelFieldCountry] || '—'}${r[labelFieldRegion] ? ' / ' + r[labelFieldRegion] : ''}`;
+        const val = Number(r[totalField] || 0);
         totals[label] = (totals[label] || 0) + val;
         totalEmissions += val;
       });
       const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
       if (!sorted.length) {
-        regionEmpty.style.display = 'block';
-        regionList.style.display = 'none'; // hide empty list per spec
+        emptyEl.style.display = 'block';
+        listEl.style.display = 'none'; // hide empty list per spec
+        if (emptyMessage) emptyEl.textContent = emptyMessage;
         return;
       }
-      regionEmpty.style.display = 'none';
-      regionList.style.display = 'grid';
+      emptyEl.style.display = 'none';
+      listEl.style.display = 'grid';
       sorted.forEach(([label, val]) => {
         const share = totalEmissions ? (val / totalEmissions) * 100 : 0;
         const row = document.createElement('div');
@@ -373,21 +493,23 @@
           <div class="bar-label"><span>${label}</span><span>${share.toFixed(0)}%</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:${share.toFixed(2)}%;"></div></div>
         `;
-        regionList.appendChild(row);
+        listEl.appendChild(row);
       });
     };
 
-    const renderCoverage = (records) => {
+    const renderCoverage = (records, elements) => {
+      const { countEl, noteEl, emptyEl, emptyMessage } = elements;
       const monthSet = new Set(records.map((r) => `${r.period_year}-${String(r.period_month).padStart(2, '0')}`));
       if (!monthSet.size) {
-        coverageCount.textContent = '—';
-        coverageNote.textContent = 'Coverage based on saved records only';
-        coverageEmpty.style.display = 'block';
+        countEl.textContent = '—';
+        noteEl.textContent = 'Coverage based on saved records only';
+        emptyEl.style.display = 'block';
+        if (emptyMessage) emptyEl.textContent = emptyMessage;
         return;
       }
-      coverageEmpty.style.display = 'none';
-      coverageCount.textContent = `${monthSet.size} month${monthSet.size === 1 ? '' : 's'}`;
-      coverageNote.textContent = 'Coverage based on saved records only';
+      emptyEl.style.display = 'none';
+      countEl.textContent = `${monthSet.size} month${monthSet.size === 1 ? '' : 's'}`;
+      noteEl.textContent = 'Coverage based on saved records only';
     };
 
     const applyFilters = (records) => {
@@ -396,30 +518,96 @@
       return records.filter((r) => String(r.period_year) === year);
     };
 
-    const renderAll = (records) => {
+    const renderAll = (records, elements) => {
       const filtered = applyFilters(records);
-      renderTrend(filtered);
-      renderRegions(filtered);
-      renderCoverage(filtered);
+      renderTrend(filtered, elements.trend);
+      renderRegions(filtered, elements.regions);
+      renderCoverage(filtered, elements.coverage);
     };
+
+    const renderScope2 = (records) => {
+      renderAll(records, {
+        trend: {
+          trendTotalEl: trendTotal,
+          trendChartEl: trendChart,
+          trendPathEl: trendPath,
+          trendMaxEl: trendMax,
+          trendMinEl: trendMin,
+          trendRangeEl: trendRange,
+          trendEmptyEl: trendEmpty,
+          totalField: 'location_based_emissions',
+          emptyMessage: 'No electricity records found for this period. Add a record to include it in calculations and exports.'
+        },
+        regions: {
+          listEl: regionList,
+          emptyEl: regionEmpty,
+          labelFieldCountry: 'calc_country',
+          labelFieldRegion: 'calc_region',
+          totalField: 'location_based_emissions',
+          emptyMessage: 'No electricity records found for this period. Add a record to include it in calculations and exports.'
+        },
+        coverage: {
+          countEl: coverageCount,
+          noteEl: coverageNote,
+          emptyEl: coverageEmpty,
+          emptyMessage: 'No electricity records found for this period. Add a record to include it in calculations and exports.'
+        }
+      });
+    };
+
+    const renderScope1 = (records) => {
+      renderAll(records, {
+        trend: {
+          trendTotalEl: scope1TrendTotal,
+          trendChartEl: scope1TrendChart,
+          trendPathEl: scope1TrendPath,
+          trendMaxEl: scope1TrendMax,
+          trendMinEl: scope1TrendMin,
+          trendRangeEl: scope1TrendRange,
+          trendEmptyEl: scope1TrendEmpty,
+          totalField: 'emissions',
+          emptyMessage: 'No Scope 1 records found for this period. Add a record to include it in calculations and exports.'
+        },
+        regions: {
+          listEl: scope1RegionList,
+          emptyEl: scope1RegionEmpty,
+          labelFieldCountry: 'country',
+          labelFieldRegion: 'region',
+          totalField: 'emissions',
+          emptyMessage: 'No Scope 1 records found for this period. Add a record to include it in calculations and exports.'
+        },
+        coverage: {
+          countEl: scope1CoverageCount,
+          noteEl: scope1CoverageNote,
+          emptyEl: scope1CoverageEmpty,
+          emptyMessage: 'No Scope 1 records found for this period. Add a record to include it in calculations and exports.'
+        }
+      });
+    };
+
+    let scope1Records = [];
 
     (async () => {
       setStatus('Checking access…');
       const session = await requireAuth();
       if (!session) return;
       try {
-        const records = await fetchRecords();
+        const [records, scope1RecordsData] = await Promise.all([fetchRecords(), fetchScope1Records()]);
         await loadCompanyPreference();
         saveRecords(records);
         populateYears(records);
-        renderAll(records);
+        renderScope2(records);
+        scope1Records = scope1RecordsData;
+        renderScope1(scope1Records);
         setStatus('');
       } catch (err) {
         console.warn('Insights load error', err);
         const cached = loadRecords();
         await loadCompanyPreference();
         populateYears(cached);
-        renderAll(cached);
+        renderScope2(cached);
+        scope1Records = [];
+        renderScope1(scope1Records);
         setStatus('Showing cached data.');
       }
   })();
@@ -427,8 +615,35 @@
     yearSelect.addEventListener('change', () => {
       yearSelect.dataset.userSet = 'true';
       const records = loadRecords();
-      renderAll(records);
+      renderScope2(records);
+      renderScope1(scope1Records);
     });
+
+    const initTabs = () => {
+      if (!tabButtons.length || !tabPanels.length) return;
+      const setActive = (tab) => {
+        tabButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tabTarget === tab));
+        tabPanels.forEach((panel) => panel.classList.toggle('active', panel.dataset.tab === tab));
+      };
+      const syncWithHash = () => {
+        const hash = window.location.hash;
+        if (hash === '#scope1') {
+          setActive('scope1');
+          return;
+        }
+        setActive('scope2');
+      };
+      tabButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tab = btn.dataset.tabTarget;
+          setActive(tab);
+        });
+      });
+      syncWithHash();
+      window.addEventListener('hashchange', syncWithHash);
+    };
+
+    initTabs();
 
     if (signoutBtn) {
       signoutBtn.addEventListener('click', async () => {
