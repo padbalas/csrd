@@ -947,8 +947,7 @@
     const scope1ResultValue = document.getElementById('scope1-result-value');
     const scope1FactorDetails = document.getElementById('scope1-factor-details');
     const scope1Disclosure = document.getElementById('scope1-disclosure');
-    const scope1DisclosureList = document.getElementById('scope1-disclosure-list');
-    const scope1EntriesList = document.getElementById('scope1-entries-list');
+    const scope1SaveBtn = document.getElementById('scope1-save');
 
     const clearChildren = (el) => {
       if (!el) return;
@@ -1053,71 +1052,9 @@
       return data || [];
     };
 
-    const renderScope1Entries = (entries) => {
-      if (!scope1EntriesList) return;
-      clearChildren(scope1EntriesList);
-      if (!appState.session) {
-        const empty = document.createElement('div');
-        empty.className = 'muted small';
-        empty.textContent = 'Log in to view your Scope 1 entries.';
-        scope1EntriesList.appendChild(empty);
-        return;
-      }
-      if (!entries.length) {
-        const empty = document.createElement('div');
-        empty.className = 'muted small';
-        empty.textContent = 'No Scope 1 entries yet.';
-        scope1EntriesList.appendChild(empty);
-        return;
-      }
-      entries.forEach((entry) => {
-        const row = document.createElement('div');
-        row.className = 'scope1-entry';
-
-        const info = document.createElement('div');
-        const title = document.createElement('div');
-        const period = `${entry.period_year}-${String(entry.period_month).padStart(2, '0')}`;
-        const location = `${SCOPE1_COUNTRY_LABELS[entry.country] || entry.country}${entry.region ? ' / ' + entry.region : ''}`;
-        const emissionsLabel = entry.emissions != null ? `${formatNumber(entry.emissions, 3)} tCO₂e` : '—';
-        const unitLabel = SCOPE1_UNIT_LABELS[entry.unit] || entry.unit || '';
-        title.textContent = `${period} • ${formatNumber(entry.quantity, 2)} ${unitLabel} • ${emissionsLabel}`;
-        const meta = document.createElement('div');
-        meta.className = 'scope1-entry-meta';
-        meta.textContent = `${location}${entry.notes ? ' • ' + entry.notes : ''}`;
-        info.appendChild(title);
-        info.appendChild(meta);
-
-        const actions = document.createElement('div');
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'btn secondary';
-        removeBtn.textContent = 'Remove';
-        removeBtn.addEventListener('click', async () => {
-          const confirmDelete = confirm('Delete this Scope 1 entry?');
-          if (!confirmDelete) return;
-          const { error } = await supabase.from('scope1_records').delete().eq('id', entry.id);
-          if (error) {
-            alert('Delete failed. Please try again.');
-            return;
-          }
-          refreshScope1Entries();
-        });
-        actions.appendChild(removeBtn);
-
-        row.appendChild(info);
-        row.appendChild(actions);
-        scope1EntriesList.appendChild(row);
-      });
-    };
-
     async function refreshScope1Entries() {
-      if (!scope1EntriesList) return;
-      if (!appState.session) {
-        renderScope1Entries([]);
-        return;
-      }
-      const entries = await fetchScope1Entries();
-      renderScope1Entries(entries);
+      if (!appState.session) return;
+      await fetchScope1Entries();
     }
 
     const showScope1Status = (message) => {
@@ -1130,8 +1067,8 @@
       scope1ResultValue.textContent = `${formatNumber(result.emissions, 3)} tCO₂e`;
       scope1FactorDetails.textContent = `Factor: ${formatNumber(result.factor_value, 6)} ${result.factor_basis} • ${result.factor_year} • ${result.factor_source} • ${result.factor_label}`;
       if (scope1Disclosure) scope1Disclosure.textContent = SCOPE1_DISCLOSURE;
-      if (scope1DisclosureList) scope1DisclosureList.textContent = SCOPE1_DISCLOSURE;
       scope1Results.classList.add('active');
+      if (scope1SaveBtn) scope1SaveBtn.disabled = false;
     };
 
     const saveScope1Entry = async (entry) => {
@@ -1144,7 +1081,6 @@
         return;
       }
       appState.scope1Saving = false;
-      appState.scope1PendingEntry = null;
       if (!appState.companyId) {
         appState.companyId = await getOrCreateCompany();
         if (!appState.companyId) return;
@@ -1174,8 +1110,9 @@
         return;
       }
       updateScope1Results(entry);
-      showScope1Status('Scope 1 entry added.');
-      refreshScope1Entries();
+      appState.scope1PendingEntry = null;
+      showScope1Status('Scope 1 record saved.');
+      window.location.href = 'scope1.html';
     };
 
     const handleScope1Submit = async (event) => {
@@ -1231,16 +1168,8 @@
         factor_label: factorData.label
       };
 
-      if (!appState.session) {
-        authModalTitle.textContent = 'Log in to save Scope 1 entries';
-        authModalDesc.textContent = 'Log in to save Scope 1 results to your account.';
-        openAuthModal('signin');
-        appState.scope1Saving = true;
-        appState.scope1PendingEntry = entry;
-        return;
-      }
-
-      await saveScope1Entry(entry);
+      appState.scope1PendingEntry = entry;
+      showScope1Status('Scope 1 estimate ready. Review and save below.');
     };
 
     const initScope1Module = () => {
@@ -1252,7 +1181,6 @@
       scope1Toggle.checked = enabled;
       setScope1Visibility(enabled);
       scope1Disclosure.textContent = SCOPE1_DISCLOSURE;
-      refreshScope1Entries();
 
       scope1Toggle.addEventListener('change', (event) => {
         const isEnabled = event.target.checked;
@@ -1265,6 +1193,20 @@
         setScope1RegionOptions(event.target.value);
       });
       scope1Form?.addEventListener('submit', handleScope1Submit);
+      scope1SaveBtn?.addEventListener('click', async () => {
+        if (!appState.scope1PendingEntry) {
+          showScope1Status('Calculate a Scope 1 estimate before saving.');
+          return;
+        }
+        if (!appState.session) {
+          authModalTitle.textContent = 'Log in to save Scope 1 records';
+          authModalDesc.textContent = 'Log in to save Scope 1 results to your account.';
+          openAuthModal('signin');
+          appState.scope1Saving = true;
+          return;
+        }
+        await saveScope1Entry(appState.scope1PendingEntry);
+      });
     };
 
     initScope1Module();
