@@ -217,8 +217,35 @@ const setActiveNav = () => {
   });
 };
 
+const initTabs = () => {
+  const buttons = Array.from(document.querySelectorAll('[data-tab-target]'));
+  const panels = Array.from(document.querySelectorAll('.tab-panel'));
+  if (!buttons.length || !panels.length) return;
+  const setActive = (tab) => {
+    buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tabTarget === tab));
+    panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.tab === tab));
+  };
+  const syncWithHash = () => {
+    const hash = window.location.hash;
+    if (hash === '#scope1') {
+      setActive('scope1');
+      return;
+    }
+    setActive('scope2');
+  };
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tabTarget;
+      setActive(tab);
+    });
+  });
+  syncWithHash();
+  window.addEventListener('hashchange', syncWithHash);
+};
+
 const init = async () => {
   setActiveNav();
+  initTabs();
   setStatus('Checking access…');
   const session = await requireAuth();
   if (!session) return;
