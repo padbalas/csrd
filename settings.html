@@ -59,6 +59,7 @@
     .btn.secondary { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
     .btn.match-records { padding: 14px 18px; }
     .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .actions.align-right { justify-content: flex-end; }
     .status { font-size: 0.95rem; color: var(--muted); min-height: 20px; }
     .note { font-size: 0.9rem; color: var(--muted); }
     .section-title { font-size: 1.35rem; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
@@ -160,7 +161,7 @@
                 <select id="site-region" required></select>
               </div>
             </div>
-            <div class="actions">
+            <div class="actions align-right">
               <button class="btn secondary match-records" type="submit">Add site</button>
               <span class="status" id="sites-status"></span>
             </div>
