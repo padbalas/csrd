@@ -242,6 +242,7 @@
         return;
       }
       const currentCountry = countryEl.value;
+      const currentRegion = regionEl.value;
       if (appState.session && appState.sites.length) {
         const countries = Array.from(
           new Set(appState.sites.map((site) => site.country))
@@ -257,13 +258,20 @@
         const siteMap = getSitesByCountry(appState.sites);
         const regions = (siteMap.get(selectedCountry) || []).map((site) => site.region);
         setRegionOptions(selectedCountry, regionEl, regions);
+        if (regions.includes(currentRegion)) {
+          regionEl.value = currentRegion;
+        }
       } else {
         populateCountryOptions(countryEl, COUNTRY_OPTIONS);
         const selectedCountry = COUNTRY_OPTIONS.some((c) => c.value === currentCountry)
           ? currentCountry
           : countryEl.value;
         if (selectedCountry) countryEl.value = selectedCountry;
+        const regions = REGION_OPTIONS[countryEl.value] || [];
         setRegionOptions(countryEl.value, regionEl);
+        if (regions.includes(currentRegion)) {
+          regionEl.value = currentRegion;
+        }
       }
       if (saveBtn) saveBtn.disabled = false;
       applyScope1SiteRestrictions();
@@ -278,6 +286,7 @@
         return;
       }
       const currentCountry = scope1Country.value;
+      const currentRegion = scope1Region.value;
       if (appState.session && appState.sites.length) {
         const countries = Array.from(
           new Set(appState.sites.map((site) => site.country))
@@ -293,13 +302,20 @@
         const siteMap = getSitesByCountry(appState.sites);
         const regions = (siteMap.get(selectedCountry) || []).map((site) => site.region);
         setRegionOptions(selectedCountry, scope1Region, regions);
+        if (regions.includes(currentRegion)) {
+          scope1Region.value = currentRegion;
+        }
       } else {
         populateCountryOptions(scope1Country, COUNTRY_OPTIONS);
         const selectedCountry = COUNTRY_OPTIONS.some((c) => c.value === currentCountry)
           ? currentCountry
           : scope1Country.value;
         if (selectedCountry) scope1Country.value = selectedCountry;
+        const regions = REGION_OPTIONS[scope1Country.value] || [];
         setRegionOptions(scope1Country.value, scope1Region);
+        if (regions.includes(currentRegion)) {
+          scope1Region.value = currentRegion;
+        }
       }
       if (scope1SaveBtn) scope1SaveBtn.disabled = false;
     };
