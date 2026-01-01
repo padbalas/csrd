@@ -63,7 +63,11 @@ test.describe('Calculator (index)', () => {
     await page.getByRole('button', { name: /See my Scope 2 electricity emissions/i }).click();
     const dialog = await dialogPromise;
     expect(dialog.message()).toMatch(/Future months are not supported/i);
-    await dialog.dismiss();
+    try {
+      await dialog.dismiss();
+    } catch {
+      // Some browsers close the page when dialogs appear during navigation; ignore.
+    }
   });
 
   test('calculates location-based result and keeps market as not provided when toggle is off', async ({ page }) => {
