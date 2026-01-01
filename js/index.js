@@ -1264,6 +1264,8 @@
       scope1FactorDetails.textContent = `Factor: ${formatNumber(result.factor_value, 6)} ${result.factor_basis} • ${result.factor_year} • ${result.factor_source} • ${result.factor_label}`;
       if (scope1Disclosure) scope1Disclosure.textContent = SCOPE1_DISCLOSURE;
       scope1Results.classList.add('active');
+      const scope1Placeholder = document.getElementById('scope1-placeholder');
+      if (scope1Placeholder) scope1Placeholder.style.display = 'none';
       if (scope1SaveBtn) scope1SaveBtn.disabled = false;
     };
 
@@ -1394,6 +1396,8 @@
       applyScope1SiteRestrictions();
       scope1Body.classList.add('active');
       scope1Disclosure.textContent = SCOPE1_DISCLOSURE;
+      const scope1Placeholder = document.getElementById('scope1-placeholder');
+      if (scope1Placeholder) scope1Placeholder.style.display = 'block';
 
       scope1Year?.addEventListener('change', syncScope1MonthOptions);
       scope1Country?.addEventListener('change', (event) => {
