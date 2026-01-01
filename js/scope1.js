@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { SCOPE1_NATURAL_GAS_FACTORS, SCOPE1_NATURAL_GAS_DEFAULT } from '../data/emission-factors.js';
+import { ensureCompanySites } from './sites.js';
 
 const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
@@ -74,6 +75,13 @@ const countEl = document.getElementById('scope1Count');
 
 let records = [];
 let companyDefaults = { country: '', region: '', reportingYear: 'all' };
+let sites = [];
+
+const applySiteRestrictions = () => {
+  const hasSites = sites.length > 0;
+  if (addBtn) addBtn.disabled = !hasSites;
+  if (bulkBtn) bulkBtn.disabled = !hasSites;
+};
 
 const formatNumber = (n, digits = 2) => Number(n).toLocaleString(undefined, {
   maximumFractionDigits: digits,
@@ -103,17 +111,19 @@ const getCompanyId = async (session) => {
   return data?.[0]?.id || null;
 };
 
-const loadCompanyDefaults = async () => {
+const loadCompanyDefaults = async (session) => {
   const { data, error } = await supabase
     .from('companies')
-    .select('reporting_year_preference,country,region')
+    .select('reporting_year_preference')
     .order('created_at', { ascending: true })
     .limit(1);
   if (error || !data || !data.length) return;
   const company = data[0] || {};
+  const siteData = await ensureCompanySites(supabase, session);
+  sites = siteData.sites || [];
   companyDefaults = {
-    country: company.country || '',
-    region: company.region || '',
+    country: siteData.hqSite?.country || '',
+    region: siteData.hqSite?.region || '',
     reportingYear: company.reporting_year_preference || 'all'
   };
 };
@@ -121,7 +131,7 @@ const loadCompanyDefaults = async () => {
 const fetchRecords = async () => {
   const { data, error } = await supabase
     .from('scope1_records')
-    .select('id,period_year,period_month,country,region,quantity,unit,notes,emissions,factor_value,factor_year,factor_source,factor_basis,factor_label,created_at')
+    .select('id,site_id,period_year,period_month,country,region,quantity,unit,notes,emissions,factor_value,factor_year,factor_source,factor_basis,factor_label,created_at')
     .order('period_year', { ascending: false })
     .order('period_month', { ascending: false })
     .order('created_at', { ascending: false });
@@ -348,8 +358,18 @@ const exportFiltered = () => {
   }
 };
 
+const getSiteCountries = () => {
+  const unique = Array.from(new Set(sites.map((site) => site.country)));
+  return unique.map((country) => {
+    const label = (COUNTRY_OPTIONS.find((c) => c.value === country) || {}).label || country;
+    return { value: country, label };
+  });
+};
+
 const setRegionOptions = (country, regionEl) => {
-  const opts = REGION_OPTIONS[country] || [];
+  const opts = sites.length
+    ? sites.filter((site) => site.country === country).map((site) => site.region)
+    : (REGION_OPTIONS[country] || []);
   regionEl.innerHTML = '<option value="">Select region</option>';
   opts.forEach((name) => {
     const opt = document.createElement('option');
@@ -360,8 +380,9 @@ const setRegionOptions = (country, regionEl) => {
 };
 
 const populateCountries = (el) => {
+  const options = sites.length ? getSiteCountries() : COUNTRY_OPTIONS;
   el.innerHTML = '<option value="">Select country</option>';
-  COUNTRY_OPTIONS.forEach((c) => {
+  options.forEach((c) => {
     const opt = document.createElement('option');
     opt.value = c.value;
     opt.textContent = c.label;
@@ -530,8 +551,8 @@ const buildAddPanel = () => `
         <select id="add-country" required></select>
       </label>
       <label>
-        Region (optional)
-        <select id="add-region"></select>
+        Region
+        <select id="add-region" required></select>
       </label>
     </div>
     <div class="panel-row">
@@ -586,6 +607,12 @@ const openAddPanel = () => {
 
   if (!form || !countryEl || !regionEl || !monthEl || !yearEl || !quantityEl || !unitEl) return;
 
+  if (!sites.length) {
+    if (statusEl) statusEl.textContent = 'Add at least one site in Settings before creating records.';
+    form.querySelector('button[type="submit"]').disabled = true;
+    return;
+  }
+
   populateCountries(countryEl);
   populateMonths(monthEl);
   populateYears(yearEl);
@@ -606,8 +633,13 @@ const openAddPanel = () => {
     const unit = unitEl.value;
     const notes = String(notesEl?.value || '').trim().slice(0, 240);
 
-    if (!country || !month || !year || !Number.isFinite(quantity) || quantity < 0 || !unit) {
+    if (!country || !region || !month || !year || !Number.isFinite(quantity) || quantity < 0 || !unit) {
       setStatus('Please complete all required fields.');
+      return;
+    }
+    const site = sites.find((entry) => entry.country === country && entry.region === region);
+    if (!site) {
+      setStatus('Select a configured site.');
       return;
     }
     if (isFuturePeriod(year, month)) {
@@ -634,10 +666,11 @@ const openAddPanel = () => {
     const payload = {
       user_id: session.user.id,
       company_id: companyId,
+      site_id: site.id,
       period_year: year,
       period_month: month,
       country,
-      region: region || null,
+      region,
       quantity,
       unit,
       notes: notes || null,
@@ -690,7 +723,7 @@ const createBulkRow = () => {
         <select data-field="country"></select>
       </label>
       <label>
-        Region (optional)
+        Region
         <select data-field="region"></select>
       </label>
     </div>
@@ -753,6 +786,12 @@ const openBulkPanel = () => {
   const statusEl = panel?.querySelector('#bulk-status');
   if (!rowsEl || !addRowBtn || !form) return;
 
+  if (!sites.length) {
+    if (statusEl) statusEl.textContent = 'Add at least one site in Settings before creating records.';
+    form.querySelector('button[type="submit"]').disabled = true;
+    return;
+  }
+
   for (let i = 0; i < 3; i += 1) {
     rowsEl.appendChild(createBulkRow());
   }
@@ -796,8 +835,13 @@ const openBulkPanel = () => {
       const hasAny = [country, region, month, year, quantity, unit, notes].some((v) => v);
       if (!hasAny) return;
 
-      if (!country || !month || !year || !Number.isFinite(quantity) || quantity < 0 || !unit) {
-        errors.push(`Row ${idx + 1}: complete country, month, year, quantity, and unit.`);
+      if (!country || !region || !month || !year || !Number.isFinite(quantity) || quantity < 0 || !unit) {
+        errors.push(`Row ${idx + 1}: complete country, region, month, year, quantity, and unit.`);
+        return;
+      }
+      const site = sites.find((entry) => entry.country === country && entry.region === region);
+      if (!site) {
+        errors.push(`Row ${idx + 1}: select a configured site.`);
         return;
       }
       if (isFuturePeriod(year, month)) {
@@ -816,10 +860,11 @@ const openBulkPanel = () => {
       payloads.push({
         user_id: session.user.id,
         company_id: companyId,
+        site_id: site.id,
         period_year: year,
         period_month: month,
         country,
-        region: region || null,
+        region,
         quantity,
         unit,
         notes: notes || null,
@@ -900,7 +945,8 @@ const loadData = async () => {
   attachHandlers();
   const session = await requireAuth();
   if (!session) return;
-  await loadCompanyDefaults();
+  await loadCompanyDefaults(session);
+  applySiteRestrictions();
   await loadData();
   supabase.auth.onAuthStateChange((_event) => {
     if (_event === 'SIGNED_OUT') {

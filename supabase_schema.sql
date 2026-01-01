@@ -24,10 +24,36 @@ create policy "Companies are scoped to owner (update)" on public.companies
 create policy "Companies are scoped to owner (delete)" on public.companies
   for delete using (auth.uid() = user_id);
 
+create table if not exists public.company_sites (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  country text not null,
+  region text not null,
+  is_hq boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.company_sites enable row level security;
+
+create policy "Company sites scoped to owner (select)" on public.company_sites
+  for select using (auth.uid() = (select user_id from public.companies where id = company_id));
+create policy "Company sites scoped to owner (insert)" on public.company_sites
+  for insert with check (auth.uid() = (select user_id from public.companies where id = company_id));
+create policy "Company sites scoped to owner (update)" on public.company_sites
+  for update using (auth.uid() = (select user_id from public.companies where id = company_id));
+create policy "Company sites scoped to owner (delete)" on public.company_sites
+  for delete using (auth.uid() = (select user_id from public.companies where id = company_id));
+
+create unique index if not exists company_sites_unique_location
+  on public.company_sites(company_id, country, region);
+create unique index if not exists company_sites_unique_hq
+  on public.company_sites(company_id) where is_hq;
+
 create table if not exists public.scope2_records (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   company_id uuid not null references public.companies(id) on delete cascade,
+  site_id uuid null references public.company_sites(id) on delete restrict,
   period_year int not null,
   period_month int not null check (period_month between 1 and 12),
   kwh numeric not null,
@@ -65,3 +91,6 @@ create unique index if not exists scope2_records_unique_period
 -- Helpful index for history listing
 create index if not exists scope2_records_user_created_idx
   on public.scope2_records(user_id, created_at desc);
+
+alter table public.scope1_records
+  add column if not exists site_id uuid null references public.company_sites(id) on delete restrict;

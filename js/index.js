@@ -1,5 +1,6 @@
     import { EMISSION_FACTORS, GLOBAL_FALLBACK, SCOPE1_NATURAL_GAS_DEFAULT, SCOPE1_NATURAL_GAS_FACTORS } from '../data/emission-factors.js';
     import { loadRecords, saveRecords, renderRecords, openRecord } from './records.js';
+    import { ensureCompanySites, getSitesByCountry } from './sites.js';
     // Configurable emission factors (metric tons CO₂e per kWh)
     // Emission factors imported from a versioned, append-only dataset for easy updates without touching UI/logic.
 
@@ -32,6 +33,14 @@
         "Nelson","Northland","Otago","Southland","Taranaki","Tasman","Waikato","Wellington","West Coast"
       ]
     };
+    const COUNTRY_OPTIONS = [
+      { value: 'US', label: 'United States' },
+      { value: 'CA', label: 'Canada' },
+      { value: 'UK', label: 'United Kingdom' },
+      { value: 'AU', label: 'Australia' },
+      { value: 'SG', label: 'Singapore' },
+      { value: 'NZ', label: 'New Zealand' }
+    ];
     const CAR_MILES_PER_TON = 1 / 0.000404; // ~0.404 kg CO₂e per mile
     const AVG_HOME_KWH_MONTH = 877; // US average monthly kWh per home
 
@@ -129,6 +138,8 @@
       authView: 'signin',
       authLoading: false,
       historyRevealed: false,
+      sites: [],
+      hqSite: null,
       scope1Saving: false,
       scope1PendingEntry: null
     };
@@ -199,19 +210,88 @@
       });
     };
 
-    const setRegionOptions = (country) => {
-      const opts = REGION_OPTIONS[country] || [];
-      regionEl.innerHTML = '<option value="">Select state / province</option>';
+    const populateCountryOptions = (el, options) => {
+      if (!el) return;
+      el.innerHTML = '<option value="">Select country</option>';
+      options.forEach((opt) => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        el.appendChild(option);
+      });
+    };
+
+    const setRegionOptions = (country, el, regions = []) => {
+      if (!el) return;
+      const opts = regions.length ? regions : (REGION_OPTIONS[country] || []);
+      el.innerHTML = '<option value="">Select state / province</option>';
       opts.forEach((name) => {
         const opt = document.createElement('option');
         opt.value = name;
         opt.textContent = name;
-        regionEl.appendChild(opt);
+        el.appendChild(opt);
       });
+    };
+
+    const applySiteRestrictions = () => {
+      if (!countryEl || !regionEl) return;
+      if (appState.session && !appState.sites.length) {
+        populateCountryOptions(countryEl, []);
+        setRegionOptions('', regionEl, []);
+        if (saveBtn) saveBtn.disabled = true;
+        return;
+      }
+      if (appState.session && appState.sites.length) {
+        const countries = Array.from(
+          new Set(appState.sites.map((site) => site.country))
+        ).map((country) => {
+          const label = (COUNTRY_OPTIONS.find((c) => c.value === country) || {}).label || country;
+          return { value: country, label };
+        });
+        populateCountryOptions(countryEl, countries);
+        const selectedCountry = countryEl.value || countries[0]?.value || '';
+        countryEl.value = selectedCountry;
+        const siteMap = getSitesByCountry(appState.sites);
+        const regions = (siteMap.get(selectedCountry) || []).map((site) => site.region);
+        setRegionOptions(selectedCountry, regionEl, regions);
+      } else {
+        populateCountryOptions(countryEl, COUNTRY_OPTIONS);
+        setRegionOptions(countryEl.value, regionEl);
+      }
+      if (saveBtn) saveBtn.disabled = false;
+      applyScope1SiteRestrictions();
+    };
+
+    const applyScope1SiteRestrictions = () => {
+      if (!scope1Country || !scope1Region) return;
+      if (appState.session && !appState.sites.length) {
+        populateCountryOptions(scope1Country, []);
+        setRegionOptions('', scope1Region, []);
+        if (scope1SaveBtn) scope1SaveBtn.disabled = true;
+        return;
+      }
+      if (appState.session && appState.sites.length) {
+        const countries = Array.from(
+          new Set(appState.sites.map((site) => site.country))
+        ).map((country) => {
+          const label = (COUNTRY_OPTIONS.find((c) => c.value === country) || {}).label || country;
+          return { value: country, label };
+        });
+        populateCountryOptions(scope1Country, countries);
+        const selectedCountry = scope1Country.value || countries[0]?.value || '';
+        scope1Country.value = selectedCountry;
+        const siteMap = getSitesByCountry(appState.sites);
+        const regions = (siteMap.get(selectedCountry) || []).map((site) => site.region);
+        setRegionOptions(selectedCountry, scope1Region, regions);
+      } else {
+        populateCountryOptions(scope1Country, COUNTRY_OPTIONS);
+        setRegionOptions(scope1Country.value, scope1Region);
+      }
+      if (scope1SaveBtn) scope1SaveBtn.disabled = false;
     };
     const setSignupRegionOptions = (country) => {
       const opts = REGION_OPTIONS[country] || [];
-      signupCompanyRegion.innerHTML = '<option value="">Select state / province (optional)</option>';
+      signupCompanyRegion.innerHTML = '<option value="">Select state / province</option>';
       opts.forEach((name) => {
         const opt = document.createElement('option');
         opt.value = name;
@@ -253,6 +333,20 @@
         // Default destination after login: show My Records info card
         // Keep user on the calculator by default; only show records when requested
       }
+    };
+
+    const loadSitesForSession = async (session) => {
+      if (!supabase || !session) {
+        appState.sites = [];
+        appState.hqSite = null;
+        applySiteRestrictions();
+        return;
+      }
+      const siteData = await ensureCompanySites(supabase, session);
+      appState.sites = siteData.sites || [];
+      appState.hqSite = siteData.hqSite || null;
+      if (siteData.companyId) appState.companyId = siteData.companyId;
+      applySiteRestrictions();
     };
 
 
@@ -323,6 +417,7 @@
       if (!supabase) return;
       const { data } = await supabase.auth.getSession();
       setSessionUI(data?.session || null);
+      await loadSitesForSession(data?.session || null);
       if (data?.session && typeof refreshScope1Entries === 'function') {
         refreshScope1Entries();
       }
@@ -331,6 +426,7 @@
       }
       supabase.auth.onAuthStateChange(async (_event, session) => {
         setSessionUI(session);
+        await loadSitesForSession(session);
         if (session) {
           if (session.user?.recovery_sent_at || _event === 'PASSWORD_RECOVERY') {
             enterRecoveryMode(session);
@@ -390,6 +486,10 @@
         authStatusSignup.textContent = 'Supabase unavailable. Please retry when online.';
         return;
       }
+      if (!signupCompanyCountry.value || !signupCompanyRegion.value) {
+        authStatusSignup.textContent = 'Select a company country and region to continue.';
+        return;
+      }
       authStatusSignup.textContent = 'Creating account...';
       const { error, data } = await supabase.auth.signUp({
         email: authEmailSignup.value,
@@ -400,16 +500,21 @@
         return;
       }
       if (data?.session?.user?.id) {
-        const { error: companyErr } = await supabase.from('companies').insert({
-          user_id: data.session.user.id,
-          company_name: signupCompanyName.value.trim(),
-          country: signupCompanyCountry.value,
-          region: signupCompanyRegion.value || null
-        });
+        const { data: companyData, error: companyErr } = await supabase
+          .from('companies')
+          .insert({
+            user_id: data.session.user.id,
+            company_name: signupCompanyName.value.trim(),
+            country: signupCompanyCountry.value,
+            region: signupCompanyRegion.value
+          })
+          .select('id')
+          .single();
         if (companyErr) {
           authStatusSignup.textContent = 'Account created. Check your email to confirm, then sign in. We will ask for company info after sign-in.';
           return;
         }
+        await createHqSite(companyData?.id, signupCompanyCountry.value, signupCompanyRegion.value);
       }
       authStatusSignup.textContent = 'Check your email to confirm your account before signing in.';
     });
@@ -511,6 +616,14 @@
         authModalDesc.textContent = 'Log in to save results and track your history. Calculations work without an account.';
         openAuthModal('signin');
         appState.saving = true;
+        return;
+      }
+      if (!appState.sites.length) {
+        alert('Add at least one site in Settings before saving records.');
+        return;
+      }
+      if (appState.lastCalculation && !appState.lastCalculation.siteId) {
+        alert('Select a configured site before saving.');
         return;
       }
       appState.saving = false;
@@ -649,6 +762,29 @@
       refreshRecordsFromRemote();
     });
 
+    const createHqSite = async (companyId, country, region) => {
+      if (!supabase || !companyId || !country || !region) return null;
+      const { data, error } = await supabase
+        .from('company_sites')
+        .insert({
+          company_id: companyId,
+          country,
+          region,
+          is_hq: true
+        })
+        .select('id')
+        .single();
+      if (error) {
+        console.warn('HQ site creation failed', error);
+        return null;
+      }
+      await supabase
+        .from('companies')
+        .update({ country, region })
+        .eq('id', companyId);
+      return data?.id || null;
+    };
+
     const getOrCreateCompany = async () => {
       // Try existing company
       if (!supabase) {
@@ -669,20 +805,33 @@
       return new Promise((resolve) => {
         const onSubmit = async (ev) => {
           ev.preventDefault();
-          if (!companyName.value || !companyCountry.value) {
-            alert('Company name and country are required.');
+          if (!companyName.value || !companyCountry.value || !companyRegion.value.trim()) {
+            alert('Company name, country, and region are required.');
             return;
           }
           const { data: inserted, error: insertErr } = await supabase.from('companies').insert({
             user_id: appState.session?.user?.id,
             company_name: companyName.value.trim(),
             country: companyCountry.value,
-            region: companyRegion.value.trim() || null
+            region: companyRegion.value.trim()
           }).select('id').single();
           if (insertErr) {
             console.error('Company save error', insertErr);
             alert('Could not save company.');
             return;
+          }
+          const hqSiteId = await createHqSite(inserted.id, companyCountry.value, companyRegion.value.trim());
+          if (hqSiteId) {
+            appState.sites = [
+              {
+                id: hqSiteId,
+                country: companyCountry.value,
+                region: companyRegion.value.trim(),
+                is_hq: true
+              }
+            ];
+            appState.hqSite = appState.sites[0];
+            applySiteRestrictions();
           }
           companyForm.removeEventListener('submit', onSubmit);
           companyBack.removeEventListener('click', onCancel);
@@ -718,6 +867,8 @@
         .eq('company_id', companyId)
         .eq('period_year', calc.year)
         .eq('period_month', calc.month)
+        .eq('calc_country', calc.country)
+        .eq('calc_region', calc.region)
         .limit(1);
       if (existing && existing.length) {
         const confirmReplace = confirm('A record for this period already exists. Replace it?');
@@ -726,6 +877,7 @@
       const payload = {
         user_id: appState.session.user.id,
         company_id: companyId,
+        site_id: calc.siteId || null,
         period_year: calc.year,
         period_month: calc.month,
         kwh: calc.kwh,
@@ -766,7 +918,13 @@
     };
 
     countryEl.addEventListener('change', (e) => {
-      setRegionOptions(e.target.value);
+      if (appState.session && appState.sites.length) {
+        const siteMap = getSitesByCountry(appState.sites);
+        const regions = (siteMap.get(e.target.value) || []).map((site) => site.region);
+        setRegionOptions(e.target.value, regionEl, regions);
+      } else {
+        setRegionOptions(e.target.value, regionEl);
+      }
     });
     signupCompanyCountry.addEventListener('change', (e) => {
       setSignupRegionOptions(e.target.value);
@@ -778,19 +936,20 @@
     });
 
     // Initialize dropdowns
+    populateCountryOptions(countryEl, COUNTRY_OPTIONS);
     populateYears(yearEl);
     populateYears(marketYearEl);
     // Default to current reporting year per Scope 2 reporting norms.
     yearEl.value = String(CURRENT_YEAR);
     marketYearEl.value = String(CURRENT_YEAR);
     syncMonthOptions();
-    setRegionOptions('');
+    setRegionOptions('', regionEl);
     setSignupRegionOptions('');
 
     const handleScope2Submit = (e) => {
       if (e) e.preventDefault();
       const persona = form.persona.value;
-      const country = form.country.value || 'OTHER';
+      const country = form.country.value;
       const month = form.month.value;
       const year = parseInt(form.year.value, 10);
       const kwh = parseFloat(form.kwh.value || '0');
@@ -815,6 +974,20 @@
       if (!persona || !country || !month || !year || !kwh || kwh <= 0 || !region) {
         alert('Please complete all fields to calculate.');
         return;
+      }
+      let selectedSite = null;
+      if (appState.session) {
+        if (!appState.sites.length) {
+          alert('Add at least one site in Settings before saving records.');
+          return;
+        }
+        selectedSite = appState.sites.find(
+          (site) => site.country === country && site.region === region
+        );
+        if (!selectedSite) {
+          alert('Select a configured site from Settings before saving.');
+          return;
+        }
       }
 
       if (marketEnabled) {
@@ -882,16 +1055,17 @@
       month: monthNumber,
       monthName: month,
       kwh,
-        country,
-        region,
-        factorValue: factor,
-        factorYear: factorData.year,
-        factorSource: factorData.source,
-        factorVersion: factorData.version,
-        tonsLocation,
-        tonsMarket,
-        marketEnabled,
-        marketType: marketEnabled ? marketType : null,
+      country,
+      region,
+      siteId: selectedSite ? selectedSite.id : null,
+      factorValue: factor,
+      factorYear: factorData.year,
+      factorSource: factorData.source,
+      factorVersion: factorData.version,
+      tonsLocation,
+      tonsMarket,
+      marketEnabled,
+      marketType: marketEnabled ? marketType : null,
       coveredKwh: marketEnabled ? coveredKwh : null
     };
 
@@ -980,12 +1154,13 @@
 
     const setScope1RegionOptions = (country) => {
       if (!scope1Region) return;
-      clearChildren(scope1Region);
-      scope1Region.appendChild(createOption('', 'Select region'));
-      const regions = REGION_OPTIONS[country] || [];
-      regions.forEach((region) => {
-        scope1Region.appendChild(createOption(region, region));
-      });
+      if (appState.session && appState.sites.length) {
+        const siteMap = getSitesByCountry(appState.sites);
+        const regions = (siteMap.get(country) || []).map((site) => site.region);
+        setRegionOptions(country, scope1Region, regions);
+        return;
+      }
+      setRegionOptions(country, scope1Region);
     };
 
     const getScope1Factor = (country, region, unit) => {
@@ -1059,10 +1234,11 @@
       const payload = {
         user_id: appState.session.user.id,
         company_id: appState.companyId,
+        site_id: entry.site_id || null,
         period_year: entry.period_year,
         period_month: entry.period_month,
         country: entry.country,
-        region: entry.region || null,
+        region: entry.region,
         quantity: entry.quantity,
         unit: entry.unit,
         notes: entry.notes || null,
@@ -1101,6 +1277,7 @@
       if (!monthVal) errors.push('Select a billing month.');
       if (!yearVal) errors.push('Select a billing year.');
       if (!countryVal) errors.push('Select a facility country.');
+      if (!regionVal) errors.push('Select a facility region.');
       if (!unitVal) errors.push('Select a unit.');
       if (!Number.isFinite(quantityVal) || quantityVal < 0) errors.push('Enter a non-negative quantity.');
       if (yearVal && monthVal) {
@@ -1116,6 +1293,21 @@
         return;
       }
 
+      let selectedSite = null;
+      if (appState.session) {
+        if (!appState.sites.length) {
+          showScope1Status('Add at least one site in Settings before saving.');
+          return;
+        }
+        selectedSite = appState.sites.find(
+          (site) => site.country === countryVal && site.region === regionVal
+        );
+        if (!selectedSite) {
+          showScope1Status('Select a configured site from Settings.');
+          return;
+        }
+      }
+
       const factorData = getScope1Factor(countryVal, regionVal, unitVal);
       if (!factorData) {
         showScope1Status('No emission factor is available for this selection. Please adjust the location or unit.');
@@ -1128,6 +1320,7 @@
         period_month: monthVal,
         country: countryVal,
         region: regionVal,
+        site_id: selectedSite ? selectedSite.id : null,
         quantity: quantityVal,
         unit: unitVal,
         notes: notesVal,
@@ -1148,7 +1341,7 @@
       if (!scope1Body) return;
       populateScope1Years();
       syncScope1MonthOptions();
-      setScope1RegionOptions(scope1Country?.value || '');
+      applyScope1SiteRestrictions();
       scope1Body.classList.add('active');
       scope1Disclosure.textContent = SCOPE1_DISCLOSURE;
 
