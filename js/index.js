@@ -787,8 +787,8 @@
     setRegionOptions('');
     setSignupRegionOptions('');
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
+    const handleScope2Submit = (e) => {
+      if (e) e.preventDefault();
       const persona = form.persona.value;
       const country = form.country.value || 'OTHER';
       const month = form.month.value;
@@ -896,7 +896,12 @@
     placeholder.style.display = 'none';
     resultContainer.classList.add('active');
     resultContainer.scrollIntoView({ behavior: 'smooth' });
-    });
+    };
+    form.addEventListener('submit', handleScope2Submit);
+    const scope2CalcBtn = document.getElementById('scope2-calc-btn');
+    if (scope2CalcBtn) {
+      scope2CalcBtn.addEventListener('click', handleScope2Submit);
+    }
 
     // Kick off auth session detection on load (safe if supabase fails to load)
     initSupabaseClient().then(() => initAuth());
