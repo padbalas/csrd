@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CarbonWise | Dashboard</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #4b5563;
+      --line: #e5e7eb;
+      --card: #ffffff;
+      --accent: #0f766e;
+      --accent-soft: #e0f2f1;
+      --bg: #f7f8fb;
+      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    .app-layout { display: flex; min-height: 100vh; background: var(--bg); }
+    .side-nav { width: 230px; padding: 24px 18px; background: #0b1220; color: #e5e7eb; border-right: 1px solid #111827; position: sticky; top: 0; height: 100vh; box-sizing: border-box; }
+    .nav-items { display: flex; flex-direction: column; gap: 6px; height: 100%; }
+    .nav-item { display: block; padding: 10px 12px; border-radius: 10px; color: #e5e7eb; text-decoration: none; font-weight: 600; }
+    .nav-item:hover:not(.disabled) { background: rgba(255,255,255,0.08); }
+    .nav-item.active { background: rgba(34,197,94,0.18); color: #fff; border: 1px solid rgba(34,197,94,0.4); }
+    .nav-item.disabled { opacity: 0.5; cursor: default; }
+    .nav-footer { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(148, 163, 184, 0.2); }
+    .nav-item.logout {
+      background: transparent;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #e5e7eb;
+      text-align: left;
+      width: 100%;
+      font-size: inherit;
+    }
+    .app-content { flex: 1; min-width: 0; }
+    header { padding: 32px 20px 12px; color: #0f172a; }
+    .shell { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+    .nav-brand {
+      display: inline-block;
+      padding: 6px 10px;
+      background: #e0f2f1;
+      color: #0f766e;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      text-decoration: none;
+    }
+    h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 36px); letter-spacing: -0.01em; }
+    p.muted { color: var(--muted); margin: 0 0 12px; }
+    section { margin-top: 20px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; box-shadow: 0 12px 30px rgba(15,23,42,0.08); }
+    .controls { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; }
+    label { font-weight: 600; display: block; margin-bottom: 6px; color: var(--muted); }
+    select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--line); font-size: 1rem; background: #fff; }
+    .toggle-group { display: inline-flex; gap: 8px; background: #f8fafc; border: 1px solid var(--line); padding: 6px; border-radius: 999px; }
+    .toggle-group button {
+      border: none;
+      background: transparent;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--muted);
+    }
+    .toggle-group button.active { background: #d1fae5; color: #0f172a; }
+    .metrics-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .metric-card { background: #f8fafc; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .metric-label { color: var(--muted); font-size: 0.95rem; }
+    .metric-value { font-size: 1.6rem; font-weight: 800; margin-top: 6px; }
+    .hero-card { display: flex; flex-direction: column; gap: 8px; }
+    .hero-value { font-size: clamp(32px, 5vw, 44px); font-weight: 800; }
+    .trend-wrap { margin-top: 12px; }
+    .trend-chart { width: 100%; height: 160px; background: #f8fafc; border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+    .trend-path { fill: none; stroke: #0f766e; stroke-width: 3; }
+    .empty { color: var(--muted); font-size: 0.95rem; padding: 8px 0; }
+    .app-footer { text-align: center; padding: 16px 0 24px; font-size: 0.95rem; color: var(--muted); }
+
+    @media (max-width: 980px) {
+      .app-layout { flex-direction: column; }
+      .side-nav {
+        width: 100%;
+        height: auto;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        border-right: none;
+        border-bottom: 1px solid #111827;
+      }
+      .nav-items { grid-auto-flow: column; grid-auto-columns: minmax(120px, 1fr); }
+    }
+    @media (max-width: 680px) {
+      .shell { padding: 0 16px 50px; }
+      .nav-items { grid-auto-flow: row; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="side-nav">
+      <a class="nav-brand" href="index.html">CarbonWise</a>
+      <nav class="nav-items">
+        <a href="dashboard.html" class="nav-item active" data-nav="dashboard">Dashboard</a>
+        <a href="records.html" class="nav-item" data-nav="records">Scope 2 Records</a>
+        <a href="scope1.html" class="nav-item" data-nav="scope1">Scope 1 Records</a>
+        <a href="insights.html" class="nav-item" data-nav="insights">Insights</a>
+        <a href="exports.html" class="nav-item" data-nav="export">Export / Reports</a>
+        <a href="settings.html" class="nav-item" data-nav="settings">Settings</a>
+        <div class="nav-footer">
+          <button class="nav-item logout" id="nav-signout" type="button">Log out</button>
+        </div>
+      </nav>
+    </aside>
+    <div class="app-content">
+      <header>
+        <div class="shell">
+          <h1>Dashboard</h1>
+          <p class="muted">Company-wide snapshot of Scope 1 + Scope 2 emissions.</p>
+        </div>
+      </header>
+
+      <div class="shell">
+        <section>
+          <div class="controls">
+            <div>
+              <label for="dashboard-year">Reporting year</label>
+              <select id="dashboard-year"></select>
+            </div>
+            <div>
+              <label for="dashboard-site">Site</label>
+              <select id="dashboard-site"></select>
+            </div>
+            <div>
+              <label>Scope 2 basis</label>
+              <div class="toggle-group" role="group" aria-label="Scope 2 basis">
+                <button type="button" id="toggle-location" class="active">Location-based</button>
+                <button type="button" id="toggle-market">Market-based</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="hero-card">
+          <div class="metric-label">Total company carbon (Scope 1 + Scope 2)</div>
+          <div class="hero-value" id="total-carbon">—</div>
+          <div class="metric-label" id="total-note">Select a year to see combined monthly trend.</div>
+        </section>
+
+        <section>
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">Scope 1 total</div>
+              <div class="metric-value" id="scope1-total">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Scope 2 total</div>
+              <div class="metric-value" id="scope2-total">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Coverage (months)</div>
+              <div class="metric-value" id="coverage-months">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Top site</div>
+              <div class="metric-value" id="top-site">—</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="trend-wrap">
+          <h2 style="margin:0 0 8px;">Combined monthly trend</h2>
+          <div class="trend-chart">
+            <svg id="trend-svg" viewBox="0 0 320 140" preserveAspectRatio="none" width="100%" height="100%">
+              <path id="trend-path" class="trend-path" d=""></path>
+            </svg>
+            <div class="empty" id="trend-empty" style="display:none;">Select a year to view the trend line.</div>
+          </div>
+        </section>
+      </div>
+      <footer class="app-footer">
+        <div><a href="methodology.html">Methodology</a> • <a href="mailto:hello@esgrise.com">Contact / support</a></div>
+        <div>Emission factors updated as of 2024.</div>
+      </footer>
+    </div>
+  </div>
+
+  <script type="module" src="./js/dashboard.js"></script>
+</body>
+</html>
