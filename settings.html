@@ -30,6 +30,7 @@
       color: #e5e7eb;
       text-align: left;
       width: 100%;
+      font-size: inherit;
     }
     .app-content { flex: 1; min-width: 0; }
     header { padding: 32px 20px 12px; color: #0f172a; }
@@ -56,9 +57,11 @@
     .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 14px; border-radius: 12px; border: 1px solid transparent; font-weight: 700; text-decoration: none; cursor: pointer; color: inherit; }
     .btn.primary { background: #22c55e; color: #0f172a; }
     .btn.secondary { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+    .btn.match-records { padding: 14px 18px; }
     .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .status { font-size: 0.95rem; color: var(--muted); min-height: 20px; }
     .note { font-size: 0.9rem; color: var(--muted); }
+    .section-title { font-size: 1.35rem; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
     .site-list { display: grid; gap: 10px; }
     .site-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #f8fafc; }
     .site-label { font-weight: 700; }
@@ -122,7 +125,7 @@
         <section class="card stack">
           <form id="company-form" class="stack">
             <div>
-              <label for="company-name">Company name</label>
+              <label for="company-name" class="section-title">Company name</label>
               <input type="text" id="company-name" required placeholder="Acme Co." />
             </div>
             <div>
@@ -158,7 +161,7 @@
               </div>
             </div>
             <div class="actions">
-              <button class="btn secondary" type="submit">Add site</button>
+              <button class="btn secondary match-records" type="submit">Add site</button>
               <span class="status" id="sites-status"></span>
             </div>
           </form>

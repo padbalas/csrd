@@ -366,10 +366,22 @@ const getSiteCountries = () => {
   });
 };
 
+const setDisabledOptions = (el, enabledValues) => {
+  if (!el) return;
+  Array.from(el.options).forEach((opt) => {
+    if (!opt.value) return;
+    opt.disabled = !enabledValues.has(opt.value);
+  });
+};
+
+const selectFirstEnabled = (el) => {
+  if (!el) return;
+  const enabled = Array.from(el.options).find((opt) => opt.value && !opt.disabled);
+  if (enabled) el.value = enabled.value;
+};
+
 const setRegionOptions = (country, regionEl) => {
-  const opts = sites.length
-    ? sites.filter((site) => site.country === country).map((site) => site.region)
-    : (REGION_OPTIONS[country] || []);
+  const opts = REGION_OPTIONS[country] || [];
   regionEl.innerHTML = '<option value="">Select region</option>';
   opts.forEach((name) => {
     const opt = document.createElement('option');
@@ -377,10 +389,19 @@ const setRegionOptions = (country, regionEl) => {
     opt.textContent = name;
     regionEl.appendChild(opt);
   });
+  if (sites.length) {
+    const enabled = new Set(
+      sites.filter((site) => site.country === country).map((site) => site.region)
+    );
+    setDisabledOptions(regionEl, enabled);
+    if (regionEl.value && !enabled.has(regionEl.value)) selectFirstEnabled(regionEl);
+  } else if (sites.length === 0) {
+    setDisabledOptions(regionEl, new Set());
+  }
 };
 
 const populateCountries = (el) => {
-  const options = sites.length ? getSiteCountries() : COUNTRY_OPTIONS;
+  const options = COUNTRY_OPTIONS;
   el.innerHTML = '<option value="">Select country</option>';
   options.forEach((c) => {
     const opt = document.createElement('option');
@@ -388,6 +409,13 @@ const populateCountries = (el) => {
     opt.textContent = c.label;
     el.appendChild(opt);
   });
+  if (sites.length) {
+    const enabled = new Set(getSiteCountries().map((c) => c.value));
+    setDisabledOptions(el, enabled);
+    if (el.value && !enabled.has(el.value)) selectFirstEnabled(el);
+  } else if (sites.length === 0) {
+    setDisabledOptions(el, new Set());
+  }
 };
 
 const populateMonths = (el) => {
@@ -555,6 +583,7 @@ const buildAddPanel = () => `
         <select id="add-region" required></select>
       </label>
     </div>
+    <div class="panel-hint">Locations not in Settings are disabled.</div>
     <div class="panel-row">
       <label>
         Billing month
@@ -610,7 +639,6 @@ const openAddPanel = () => {
   if (!sites.length) {
     if (statusEl) statusEl.textContent = 'Add at least one site in Settings before creating records.';
     form.querySelector('button[type="submit"]').disabled = true;
-    return;
   }
 
   populateCountries(countryEl);
@@ -703,6 +731,7 @@ const buildBulkPanel = () => `
     </div>
     <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
   </div>
+  <div class="panel-hint">Locations not in Settings are disabled.</div>
   <form id="bulk-form" class="panel-form">
     <div id="bulk-rows"></div>
     <div class="panel-actions">
@@ -789,7 +818,6 @@ const openBulkPanel = () => {
   if (!sites.length) {
     if (statusEl) statusEl.textContent = 'Add at least one site in Settings before creating records.';
     form.querySelector('button[type="submit"]').disabled = true;
-    return;
   }
 
   for (let i = 0; i < 3; i += 1) {

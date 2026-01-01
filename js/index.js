@@ -221,6 +221,20 @@
       });
     };
 
+    const setDisabledOptions = (el, enabledValues) => {
+      if (!el) return;
+      Array.from(el.options).forEach((opt) => {
+        if (!opt.value) return;
+        opt.disabled = !enabledValues.has(opt.value);
+      });
+    };
+
+    const selectFirstEnabled = (el) => {
+      if (!el) return;
+      const enabled = Array.from(el.options).find((opt) => opt.value && !opt.disabled);
+      if (enabled) el.value = enabled.value;
+    };
+
     const setRegionOptions = (country, el, regions = []) => {
       if (!el) return;
       const opts = regions.length ? regions : (REGION_OPTIONS[country] || []);
@@ -236,30 +250,36 @@
     const applySiteRestrictions = () => {
       if (!countryEl || !regionEl) return;
       if (appState.session && !appState.sites.length) {
-        populateCountryOptions(countryEl, []);
-        setRegionOptions('', regionEl, []);
+        populateCountryOptions(countryEl, COUNTRY_OPTIONS);
+        setDisabledOptions(countryEl, new Set());
+        setRegionOptions(countryEl.value, regionEl);
+        setDisabledOptions(regionEl, new Set());
         if (saveBtn) saveBtn.disabled = true;
         return;
       }
       const currentCountry = countryEl.value;
       const currentRegion = regionEl.value;
       if (appState.session && appState.sites.length) {
-        const countries = Array.from(
-          new Set(appState.sites.map((site) => site.country))
-        ).map((country) => {
-          const label = (COUNTRY_OPTIONS.find((c) => c.value === country) || {}).label || country;
-          return { value: country, label };
-        });
-        populateCountryOptions(countryEl, countries);
-        const selectedCountry = countries.some((c) => c.value === currentCountry)
-          ? currentCountry
-          : (countryEl.value || countries[0]?.value || '');
-        countryEl.value = selectedCountry;
+        const allowedCountries = new Set(appState.sites.map((site) => site.country));
+        populateCountryOptions(countryEl, COUNTRY_OPTIONS);
+        setDisabledOptions(countryEl, allowedCountries);
+        const selectedCountry = allowedCountries.has(currentCountry) ? currentCountry : '';
+        if (selectedCountry) {
+          countryEl.value = selectedCountry;
+        } else {
+          selectFirstEnabled(countryEl);
+        }
         const siteMap = getSitesByCountry(appState.sites);
-        const regions = (siteMap.get(selectedCountry) || []).map((site) => site.region);
-        setRegionOptions(selectedCountry, regionEl, regions);
-        if (regions.includes(currentRegion)) {
+        const activeCountry = countryEl.value;
+        const allowedRegions = new Set(
+          (siteMap.get(activeCountry) || []).map((site) => site.region)
+        );
+        setRegionOptions(activeCountry, regionEl);
+        setDisabledOptions(regionEl, allowedRegions);
+        if (allowedRegions.has(currentRegion)) {
           regionEl.value = currentRegion;
+        } else {
+          selectFirstEnabled(regionEl);
         }
       } else {
         populateCountryOptions(countryEl, COUNTRY_OPTIONS);
@@ -267,11 +287,8 @@
           ? currentCountry
           : countryEl.value;
         if (selectedCountry) countryEl.value = selectedCountry;
-        const regions = REGION_OPTIONS[countryEl.value] || [];
         setRegionOptions(countryEl.value, regionEl);
-        if (regions.includes(currentRegion)) {
-          regionEl.value = currentRegion;
-        }
+        if (currentRegion) regionEl.value = currentRegion;
       }
       if (saveBtn) saveBtn.disabled = false;
       applyScope1SiteRestrictions();
@@ -280,30 +297,36 @@
     const applyScope1SiteRestrictions = () => {
       if (!scope1Country || !scope1Region) return;
       if (appState.session && !appState.sites.length) {
-        populateCountryOptions(scope1Country, []);
-        setRegionOptions('', scope1Region, []);
+        populateCountryOptions(scope1Country, COUNTRY_OPTIONS);
+        setDisabledOptions(scope1Country, new Set());
+        setRegionOptions(scope1Country.value, scope1Region);
+        setDisabledOptions(scope1Region, new Set());
         if (scope1SaveBtn) scope1SaveBtn.disabled = true;
         return;
       }
       const currentCountry = scope1Country.value;
       const currentRegion = scope1Region.value;
       if (appState.session && appState.sites.length) {
-        const countries = Array.from(
-          new Set(appState.sites.map((site) => site.country))
-        ).map((country) => {
-          const label = (COUNTRY_OPTIONS.find((c) => c.value === country) || {}).label || country;
-          return { value: country, label };
-        });
-        populateCountryOptions(scope1Country, countries);
-        const selectedCountry = countries.some((c) => c.value === currentCountry)
-          ? currentCountry
-          : (scope1Country.value || countries[0]?.value || '');
-        scope1Country.value = selectedCountry;
+        const allowedCountries = new Set(appState.sites.map((site) => site.country));
+        populateCountryOptions(scope1Country, COUNTRY_OPTIONS);
+        setDisabledOptions(scope1Country, allowedCountries);
+        const selectedCountry = allowedCountries.has(currentCountry) ? currentCountry : '';
+        if (selectedCountry) {
+          scope1Country.value = selectedCountry;
+        } else {
+          selectFirstEnabled(scope1Country);
+        }
         const siteMap = getSitesByCountry(appState.sites);
-        const regions = (siteMap.get(selectedCountry) || []).map((site) => site.region);
-        setRegionOptions(selectedCountry, scope1Region, regions);
-        if (regions.includes(currentRegion)) {
+        const activeCountry = scope1Country.value;
+        const allowedRegions = new Set(
+          (siteMap.get(activeCountry) || []).map((site) => site.region)
+        );
+        setRegionOptions(activeCountry, scope1Region);
+        setDisabledOptions(scope1Region, allowedRegions);
+        if (allowedRegions.has(currentRegion)) {
           scope1Region.value = currentRegion;
+        } else {
+          selectFirstEnabled(scope1Region);
         }
       } else {
         populateCountryOptions(scope1Country, COUNTRY_OPTIONS);
@@ -311,11 +334,8 @@
           ? currentCountry
           : scope1Country.value;
         if (selectedCountry) scope1Country.value = selectedCountry;
-        const regions = REGION_OPTIONS[scope1Country.value] || [];
         setRegionOptions(scope1Country.value, scope1Region);
-        if (regions.includes(currentRegion)) {
-          scope1Region.value = currentRegion;
-        }
+        if (currentRegion) scope1Region.value = currentRegion;
       }
       if (scope1SaveBtn) scope1SaveBtn.disabled = false;
     };
