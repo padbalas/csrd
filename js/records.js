@@ -356,19 +356,26 @@ const computeCarbonReminders = (records = getFilteredRecords()) => {
 
   // Detect missing months in sequence
   if (targetYear) {
-    const maxMonth = targetYear === currentYear ? now.getMonth() + 1 : 12;
     const regionList = filterRegionLabel
       ? [filterRegionLabel]
       : filterCountry
         ? regionsForCountry
         : regionsPresent;
     regionList.forEach((regionLabel) => {
+      let maxSeenMonth = 0;
       const seen = new Set(
         records
           .filter((r) => (r.calc_country || '—') + (r.calc_region ? ' / ' + r.calc_region : '') === regionLabel)
-          .map((r) => `${r.period_year || r.year}-${String(r.period_month || r.month).padStart(2, '0')}`)
-          .filter((k) => k.startsWith(`${targetYear}-`))
+          .filter((r) => String(r.period_year || r.year) === String(targetYear))
+          .map((r) => {
+            const monthVal = Number(r.period_month || r.month || 0);
+            if (monthVal > maxSeenMonth) maxSeenMonth = monthVal;
+            return `${r.period_year || r.year}-${String(monthVal).padStart(2, '0')}`;
+          })
       );
+      const maxMonth = targetYear === currentYear
+        ? Math.max(now.getMonth() + 1, maxSeenMonth)
+        : 12;
       const missing = [];
       for (let m = 1; m <= maxMonth; m += 1) {
         const key = `${targetYear}-${String(m).padStart(2, '0')}`;

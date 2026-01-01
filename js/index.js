@@ -191,22 +191,12 @@
       }
     };
 
-    // Disable future months when current year is selected
+    // Keep future months selectable; validation blocks them on submit.
     const syncMonthOptions = () => {
-      const selectedYear = parseInt(yearEl.value, 10);
       const monthOptions = Array.from(monthEl.options).filter((o) => o.value);
-      monthOptions.forEach((opt, idx) => {
-        const monthNumber = idx + 1;
-        opt.disabled = selectedYear === CURRENT_YEAR && monthNumber > CURRENT_MONTH;
+      monthOptions.forEach((opt) => {
+        opt.disabled = false;
       });
-      // If current selection becomes invalid, reset to blank
-      if (selectedYear === CURRENT_YEAR) {
-        const selMonthIndex = monthEl.selectedIndex;
-        const monthNumber = selMonthIndex > 0 ? selMonthIndex : 0;
-        if (monthNumber > CURRENT_MONTH) {
-          monthEl.value = '';
-        }
-      }
     };
 
     const setRegionOptions = (country) => {
