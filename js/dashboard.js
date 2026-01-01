@@ -13,6 +13,7 @@ const totalCarbonEl = document.getElementById('total-carbon');
 const totalNoteEl = document.getElementById('total-note');
 const scope1TotalEl = document.getElementById('scope1-total');
 const scope2TotalEl = document.getElementById('scope2-total');
+const scope3TotalEl = document.getElementById('scope3-total');
 const coverageEl = document.getElementById('coverage-months');
 const topSiteEl = document.getElementById('top-site');
 const trendPath = document.getElementById('trend-path');
@@ -82,6 +83,18 @@ const fetchScope1 = async (year, siteId) => {
   return data || [];
 };
 
+const fetchScope3 = async (year) => {
+  let query = supabase
+    .from('scope3_records')
+    .select('period_year,emissions')
+    .order('period_year', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (year) query = query.eq('period_year', Number(year));
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+};
+
 const getScope2Value = (record, basis) => {
   if (basis === 'market') {
     return record.market_based_emissions != null
@@ -124,14 +137,16 @@ const renderTrend = (scope1, scope2, basis, year) => {
   trendPath.setAttribute('d', `M${points.join(' L')}`);
 };
 
-const renderMetrics = (scope1, scope2, basis, year, sites, selectedSiteId) => {
+const renderMetrics = (scope1, scope2, scope3, basis, year, sites, selectedSiteId) => {
   const scope1Total = scope1.reduce((sum, r) => sum + Number(r.emissions || 0), 0);
   const scope2Total = scope2.reduce((sum, r) => sum + getScope2Value(r, basis), 0);
+  const scope3Total = scope3.reduce((sum, r) => sum + Number(r.emissions || 0), 0);
   const total = scope1Total + scope2Total;
 
   if (totalCarbonEl) totalCarbonEl.textContent = `${formatNumber(total, 2)} tCO₂e`;
   if (scope1TotalEl) scope1TotalEl.textContent = `${formatNumber(scope1Total, 2)} tCO₂e`;
   if (scope2TotalEl) scope2TotalEl.textContent = `${formatNumber(scope2Total, 2)} tCO₂e`;
+  if (scope3TotalEl) scope3TotalEl.textContent = `${formatNumber(scope3Total, 2)} tCO₂e`;
   if (totalNoteEl) {
     totalNoteEl.textContent = year
       ? `Totals for ${year} • ${basis === 'market' ? 'Market-based Scope 2' : 'Location-based Scope 2'}`
@@ -210,11 +225,12 @@ const renderDashboard = async (sites) => {
   const basis = getBasis();
   const year = yearSelect?.value || '';
   const siteId = siteSelect?.value || '';
-  const [scope1, scope2] = await Promise.all([
+  const [scope1, scope2, scope3] = await Promise.all([
     fetchScope1(year, siteId),
-    fetchScope2(year, siteId)
+    fetchScope2(year, siteId),
+    fetchScope3(year)
   ]);
-  renderMetrics(scope1, scope2, basis, year, sites, siteId);
+  renderMetrics(scope1, scope2, scope3, basis, year, sites, siteId);
   renderTrend(scope1, scope2, basis, year);
 };
 

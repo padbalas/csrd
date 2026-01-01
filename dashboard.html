@@ -117,7 +117,7 @@
       <header>
         <div class="shell">
           <h1>Dashboard</h1>
-          <p class="muted">Company-wide snapshot of Scope 1 + Scope 2 emissions.</p>
+          <p class="muted">Company-wide snapshot of Scope 1 + Scope 2 emissions, with Scope 3 shown separately.</p>
         </div>
       </header>
 
@@ -146,6 +146,7 @@
           <div class="metric-label">Total company carbon (Scope 1 + Scope 2)</div>
           <div class="hero-value" id="total-carbon">—</div>
           <div class="metric-label" id="total-note">Select a year to see combined monthly trend.</div>
+          <div class="metric-label">Scope 3 screening is shown separately and not included in this total.</div>
         </section>
 
         <section>
@@ -157,6 +158,11 @@
             <div class="metric-card">
               <div class="metric-label">Scope 2 total</div>
               <div class="metric-value" id="scope2-total">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Scope 3 screening total</div>
+              <div class="metric-value" id="scope3-total">—</div>
+              <div class="metric-note">Spend-based EIO only; not included in combined totals.</div>
             </div>
             <div class="metric-card">
               <div class="metric-label">Coverage (months)</div>

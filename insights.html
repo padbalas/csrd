@@ -158,6 +158,7 @@
         <div class="tab-header">
           <button type="button" class="tab-button active" data-tab-target="scope2">Scope 2 electricity</button>
           <button type="button" class="tab-button" data-tab-target="scope1">Scope 1 natural gas</button>
+          <button type="button" class="tab-button" data-tab-target="scope3">Scope 3 screening</button>
         </div>
         <section class="card">
           <div class="filters">
@@ -244,6 +245,33 @@
             <div class="note">Calculated using Scope 1 stationary combustion factors (tCO₂e). <a href="methodology.html#scope-1">See Methodology</a>.</div>
           </section>
         </div>
+
+        <div class="tab-panel" data-tab="scope3">
+          <section class="card stack">
+            <h3 style="margin:0;">Category contribution</h3>
+            <p class="subtitle">Scope 3 screening (tCO₂e) • Spend-based EIO only</p>
+            <div class="ranked-list" id="scope3CategoryList"></div>
+            <div class="empty" id="scope3CategoryEmpty" style="display:none;">No Scope 3 records found for this period. Add a record to include it in calculations and exports.</div>
+            <div class="note">Scope 3 emissions shown here are screening-level estimates calculated using spend-based EIO models. <a href="methodology.html#scope-3">See Methodology</a>.</div>
+          </section>
+
+          <section class="card stack">
+            <h3 style="margin:0;">Regional contribution</h3>
+            <p class="subtitle">Scope 3 screening (tCO₂e) • Spend-based EIO only</p>
+            <div class="ranked-list" id="scope3RegionList"></div>
+            <div class="empty" id="scope3RegionEmpty" style="display:none;">No Scope 3 records found for this period. Add a record to include it in calculations and exports.</div>
+            <div class="note">Scope 3 emissions shown here are screening-level estimates calculated using spend-based EIO models. <a href="methodology.html#scope-3">See Methodology</a>.</div>
+          </section>
+
+          <section class="card stack">
+            <h3 style="margin:0;">Data coverage</h3>
+            <p class="subtitle">Saved Scope 3 records • Screening-level only</p>
+            <div class="metric" id="scope3CoverageCount">—</div>
+            <div class="subtitle" id="scope3CoverageNote">Coverage based on saved records only</div>
+            <div class="empty" id="scope3CoverageEmpty" style="display:none;">No Scope 3 records found for this period. Add a record to include it in calculations and exports.</div>
+            <div class="note">Scope 3 emissions shown here are screening-level estimates calculated using spend-based EIO models. <a href="methodology.html#scope-3">See Methodology</a>.</div>
+          </section>
+        </div>
       </div>
       <footer class="app-footer">
         <!-- Trust signals in footer: methodology, support, and factor freshness -->
@@ -302,6 +330,13 @@
     const scope1CoverageCount = document.getElementById('scope1CoverageCount');
     const scope1CoverageNote = document.getElementById('scope1CoverageNote');
     const scope1CoverageEmpty = document.getElementById('scope1CoverageEmpty');
+    const scope3CategoryList = document.getElementById('scope3CategoryList');
+    const scope3CategoryEmpty = document.getElementById('scope3CategoryEmpty');
+    const scope3RegionList = document.getElementById('scope3RegionList');
+    const scope3RegionEmpty = document.getElementById('scope3RegionEmpty');
+    const scope3CoverageCount = document.getElementById('scope3CoverageCount');
+    const scope3CoverageNote = document.getElementById('scope3CoverageNote');
+    const scope3CoverageEmpty = document.getElementById('scope3CoverageEmpty');
     const statusEl = document.getElementById('insightStatus');
     const tabButtons = Array.from(document.querySelectorAll('[data-tab-target]'));
     const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
@@ -352,6 +387,16 @@
         .select('period_year,period_month,country,region,emissions')
         .order('period_year', { ascending: false })
         .order('period_month', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    };
+
+    const fetchScope3Records = async () => {
+      const { data, error } = await supabase
+        .from('scope3_records')
+        .select('period_year,spend_country,spend_region,category_label,emissions')
+        .order('period_year', { ascending: false })
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     };
@@ -499,6 +544,38 @@
       });
     };
 
+    const renderListByLabel = (records, elements) => {
+      const { listEl, emptyEl, labelField, totalField, emptyMessage } = elements;
+      listEl.innerHTML = '';
+      const totals = {};
+      let totalEmissions = 0;
+      records.forEach((r) => {
+        const label = r[labelField] || '—';
+        const val = Number(r[totalField] || 0);
+        totals[label] = (totals[label] || 0) + val;
+        totalEmissions += val;
+      });
+      const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+      if (!sorted.length) {
+        emptyEl.style.display = 'block';
+        listEl.style.display = 'none';
+        if (emptyMessage) emptyEl.textContent = emptyMessage;
+        return;
+      }
+      emptyEl.style.display = 'none';
+      listEl.style.display = 'grid';
+      sorted.forEach(([label, val]) => {
+        const share = totalEmissions ? (val / totalEmissions) * 100 : 0;
+        const row = document.createElement('div');
+        row.className = 'bar-row';
+        row.innerHTML = `
+          <div class="bar-label"><span>${label}</span><span>${share.toFixed(0)}%</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${share.toFixed(2)}%;"></div></div>
+        `;
+        listEl.appendChild(row);
+      });
+    };
+
     const renderCoverage = (records, elements) => {
       const { countEl, noteEl, emptyEl, emptyMessage } = elements;
       const monthSet = new Set(records.map((r) => `${r.period_year}-${String(r.period_month).padStart(2, '0')}`));
@@ -518,6 +595,20 @@
       const year = yearSelect.value;
       if (!year) return records;
       return records.filter((r) => String(r.period_year) === year);
+    };
+
+    const renderScope3Coverage = (records, elements) => {
+      const { countEl, noteEl, emptyEl, emptyMessage } = elements;
+      if (!records.length) {
+        countEl.textContent = '—';
+        noteEl.textContent = 'Coverage based on saved records only';
+        emptyEl.style.display = 'block';
+        if (emptyMessage) emptyEl.textContent = emptyMessage;
+        return;
+      }
+      emptyEl.style.display = 'none';
+      countEl.textContent = `${records.length} record${records.length === 1 ? '' : 's'}`;
+      noteEl.textContent = 'Coverage based on saved records only';
     };
 
     const renderAll = (records, elements) => {
@@ -587,20 +678,48 @@
       });
     };
 
+    const renderScope3 = (records) => {
+      const filtered = applyFilters(records);
+      renderListByLabel(filtered, {
+        listEl: scope3CategoryList,
+        emptyEl: scope3CategoryEmpty,
+        labelField: 'category_label',
+        totalField: 'emissions',
+        emptyMessage: 'No Scope 3 records found for this period. Add a record to include it in calculations and exports.'
+      });
+      renderRegions(filtered, {
+        listEl: scope3RegionList,
+        emptyEl: scope3RegionEmpty,
+        labelFieldCountry: 'spend_country',
+        labelFieldRegion: 'spend_region',
+        totalField: 'emissions',
+        emptyMessage: 'No Scope 3 records found for this period. Add a record to include it in calculations and exports.'
+      });
+      renderScope3Coverage(filtered, {
+        countEl: scope3CoverageCount,
+        noteEl: scope3CoverageNote,
+        emptyEl: scope3CoverageEmpty,
+        emptyMessage: 'No Scope 3 records found for this period. Add a record to include it in calculations and exports.'
+      });
+    };
+
     let scope1Records = [];
+    let scope3Records = [];
 
     (async () => {
       setStatus('Checking access…');
       const session = await requireAuth();
       if (!session) return;
       try {
-        const [records, scope1RecordsData] = await Promise.all([fetchRecords(), fetchScope1Records()]);
+        const [records, scope1RecordsData, scope3RecordsData] = await Promise.all([fetchRecords(), fetchScope1Records(), fetchScope3Records()]);
         await loadCompanyPreference();
         saveRecords(records);
         populateYears(records);
         renderScope2(records);
         scope1Records = scope1RecordsData;
         renderScope1(scope1Records);
+        scope3Records = scope3RecordsData;
+        renderScope3(scope3Records);
         setStatus('');
       } catch (err) {
         console.warn('Insights load error', err);
@@ -610,6 +729,8 @@
         renderScope2(cached);
         scope1Records = [];
         renderScope1(scope1Records);
+        scope3Records = [];
+        renderScope3(scope3Records);
         setStatus('Showing cached data.');
       }
   })();
@@ -619,6 +740,7 @@
       const records = loadRecords();
       renderScope2(records);
       renderScope1(scope1Records);
+      renderScope3(scope3Records);
     });
 
     const initTabs = () => {
