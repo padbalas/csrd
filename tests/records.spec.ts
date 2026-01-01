@@ -30,7 +30,7 @@ test.describe('Records page (unauthenticated)', () => {
     const nav = page.locator('.side-nav');
     await expect(nav.getByRole('link', { name: 'Scope 2 Records' })).toBeVisible();
     await expect(nav.getByRole('link', { name: /Export \/ Reports/i })).toBeVisible();
-    await expect(nav.getByRole('link', { name: /Dashboard/i })).toHaveCount(0);
+    await expect(nav.getByRole('link', { name: /Dashboard/i })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'Scope 2 Records' })).toHaveClass(/active/);
   });
 
