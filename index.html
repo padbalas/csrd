@@ -710,20 +710,44 @@
             <input type="text" id="scope1-notes" maxlength="240" placeholder="Optional context for this entry" />
           </div>
           <div class="cta-row" style="justify-content:flex-start;">
-            <button type="submit" class="btn primary" id="scope1-calc">Calculate Scope 1 estimate</button>
+            <button type="submit" class="btn primary" id="scope1-calc">See my Scope 1 estimate</button>
           </div>
           <p class="muted small" id="scope1-status"></p>
         </form>
 
-        <div id="scope1-results" class="notice scope1-results" style="margin-top:14px;">
-          <div><strong>Scope 1 estimate (tCO₂e)</strong></div>
-          <div id="scope1-result-value" style="font-size:1.4rem; font-weight:700; margin-top:4px;">—</div>
-          <div class="muted small" id="scope1-factor-details" style="margin-top:6px;"></div>
+        <div class="notice" style="margin-top:10px;">
+          <strong>Methodology:</strong> GHG Protocol Scope 1 stationary combustion • <strong>Emission factors:</strong> Public, government-issued data (year-stamped) • Estimates only — not legal, tax, or audit advice. <a href="methodology.html#scope-1">See Methodology</a>.
+        </div>
+
+        <section id="scope1-results" class="result scope1-results" style="margin-top:14px;">
+          <h2>Your Scope 1 estimate</h2>
+          <div class="example">
+            <strong>Example:</strong> 320 therms → 1.88 tCO₂e ≈ heating a small office for a month. For intuition only (non-reporting metric).
+          </div>
+          <div class="grid-3">
+            <div class="stat-box">
+              <strong id="scope1-result-value">—</strong><br />
+              <span class="muted">Scope 1 stationary combustion (tCO₂e)</span>
+            </div>
+            <div class="stat-box">
+              <strong id="scope1-factor-details">—</strong><br />
+              <span class="muted">Factor detail</span>
+            </div>
+            <div class="stat-box">
+              <strong>Next step</strong><br />
+              <span class="muted">Save this entry for reporting</span>
+            </div>
+          </div>
           <p class="muted small" id="scope1-disclosure" style="margin-top:8px;"></p>
+          <p class="muted"><strong>Disclaimer:</strong> CarbonWise provides informational estimates only. This is not legal, audit, or tax advice.</p>
+          <div class="notice">
+            <strong>Compliance context (plain English):</strong><br />
+            Scope 1 reporting may be required for larger entities under regulations like EU CSRD or California SB-253. Many small businesses are not required to report yet. This is high-level guidance only — not legal, audit, or tax advice.
+          </div>
           <div class="cta-row" style="margin-top:12px; justify-content:flex-start;">
             <button type="button" class="btn primary" id="scope1-save" disabled>Save Scope 1 record</button>
           </div>
-        </div>
+        </section>
       </div>
     </section>
       </div>
