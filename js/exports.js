@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SCOPE3_DISCLOSURE } from '../data/scope3-eio.js';
 
 const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
@@ -20,6 +21,9 @@ const signoutBtn = document.getElementById('nav-signout');
 const scope1YearSelect = document.getElementById('scope1ExportYear');
 const scope1ExportBtn = document.getElementById('exportScope1Csv');
 const scope1StatusEl = document.getElementById('scope1ExportStatus');
+const scope3YearSelect = document.getElementById('scope3ExportYear');
+const scope3ExportBtn = document.getElementById('exportScope3Csv');
+const scope3StatusEl = document.getElementById('scope3ExportStatus');
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -37,6 +41,7 @@ const createOption = (value, label) => {
 
 const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
 const setScope1Status = (msg) => { if (scope1StatusEl) scope1StatusEl.textContent = msg; };
+const setScope3Status = (msg) => { if (scope3StatusEl) scope3StatusEl.textContent = msg; };
 
 const setLoading = (isLoading) => {
   if (exportCsvBtn) exportCsvBtn.disabled = isLoading;
@@ -45,6 +50,10 @@ const setLoading = (isLoading) => {
 
 const setScope1Loading = (isLoading) => {
   if (scope1ExportBtn) scope1ExportBtn.disabled = isLoading;
+};
+
+const setScope3Loading = (isLoading) => {
+  if (scope3ExportBtn) scope3ExportBtn.disabled = isLoading;
 };
 
 const requireAuth = async () => {
@@ -119,6 +128,20 @@ const fetchScope1Records = async (year = '') => {
   return data || [];
 };
 
+const fetchScope3Records = async (year = '') => {
+  let query = supabase
+    .from('scope3_records')
+    .select('period_year,spend_amount,currency,category_label,eio_sector,emission_factor_value,emission_factor_year,emission_factor_source,emissions')
+    .order('period_year', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (year) {
+    query = query.eq('period_year', year);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+};
+
 const populateScope1Years = (records) => {
   if (!scope1YearSelect) return;
   const years = Array.from(new Set((records || []).map((r) => r.period_year))).filter(Boolean);
@@ -131,6 +154,20 @@ const populateScope1Years = (records) => {
     scope1YearSelect.appendChild(createOption(String(year), String(year)));
   });
   scope1YearSelect.value = current || (years.includes(CURRENT_YEAR) ? String(CURRENT_YEAR) : '');
+};
+
+const populateScope3Years = (records) => {
+  if (!scope3YearSelect) return;
+  const years = Array.from(new Set((records || []).map((r) => r.period_year))).filter(Boolean);
+  if (!years.includes(CURRENT_YEAR)) years.push(CURRENT_YEAR);
+  years.sort((a, b) => b - a);
+  const current = scope3YearSelect.value;
+  clearChildren(scope3YearSelect);
+  scope3YearSelect.appendChild(createOption('', 'All years'));
+  years.forEach((year) => {
+    scope3YearSelect.appendChild(createOption(String(year), String(year)));
+  });
+  scope3YearSelect.value = current || (years.includes(CURRENT_YEAR) ? String(CURRENT_YEAR) : '');
 };
 
 const escapeCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
@@ -189,6 +226,34 @@ const toScope1Csv = (entries) => {
       SCOPE1_DISCLOSURE
     ];
   });
+  return [headers, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\r\n');
+};
+
+const toScope3Csv = (entries) => {
+  const headers = [
+    'Scope',
+    'Category',
+    'Spend amount',
+    'Currency',
+    'EIO sector reference',
+    'Emission factor value',
+    'Factor year',
+    'Factor source',
+    'Emissions (tCO2e)',
+    'Disclosure text'
+  ];
+  const rows = entries.map((entry) => ([
+    'Scope 3',
+    entry.category_label || '',
+    entry.spend_amount ?? '',
+    entry.currency || '',
+    entry.eio_sector || '',
+    entry.emission_factor_value ?? '',
+    entry.emission_factor_year ?? '',
+    entry.emission_factor_source ?? '',
+    entry.emissions ?? '',
+    SCOPE3_DISCLOSURE
+  ]));
   return [headers, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\r\n');
 };
 
@@ -266,6 +331,13 @@ const init = async () => {
     console.warn('Scope 1 records load failed', err);
     populateScope1Years([]);
   }
+  try {
+    const scope3Records = await fetchScope3Records('');
+    populateScope3Years(scope3Records);
+  } catch (err) {
+    console.warn('Scope 3 records load failed', err);
+    populateScope3Years([]);
+  }
 
   if (exportCsvBtn) {
     exportCsvBtn.addEventListener('click', async () => {
@@ -313,6 +385,31 @@ const init = async () => {
         setScope1Status('Could not generate Scope 1 CSV right now. Please try again.');
       } finally {
         setScope1Loading(false);
+      }
+    });
+  }
+
+  if (scope3ExportBtn) {
+    scope3ExportBtn.addEventListener('click', async () => {
+      setScope3Loading(true);
+      setScope3Status('Generating Scope 3 CSV…');
+      try {
+        const year = scope3YearSelect?.value || '';
+        const entries = await fetchScope3Records(year);
+        if (!entries.length) {
+          setScope3Status('No Scope 3 records found for this period. Add a record to include it in exports.');
+          setScope3Loading(false);
+          return;
+        }
+        const csv = toScope3Csv(entries);
+        const namePart = year ? `${year}` : 'all-years';
+        downloadCsv(csv, `carbonwise_scope3_${namePart}.csv`);
+        setScope3Status('Scope 3 CSV generated.');
+      } catch (err) {
+        console.warn('Scope 3 CSV export error', err);
+        setScope3Status('Could not generate Scope 3 CSV right now. Please try again.');
+      } finally {
+        setScope3Loading(false);
       }
     });
   }

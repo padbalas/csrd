@@ -1,0 +1,939 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SCOPE3_FACTOR_SETS, SCOPE3_CATEGORY_LIST, SCOPE3_DISCLOSURE } from '../data/scope3-eio.js';
+
+const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
+const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const TODAY = new Date();
+const CURRENT_YEAR = TODAY.getFullYear();
+const COUNTRY_OPTIONS = [
+  { value: 'US', label: 'United States' },
+  { value: 'CA', label: 'Canada' },
+  { value: 'UK', label: 'United Kingdom' },
+  { value: 'AU', label: 'Australia' },
+  { value: 'SG', label: 'Singapore' },
+  { value: 'NZ', label: 'New Zealand' }
+];
+const REGION_OPTIONS = {
+  US: [
+    "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","District of Columbia",
+    "Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine",
+    "Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada",
+    "New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma",
+    "Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont",
+    "Virginia","Washington","West Virginia","Wisconsin","Wyoming"
+  ],
+  CA: [
+    "Alberta","British Columbia","Manitoba","New Brunswick","Newfoundland and Labrador","Northwest Territories",
+    "Nova Scotia","Nunavut","Ontario","Prince Edward Island","Quebec","Saskatchewan","Yukon"
+  ],
+  UK: [
+    "England","Northern Ireland","Scotland","Wales"
+  ],
+  AU: [
+    "New South Wales","Victoria","Queensland","Western Australia","South Australia",
+    "Tasmania","Australian Capital Territory","Northern Territory"
+  ],
+  SG: [
+    "Singapore"
+  ],
+  NZ: [
+    "Auckland","Bay of Plenty","Canterbury","Gisborne","Hawke's Bay","Manawatu-Whanganui","Marlborough",
+    "Nelson","Northland","Otago","Southland","Taranaki","Tasman","Waikato","Wellington","West Coast"
+  ]
+};
+
+const scope3Table = document.getElementById('scope3Table');
+const exportBtn = document.getElementById('scope3-export-csv');
+const exportStatus = document.getElementById('scope3-export-status');
+const addBtn = document.getElementById('scope3-add');
+const bulkBtn = document.getElementById('scope3-bulk');
+const panel = document.getElementById('scope3Panel');
+const signoutBtn = document.getElementById('nav-signout');
+const filterYear = document.getElementById('filterYear');
+const filterCategory = document.getElementById('filterCategory');
+const filterCountry = document.getElementById('filterCountry');
+const filterRegion = document.getElementById('filterRegion');
+
+let records = [];
+let reportingYearPreference = 'all';
+let factorSet = null;
+let companyCountry = '';
+let companyRegion = '';
+
+const getFactorSet = (countryCode) => SCOPE3_FACTOR_SETS[countryCode] || null;
+
+const formatNumber = (n, digits = 2) => Number(n).toLocaleString(undefined, {
+  maximumFractionDigits: digits,
+  minimumFractionDigits: digits
+});
+
+const requireAuth = async () => {
+  const { data } = await supabase.auth.getSession();
+  if (!data?.session) {
+    window.location.href = 'index.html';
+    return null;
+  }
+  return data.session;
+};
+
+const getCompanyId = async (session) => {
+  if (!session) return null;
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: true })
+    .limit(1);
+  if (error) return null;
+  return data?.[0]?.id || null;
+};
+
+const loadCompanyPreference = async () => {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('reporting_year_preference,country,region')
+    .order('created_at', { ascending: true })
+    .limit(1);
+  if (error || !data || !data.length) return;
+  reportingYearPreference = data[0].reporting_year_preference || 'all';
+  companyCountry = data[0].country || '';
+  companyRegion = data[0].region || '';
+  factorSet = SCOPE3_FACTOR_SETS[companyCountry] || null;
+};
+
+const fetchRecords = async () => {
+  const { data, error } = await supabase
+    .from('scope3_records')
+    .select('id,period_year,spend_country,spend_region,spend_amount,currency,category_id,category_label,vendor_name,notes,eio_sector,emission_factor_value,emission_factor_year,emission_factor_source,emission_factor_model,emission_factor_geo,emission_factor_currency,emissions,created_at')
+    .order('period_year', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
+const populateFilters = (rows) => {
+  const years = new Set();
+  const categories = new Set();
+  const countries = new Set();
+  const regions = new Set();
+  rows.forEach((r) => {
+    if (r.period_year) years.add(String(r.period_year));
+    if (r.category_label) categories.add(r.category_label);
+    if (r.spend_country) countries.add(r.spend_country);
+    if (r.spend_region) regions.add(r.spend_region);
+  });
+  years.add(String(CURRENT_YEAR));
+
+  if (filterYear) {
+    const current = filterYear.value;
+    filterYear.innerHTML = '<option value="">All</option>';
+    Array.from(years).sort((a, b) => b.localeCompare(a)).forEach((y) => {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      filterYear.appendChild(opt);
+    });
+    filterYear.value = current;
+  }
+
+  if (filterCategory) {
+    const current = filterCategory.value;
+    filterCategory.innerHTML = '<option value="">All</option>';
+    const source = categories.size
+      ? Array.from(categories)
+      : (factorSet?.categories || []).map((cat) => cat.label);
+    source.sort().forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      filterCategory.appendChild(opt);
+    });
+    filterCategory.value = current;
+  }
+
+  if (filterCountry) {
+    const current = filterCountry.value;
+    filterCountry.innerHTML = '<option value="">All</option>';
+    Array.from(countries).sort().forEach((country) => {
+      const opt = document.createElement('option');
+      opt.value = country;
+      opt.textContent = country;
+      filterCountry.appendChild(opt);
+    });
+    filterCountry.value = current;
+  }
+
+  if (filterRegion) {
+    const current = filterRegion.value;
+    filterRegion.innerHTML = '<option value="">All</option>';
+    Array.from(regions).sort().forEach((region) => {
+      const opt = document.createElement('option');
+      opt.value = region;
+      opt.textContent = region;
+      filterRegion.appendChild(opt);
+    });
+    filterRegion.value = current;
+  }
+};
+
+const applyDefaultFilters = () => {
+  const preferredYear = reportingYearPreference === 'previous'
+    ? CURRENT_YEAR - 1
+    : reportingYearPreference === 'current'
+      ? CURRENT_YEAR
+      : null;
+  const userSet = (el) => el?.dataset?.userSet === 'true';
+  if (filterYear && !filterYear.value && !userSet(filterYear)) {
+    if (preferredYear) {
+      filterYear.value = String(preferredYear);
+    } else {
+      filterYear.value = String(CURRENT_YEAR);
+    }
+    filterYear.dataset.defaulted = 'true';
+  }
+  if (filterCountry && !filterCountry.value && companyCountry && !userSet(filterCountry)) {
+    filterCountry.value = companyCountry;
+  }
+  if (filterRegion && !filterRegion.value && companyRegion && !userSet(filterRegion)) {
+    filterRegion.value = companyRegion;
+  }
+};
+
+const applyFilters = (rows) => {
+  const yearVal = filterYear?.value || '';
+  const categoryVal = filterCategory?.value || '';
+  const countryVal = filterCountry?.value || '';
+  const regionVal = filterRegion?.value || '';
+  return rows.filter((r) => {
+    const yearMatch = yearVal ? String(r.period_year) === yearVal : true;
+    const categoryMatch = categoryVal ? r.category_label === categoryVal : true;
+    const countryMatch = countryVal ? r.spend_country === countryVal : true;
+    const regionMatch = regionVal ? r.spend_region === regionVal : true;
+    return yearMatch && categoryMatch && countryMatch && regionMatch;
+  });
+};
+
+const showMessage = (msg) => {
+  if (!scope3Table) return;
+  scope3Table.innerHTML = `<tr><td colspan="3" style="color:#4b5563;">${msg}</td></tr>`;
+};
+
+const renderTable = (rows) => {
+  if (!scope3Table) return;
+  scope3Table.innerHTML = '';
+  if (!rows.length) {
+    showMessage('No Scope 3 records match these filters. Add a record to include it in exports.');
+    return;
+  }
+  rows.forEach((row) => {
+    const tr = document.createElement('tr');
+    const spend = `${formatNumber(row.spend_amount || 0, 2)} ${row.currency || ''}`;
+    const vendor = row.vendor_name ? ` · ${row.vendor_name}` : '';
+    const region = row.spend_region ? ` / ${row.spend_region}` : '';
+    tr.innerHTML = `
+      <td>
+        <div class="primary">${formatNumber(row.emissions || 0, 3)} tCO₂e</div>
+        <div class="secondary">${row.period_year || ''} · ${row.category_label || '—'} · ${row.spend_country || '—'}${region}</div>
+      </td>
+      <td>${spend}${vendor}</td>
+      <td class="actions">
+        <button class="btn secondary" data-action="view" data-id="${row.id}">View</button>
+      </td>
+    `;
+    scope3Table.appendChild(tr);
+  });
+};
+
+const refreshView = () => {
+  populateFilters(records);
+  applyDefaultFilters();
+  const filtered = applyFilters(records);
+  renderTable(filtered);
+};
+
+const openPanel = (html) => {
+  if (!panel) return;
+  panel.innerHTML = html;
+  panel.classList.remove('hidden');
+  panel.classList.add('active');
+  const closeBtn = panel.querySelector('[data-close-panel]');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      panel.classList.remove('active');
+      panel.classList.add('hidden');
+      panel.innerHTML = '';
+    }, { once: true });
+  }
+};
+
+const buildRecordDetails = (record) => {
+  const spend = `${formatNumber(record.spend_amount || 0, 2)} ${record.currency || ''}`;
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
+      <div>
+        <div style="font-weight:700;font-size:1.05rem;">Record details</div>
+        <div style="color:#4b5563;font-size:0.95rem;">${record.period_year || ''} • ${record.category_label || '—'}</div>
+      </div>
+      <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
+    </div>
+    <div style="display:grid;gap:10px;">
+      <div><strong>Spend</strong><br>${spend}</div>
+      <div><strong>Spend country / region</strong><br>${record.spend_country || '—'}${record.spend_region ? ' / ' + record.spend_region : ''}</div>
+      <div><strong>Vendor (optional)</strong><br>${record.vendor_name || '—'}</div>
+      <div><strong>Notes</strong><br>${record.notes || '—'}</div>
+      <div><strong>EIO sector</strong><br>${record.eio_sector || '—'}</div>
+      <div><strong>Emission factor</strong><br>${formatNumber(record.emission_factor_value || 0, 6)} tCO₂e/${record.emission_factor_currency || ''}</div>
+      <div><strong>Factor source</strong><br>${record.emission_factor_source} • ${record.emission_factor_year}</div>
+      <div><strong>Model / geography</strong><br>${record.emission_factor_model} • ${record.emission_factor_geo}</div>
+      <p style="color:#4b5563;font-size:0.95rem;margin:8px 0 0;">${SCOPE3_DISCLOSURE}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <button class="btn secondary" data-panel-edit="${record.id}" style="padding:10px 12px;">Edit</button>
+        <button class="btn secondary" data-panel-delete="${record.id}" style="padding:10px 12px;">Delete</button>
+      </div>
+    </div>
+  `;
+};
+
+const openRecordPanel = (recordId) => {
+  const record = records.find((r) => String(r.id) === String(recordId));
+  if (!record) return;
+  openPanel(buildRecordDetails(record));
+  const editBtn = panel?.querySelector('[data-panel-edit]');
+  const deleteBtn = panel?.querySelector('[data-panel-delete]');
+  if (editBtn) {
+    editBtn.addEventListener('click', () => handleEditRecord(record));
+  }
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', () => handleDeleteRecord(record));
+  }
+};
+
+const handleEditRecord = async (record) => {
+  const spendInput = prompt('Update spend amount:', record.spend_amount);
+  if (spendInput === null) return;
+  const spend = Number(spendInput);
+  if (!Number.isFinite(spend) || spend < 0) {
+    alert('Enter a valid spend amount (>= 0).');
+    return;
+  }
+  const vendorInput = prompt('Update vendor name (optional):', record.vendor_name || '');
+  if (vendorInput === null) return;
+  const notesInput = prompt('Update notes (optional):', record.notes || '');
+  if (notesInput === null) return;
+
+  const set = getFactorSet(record.spend_country || companyCountry);
+  const category = set?.categories.find((c) => c.id === record.category_id);
+  if (!set || !category) {
+    alert('Category data not found.');
+    return;
+  }
+  const emissions = spend * category.factor;
+  const { error } = await supabase
+    .from('scope3_records')
+    .update({
+      spend_amount: spend,
+      vendor_name: String(vendorInput || '').trim().slice(0, 120) || null,
+      notes: String(notesInput || '').trim().slice(0, 240) || null,
+      emissions
+    })
+    .eq('id', record.id);
+  if (error) {
+    alert('Save failed. Please try again.');
+    return;
+  }
+  await loadData();
+  panel?.classList.remove('active');
+  panel?.classList.add('hidden');
+  if (panel) panel.innerHTML = '';
+};
+
+const handleDeleteRecord = async (record) => {
+  const confirmDelete = confirm('Delete this record?');
+  if (!confirmDelete) return;
+  const { error } = await supabase.from('scope3_records').delete().eq('id', record.id);
+  if (error) {
+    alert('Delete failed. Please try again.');
+    return;
+  }
+  await loadData();
+  panel?.classList.remove('active');
+  panel?.classList.add('hidden');
+  if (panel) panel.innerHTML = '';
+};
+
+const populateYears = (el, withPlaceholder = true) => {
+  el.innerHTML = withPlaceholder ? '<option value="">Select year</option>' : '';
+  for (let y = CURRENT_YEAR; y >= 2024; y -= 1) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    el.appendChild(opt);
+  }
+};
+
+const populateCategories = (el) => {
+  el.innerHTML = '<option value="">Select category</option>';
+  const categories = factorSet?.categories || SCOPE3_CATEGORY_LIST;
+  categories.forEach((cat) => {
+    const opt = document.createElement('option');
+    opt.value = cat.id;
+    opt.textContent = cat.label;
+    el.appendChild(opt);
+  });
+};
+
+const populateCurrencies = (el) => {
+  el.innerHTML = '<option value="">Select currency</option>';
+  const currency = factorSet?.currency ? [factorSet.currency] : [];
+  currency.forEach((code) => {
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = code;
+    el.appendChild(opt);
+  });
+};
+
+const populateCountries = (el) => {
+  el.innerHTML = '<option value="">Select country</option>';
+  COUNTRY_OPTIONS.forEach((c) => {
+    const opt = document.createElement('option');
+    opt.value = c.value;
+    opt.textContent = c.label;
+    el.appendChild(opt);
+  });
+};
+
+const setRegionOptions = (country, regionEl) => {
+  if (!regionEl) return;
+  const opts = REGION_OPTIONS[country] || [];
+  regionEl.innerHTML = '<option value="">Select region</option>';
+  opts.forEach((name) => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    regionEl.appendChild(opt);
+  });
+};
+
+const buildAddPanel = () => `
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
+    <div>
+      <div style="font-weight:700;font-size:1.05rem;">Add Scope 3 record</div>
+      <div style="color:#4b5563;font-size:0.95rem;">Spend-based screening estimate (EIO-only).</div>
+    </div>
+    <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
+  </div>
+  <form id="add-scope3-form" class="panel-form">
+    <div class="panel-row">
+      <label>
+        Reporting year
+        <select id="add-year" required></select>
+      </label>
+      <label>
+        Category
+        <select id="add-category" required></select>
+      </label>
+    </div>
+    <div class="panel-row">
+      <label>
+        Spend country
+        <select id="add-country" required></select>
+      </label>
+      <label>
+        Spend region
+        <select id="add-region" required></select>
+      </label>
+    </div>
+    <div class="panel-row">
+      <label>
+        Spend amount
+        <input type="number" id="add-spend" min="0" step="any" placeholder="e.g., 12000" required />
+      </label>
+      <label>
+        Currency
+        <select id="add-currency" required></select>
+      </label>
+    </div>
+    <div class="panel-row single">
+      <label>
+        Vendor name (optional)
+        <input type="text" id="add-vendor" maxlength="120" placeholder="Optional vendor reference" />
+      </label>
+    </div>
+    <div class="panel-row single">
+      <label>
+        Notes (optional)
+        <input type="text" id="add-notes" maxlength="240" placeholder="Optional context for this entry" />
+      </label>
+    </div>
+    <div class="panel-hint">Spend-based EIO factors are screening-level only; no supplier-specific data is used.</div>
+    <div class="panel-hint">Factor set: ${companyCountry || '—'} · ${factorSet?.model || '—'} · ${factorSet?.currency || '—'}.</div>
+    <div class="panel-actions">
+      <button type="submit" class="btn primary">Save record</button>
+    </div>
+    <p class="panel-status" id="add-status"></p>
+  </form>
+`;
+
+const openAddPanel = () => {
+  openPanel(buildAddPanel());
+  const form = panel?.querySelector('#add-scope3-form');
+  const yearEl = panel?.querySelector('#add-year');
+  const categoryEl = panel?.querySelector('#add-category');
+  const countryEl = panel?.querySelector('#add-country');
+  const regionEl = panel?.querySelector('#add-region');
+  const spendEl = panel?.querySelector('#add-spend');
+  const currencyEl = panel?.querySelector('#add-currency');
+  const vendorEl = panel?.querySelector('#add-vendor');
+  const notesEl = panel?.querySelector('#add-notes');
+  const statusEl = panel?.querySelector('#add-status');
+  if (!form || !yearEl || !categoryEl || !countryEl || !regionEl || !spendEl || !currencyEl) return;
+
+  populateYears(yearEl);
+  populateCategories(categoryEl);
+  populateCountries(countryEl);
+  if (companyCountry) countryEl.value = companyCountry;
+  setRegionOptions(countryEl.value, regionEl);
+  factorSet = getFactorSet(countryEl.value);
+  populateCurrencies(currencyEl);
+  if (currencyEl && currencyEl.options.length === 1) {
+    currencyEl.value = currencyEl.options[0].value;
+  }
+  countryEl.addEventListener('change', () => {
+    factorSet = getFactorSet(countryEl.value);
+    populateCurrencies(currencyEl);
+    setRegionOptions(countryEl.value, regionEl);
+    if (currencyEl.options.length === 1) {
+      currencyEl.value = currencyEl.options[0].value;
+    }
+  });
+
+  const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setStatus('');
+    const year = parseInt(yearEl.value, 10);
+    const categoryId = categoryEl.value;
+    const spendCountry = countryEl.value;
+    const spendRegion = regionEl.value;
+    const spend = parseFloat(spendEl.value);
+    const currency = currencyEl.value;
+    const vendor = String(vendorEl?.value || '').trim().slice(0, 120);
+    const notes = String(notesEl?.value || '').trim().slice(0, 240);
+
+    if (!year || !categoryId || !spendCountry || !spendRegion || !currency || !Number.isFinite(spend) || spend < 0) {
+      setStatus('Complete year, category, country, region, spend, and currency (spend must be >= 0).');
+      return;
+    }
+    if (year > CURRENT_YEAR) {
+      setStatus('Future reporting years are not allowed.');
+      return;
+    }
+    factorSet = getFactorSet(spendCountry);
+    if (!factorSet) {
+      setStatus('No factor set available for the selected spend country.');
+      return;
+    }
+    const category = factorSet.categories.find((c) => c.id === categoryId);
+    if (!category) {
+      setStatus('Select a valid category.');
+      return;
+    }
+    if (factorSet.currency !== currency) {
+      setStatus(`This category uses ${factorSet.currency} factors only.`);
+      return;
+    }
+
+    const session = await requireAuth();
+    if (!session) return;
+    const companyId = await getCompanyId(session);
+    if (!companyId) {
+      setStatus('Company profile missing. Add it from the main page.');
+      return;
+    }
+
+    const emissions = spend * category.factor;
+    const payload = {
+      user_id: session.user.id,
+      company_id: companyId,
+      period_year: year,
+      spend_country: spendCountry,
+      spend_region: spendRegion,
+      spend_amount: spend,
+      currency,
+      category_id: category.id,
+      category_label: category.label,
+      vendor_name: vendor || null,
+      notes: notes || null,
+      eio_sector: category.eio_sector,
+      emission_factor_value: category.factor,
+      emission_factor_year: factorSet.year,
+      emission_factor_source: factorSet.source,
+      emission_factor_model: factorSet.model,
+      emission_factor_geo: factorSet.geo,
+      emission_factor_currency: factorSet.currency,
+      emissions
+    };
+
+    const { error } = await supabase.from('scope3_records').insert(payload);
+    if (error) {
+      console.warn('Scope 3 save failed', error);
+      setStatus('Save failed. Please try again.');
+      return;
+    }
+    await loadData();
+    panel?.classList.remove('active');
+    panel?.classList.add('hidden');
+    if (panel) panel.innerHTML = '';
+  });
+};
+
+const buildBulkPanel = () => `
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
+    <div>
+      <div style="font-weight:700;font-size:1.05rem;">Bulk add Scope 3 records</div>
+      <div style="color:#4b5563;font-size:0.95rem;">Add multiple spend entries at once.</div>
+    </div>
+    <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
+  </div>
+  <div class="panel-hint">Only EIO spend-based categories are supported in v1.</div>
+  <form id="bulk-form" class="panel-form">
+    <div id="bulk-rows"></div>
+    <div class="panel-actions">
+      <button type="button" class="btn secondary" id="bulk-add-row">Add row</button>
+      <button type="submit" class="btn primary">Save rows</button>
+    </div>
+    <p class="panel-status" id="bulk-status"></p>
+  </form>
+`;
+
+const createBulkRow = () => {
+  const row = document.createElement('div');
+  row.className = 'bulk-row';
+  row.innerHTML = `
+    <div class="panel-row">
+      <label>
+        Reporting year
+        <select data-field="year"></select>
+      </label>
+      <label>
+        Category
+        <select data-field="category"></select>
+      </label>
+    </div>
+    <div class="panel-row">
+      <label>
+        Spend country
+        <select data-field="country"></select>
+      </label>
+      <label>
+        Spend region
+        <select data-field="region"></select>
+      </label>
+    </div>
+    <div class="panel-row">
+      <label>
+        Spend amount
+        <input type="number" data-field="spend" min="0" step="any" placeholder="e.g., 12000" />
+      </label>
+      <label>
+        Currency
+        <select data-field="currency"></select>
+      </label>
+    </div>
+    <div class="panel-row single">
+      <label>
+        Vendor name (optional)
+        <input type="text" data-field="vendor" maxlength="120" placeholder="Optional vendor reference" />
+      </label>
+    </div>
+    <div class="panel-row single">
+      <label>
+        Notes (optional)
+        <input type="text" data-field="notes" maxlength="240" placeholder="Optional context" />
+      </label>
+    </div>
+    <div class="bulk-row-actions">
+      <button type="button" class="btn secondary" data-remove-row>Remove row</button>
+    </div>
+  `;
+
+  const yearEl = row.querySelector('[data-field="year"]');
+  const categoryEl = row.querySelector('[data-field="category"]');
+  const countryEl = row.querySelector('[data-field="country"]');
+  const regionEl = row.querySelector('[data-field="region"]');
+  const currencyEl = row.querySelector('[data-field="currency"]');
+  if (yearEl && categoryEl && countryEl && regionEl && currencyEl) {
+    populateYears(yearEl);
+    populateCategories(categoryEl);
+    populateCountries(countryEl);
+    if (companyCountry) countryEl.value = companyCountry;
+    setRegionOptions(countryEl.value, regionEl);
+    const rowFactorSet = getFactorSet(countryEl.value);
+    currencyEl.innerHTML = '<option value="">Select currency</option>';
+    if (rowFactorSet?.currency) {
+      const opt = document.createElement('option');
+      opt.value = rowFactorSet.currency;
+      opt.textContent = rowFactorSet.currency;
+      currencyEl.appendChild(opt);
+      currencyEl.value = rowFactorSet.currency;
+    }
+    countryEl.addEventListener('change', () => {
+      const selectedSet = getFactorSet(countryEl.value);
+      currencyEl.innerHTML = '<option value="">Select currency</option>';
+      setRegionOptions(countryEl.value, regionEl);
+      if (selectedSet?.currency) {
+        const opt = document.createElement('option');
+        opt.value = selectedSet.currency;
+        opt.textContent = selectedSet.currency;
+        currencyEl.appendChild(opt);
+        currencyEl.value = selectedSet.currency;
+      }
+    });
+  }
+  const removeBtn = row.querySelector('[data-remove-row]');
+  if (removeBtn) removeBtn.addEventListener('click', () => row.remove());
+  return row;
+};
+
+const openBulkPanel = () => {
+  openPanel(buildBulkPanel());
+  const rowsEl = panel?.querySelector('#bulk-rows');
+  const addRowBtn = panel?.querySelector('#bulk-add-row');
+  const form = panel?.querySelector('#bulk-form');
+  const statusEl = panel?.querySelector('#bulk-status');
+  if (!rowsEl || !addRowBtn || !form) return;
+
+  for (let i = 0; i < 3; i += 1) {
+    rowsEl.appendChild(createBulkRow());
+  }
+  addRowBtn.addEventListener('click', () => {
+    rowsEl.appendChild(createBulkRow());
+  });
+
+  const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setStatus('');
+    const rows = Array.from(rowsEl.querySelectorAll('.bulk-row'));
+    if (!rows.length) {
+      setStatus('Add at least one row.');
+      return;
+    }
+
+    const session = await requireAuth();
+    if (!session) return;
+    const companyId = await getCompanyId(session);
+    if (!companyId) {
+      setStatus('Company profile missing. Add it from the main page.');
+      return;
+    }
+    if (!factorSet) {
+      setStatus('No factor set available for your company country.');
+      return;
+    }
+
+    const payloads = [];
+    const errors = [];
+
+    rows.forEach((row, idx) => {
+      const year = parseInt(row.querySelector('[data-field="year"]')?.value || '0', 10);
+      const categoryId = row.querySelector('[data-field="category"]')?.value || '';
+      const spendCountry = row.querySelector('[data-field="country"]')?.value || '';
+      const spendRegion = row.querySelector('[data-field="region"]')?.value || '';
+      const spend = parseFloat(row.querySelector('[data-field="spend"]')?.value || '');
+      const currency = row.querySelector('[data-field="currency"]')?.value || '';
+      const vendor = String(row.querySelector('[data-field="vendor"]')?.value || '').trim().slice(0, 120);
+      const notes = String(row.querySelector('[data-field="notes"]')?.value || '').trim().slice(0, 240);
+
+      const hasAny = [year, categoryId, spendCountry, spendRegion, spend, currency, vendor, notes].some((v) => v);
+      if (!hasAny) return;
+
+      if (!year || !categoryId || !spendCountry || !spendRegion || !currency || !Number.isFinite(spend) || spend < 0) {
+        errors.push(`Row ${idx + 1}: complete year, category, country, region, spend, and currency (spend >= 0).`);
+        return;
+      }
+      if (year > CURRENT_YEAR) {
+        errors.push(`Row ${idx + 1}: future reporting years are not allowed.`);
+        return;
+      }
+      const rowFactorSet = getFactorSet(spendCountry);
+      if (!rowFactorSet) {
+        errors.push(`Row ${idx + 1}: no factor set for ${spendCountry}.`);
+        return;
+      }
+      const category = rowFactorSet.categories.find((c) => c.id === categoryId);
+      if (!category) {
+        errors.push(`Row ${idx + 1}: select a valid category.`);
+        return;
+      }
+      if (rowFactorSet.currency !== currency) {
+        errors.push(`Row ${idx + 1}: use ${rowFactorSet.currency} for this category.`);
+        return;
+      }
+
+      const emissions = spend * category.factor;
+      payloads.push({
+        user_id: session.user.id,
+        company_id: companyId,
+        period_year: year,
+        spend_country: spendCountry,
+        spend_region: spendRegion,
+        spend_amount: spend,
+        currency,
+        category_id: category.id,
+        category_label: category.label,
+        vendor_name: vendor || null,
+        notes: notes || null,
+        eio_sector: category.eio_sector,
+        emission_factor_value: category.factor,
+        emission_factor_year: rowFactorSet.year,
+        emission_factor_source: rowFactorSet.source,
+        emission_factor_model: rowFactorSet.model,
+        emission_factor_geo: rowFactorSet.geo,
+        emission_factor_currency: rowFactorSet.currency,
+        emissions
+      });
+    });
+
+    if (errors.length) {
+      setStatus(errors[0]);
+      return;
+    }
+    if (!payloads.length) {
+      setStatus('Add at least one complete row.');
+      return;
+    }
+
+    const { error } = await supabase.from('scope3_records').insert(payloads);
+    if (error) {
+      console.warn('Scope 3 bulk add failed', error);
+      setStatus('Save failed. Please try again.');
+      return;
+    }
+    await loadData();
+    panel?.classList.remove('active');
+    panel?.classList.add('hidden');
+    if (panel) panel.innerHTML = '';
+  });
+};
+
+const escapeCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+const toCsv = (rows) => {
+  const headers = [
+    'Scope',
+    'Category',
+    'Spend amount',
+    'Currency',
+    'EIO sector reference',
+    'Emission factor value',
+    'Factor year',
+    'Factor source',
+    'Emissions (tCO2e)',
+    'Disclosure text'
+  ];
+  const data = rows.map((r) => ([
+    'Scope 3',
+    r.category_label || '',
+    r.spend_amount ?? '',
+    r.currency || '',
+    r.eio_sector || '',
+    r.emission_factor_value ?? '',
+    r.emission_factor_year ?? '',
+    r.emission_factor_source ?? '',
+    r.emissions ?? '',
+    SCOPE3_DISCLOSURE
+  ]));
+  return [headers, ...data].map((row) => row.map(escapeCsv).join(',')).join('\r\n');
+};
+
+const downloadCsv = (csv, filename) => {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+const exportFiltered = () => {
+  if (!exportBtn) return;
+  exportBtn.disabled = true;
+  if (exportStatus) exportStatus.textContent = 'Preparing export...';
+  try {
+    const filtered = applyFilters(records);
+    if (!filtered.length) {
+      if (exportStatus) exportStatus.textContent = 'No records match these filters.';
+      return;
+    }
+    const yearVal = filterYear?.value || '';
+    const namePart = yearVal ? `${yearVal}` : 'filtered';
+    downloadCsv(toCsv(filtered), `carbonwise_scope3_${namePart}.csv`);
+    if (exportStatus) exportStatus.textContent = 'Exported with current filters.';
+  } catch (err) {
+    console.warn('Scope 3 export failed', err);
+    if (exportStatus) exportStatus.textContent = 'Could not export right now.';
+  } finally {
+    exportBtn.disabled = false;
+  }
+};
+
+const attachHandlers = () => {
+  if (scope3Table) {
+    scope3Table.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      if (btn.getAttribute('data-action') === 'view') {
+        openRecordPanel(btn.getAttribute('data-id'));
+      }
+    });
+  }
+  if (exportBtn) exportBtn.addEventListener('click', exportFiltered);
+  if (addBtn) addBtn.addEventListener('click', openAddPanel);
+  if (bulkBtn) bulkBtn.addEventListener('click', openBulkPanel);
+  [filterYear, filterCategory, filterCountry, filterRegion].forEach((el) => {
+    if (!el) return;
+    el.addEventListener('change', () => {
+      el.dataset.userSet = 'true';
+      refreshView();
+    });
+  });
+  if (signoutBtn) {
+    signoutBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await supabase.auth.signOut();
+      window.location.href = 'index.html';
+    });
+  }
+};
+
+const loadData = async () => {
+  try {
+    records = await fetchRecords();
+  } catch (err) {
+    console.warn('Scope 3 load failed', err);
+    records = [];
+  }
+  refreshView();
+};
+
+(async () => {
+  attachHandlers();
+  const session = await requireAuth();
+  if (!session) return;
+  await loadCompanyPreference();
+  await loadData();
+  supabase.auth.onAuthStateChange((_event) => {
+    if (_event === 'SIGNED_OUT') {
+      window.location.href = 'index.html';
+    }
+  });
+})();

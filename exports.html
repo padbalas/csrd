@@ -125,6 +125,7 @@
         <a href="dashboard.html" class="nav-item" data-nav="dashboard">Dashboard</a>
         <a href="records.html" class="nav-item" data-nav="records">Scope 2 Records</a>
         <a href="scope1.html" class="nav-item" data-nav="scope1">Scope 1 Records</a>
+        <a href="scope3.html" class="nav-item" data-nav="scope3">Scope 3 Screening</a>
         <a href="insights.html" class="nav-item" data-nav="insights">Insights</a>
         <a href="exports.html" class="nav-item active" data-nav="export">Export / Reports</a>
         <a href="settings.html" class="nav-item" data-nav="settings">Settings</a>
@@ -146,6 +147,7 @@
         <div class="tab-header">
           <button type="button" class="tab-button active" data-tab-target="scope2">Scope 2 electricity</button>
           <button type="button" class="tab-button" data-tab-target="scope1">Scope 1 natural gas</button>
+          <button type="button" class="tab-button" data-tab-target="scope3">Scope 3 screening</button>
         </div>
 
         <div class="tab-panel active" data-tab="scope2">
@@ -175,7 +177,8 @@
               <li>Scope 2 emission factor value, year, and source</li>
               <li>Scope 1: period (YYYY-MM), fuel quantity, unit, and emissions (tCO₂e)</li>
               <li>Scope 1 emission factor value, year, and source</li>
-              <li>Disclosure statements for Scope 1 and Scope 2 exports</li>
+              <li>Scope 3: spend amount, category, EIO sector reference, and emissions (tCO₂e)</li>
+              <li>Disclosure statements for Scope 1, Scope 2, and Scope 3 exports</li>
             </ul>
           </section>
         </div>
@@ -198,6 +201,27 @@
             </div>
             <p class="note">Scope 1 emissions are estimates based on user-provided fuel data. Results may be partial and do not represent full Scope 1 coverage.</p>
             <p class="note">Methodology: <a href="methodology.html#scope-1">See Scope 1 methodology</a>.</p>
+          </section>
+        </div>
+
+        <div class="tab-panel" data-tab="scope3">
+          <section class="card stack">
+            <div>
+              <h2 style="margin:0 0 6px;">Scope 3 (Estimated — Spend-based)</h2>
+              <p class="muted">Screening-level, spend-based Scope 3 estimates using EIO factors only.</p>
+            </div>
+            <div>
+              <label for="scope3ExportYear">Reporting year</label>
+              <select id="scope3ExportYear">
+                <option value="">All years</option>
+              </select>
+            </div>
+            <div class="actions">
+              <button class="btn primary" id="exportScope3Csv">Generate Scope 3 CSV</button>
+              <span class="status" id="scope3ExportStatus"></span>
+            </div>
+            <p class="note">Scope 3 emissions shown here are screening-level estimates calculated using spend-based environmentally extended input-output (EIO) models. Results are indicative only and subject to high uncertainty.</p>
+            <p class="note">Methodology: <a href="methodology.html#scope-3">See Scope 3 methodology</a>.</p>
           </section>
         </div>
       </div>

@@ -29,13 +29,13 @@
   <div class="shell">
     <header class="card">
       <h1>Methodology & Disclosures</h1>
-      <p class="muted">How CarbonWise calculates Scope 2 electricity emissions (tCO₂e), including optional user-declared market-based adjustments and Scope 1 estimates.</p>
+      <p class="muted">How CarbonWise calculates Scope 2 electricity emissions (tCO₂e), Scope 1 stationary combustion estimates, and Scope 3 screening-level spend-based estimates.</p>
     </header>
 
     <!-- Scope coverage clarity -->
     <section>
       <h2>Scope Covered</h2>
-      <p>CarbonWise supports Scope 2 emissions from purchased electricity and Scope 1 emissions from stationary natural gas combustion. Each scope has its own inputs, factors, and disclosures.</p>
+      <p>CarbonWise supports Scope 2 emissions from purchased electricity, Scope 1 emissions from stationary natural gas combustion, and Scope 3 screening-level estimates using spend-based EIO models. Each scope has its own inputs, factors, and disclosures.</p>
     </section>
 
     <section id="scope-2">
@@ -67,6 +67,22 @@
       <p class="muted">Factors are sourced from public, government-issued datasets and are year-stamped.</p>
       <p><strong>Estimation limitations</strong></p>
       <p class="muted">Results are partial and may omit other Scope 1 sources. Factors are simplified and are not a full inventory or verification.</p>
+    </section>
+
+    <section id="scope-3">
+      <h2>Scope 3 Methodology (EIO-Only)</h2>
+      <p><strong>What spend-based EIO modeling is</strong></p>
+      <p class="muted">Scope 3 v1 uses environmentally extended input-output (EIO) models to estimate emissions from spend. Spend in each category is multiplied by a national-average EIO factor expressed as tCO₂e per currency unit.</p>
+      <p><strong>Supported categories (v1)</strong></p>
+      <p class="muted">Purchased Goods & Services (General), Professional Services, Software & Cloud Services, Marketing & Advertising Services, and Logistics & Shipping (Upstream, spend-based only).</p>
+      <p class="muted">CarbonWise intentionally limits Scope 3 v1 to a small set of high-confidence categories to prioritize clarity and defensibility over broad but uncertain coverage.</p>
+      <p><strong>Limitations and uncertainty</strong></p>
+      <p class="muted">These results are screening-level only, based on average sector data. They do not use supplier-specific data, activity quantities, or process-based LCA. Uncertainty is high and results should not be treated as audit-grade.</p>
+      <p><strong>Appropriate use cases</strong></p>
+      <p class="muted">Early screening, directional insights, and prioritization for deeper analysis.</p>
+      <p><strong>Inappropriate use cases</strong></p>
+      <p class="muted">Audits, supplier claims, product-level LCAs, or public-facing assertions of supplier performance.</p>
+      <p class="muted">Scope 3 emissions shown here are screening-level estimates calculated using spend-based environmentally extended input-output (EIO) models. Results are indicative only and subject to high uncertainty.</p>
     </section>
 
     <section>

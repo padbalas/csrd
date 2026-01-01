@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CarbonWise | Scope 1 Records</title>
+  <title>CarbonWise | Scope 3 Screening</title>
   <style>
     :root {
       --ink: #0f172a;
@@ -97,7 +97,7 @@
     .subhead {
       font-size: 1.15rem;
       color: var(--muted);
-      max-width: 680px;
+      max-width: 720px;
       margin: 0 0 18px;
     }
     .nav-brand {
@@ -110,6 +110,17 @@
       font-size: 0.9rem;
       margin-bottom: 16px;
       text-decoration: none;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border: 1px solid #e2e8f0;
     }
     .btn {
       display: inline-flex;
@@ -140,29 +151,6 @@
     .table th, .table td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: left; }
     .table th { font-weight: 700; font-size: 0.95rem; color: var(--muted); }
     .table td { font-size: 0.95rem; }
-    .summary-block {
-      margin-top: 20px;
-      padding: 18px 16px;
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-    }
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-      margin-top: 10px;
-    }
-    .summary-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 12px;
-    }
-    .summary-card .label { color: var(--muted); font-size: 0.95rem; }
-    .summary-card .value { font-weight: 800; font-size: 1.3rem; margin-top: 6px; }
-    .summary-card .unit { color: var(--muted); font-size: 0.9rem; }
     .records-controls {
       display: flex;
       align-items: center;
@@ -190,11 +178,12 @@
       flex-direction: column;
       gap: 4px;
     }
-    .records-filters select {
+    .records-filters select,
+    .records-filters input {
       padding: 8px;
       border-radius: 10px;
       border: 1px solid #e5e7eb;
-      min-width: 140px;
+      min-width: 160px;
     }
     .records-actions { display: flex; align-items: center; gap: 8px; }
     .records-status { color: var(--muted); font-size: 0.9rem; }
@@ -212,56 +201,34 @@
     .panel-row.single {
       grid-template-columns: minmax(0, 1fr);
     }
-    .panel-form label {
-      font-weight: 600;
-      color: var(--muted);
-      font-size: 0.95rem;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .panel-form input,
-    .panel-form select {
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid #e5e7eb;
-    }
-    .panel-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .panel-status { color: var(--muted); font-size: 0.9rem; }
-    .panel-hint { color: var(--muted); font-size: 0.9rem; }
-    .app-footer { text-align: center; padding: 16px 0 24px; font-size: 0.95rem; color: var(--muted); }
-    .bulk-row {
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 10px;
-      display: grid;
-      gap: 10px;
-    }
-    .bulk-row-actions {
-      display: flex;
-      justify-content: flex-end;
-    }
+    .panel-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .panel-status { color: var(--muted); font-size: 0.9rem; min-height: 20px; }
+    .panel-hint { font-size: 0.9rem; color: var(--muted); margin-top: -6px; }
     .slide-panel {
       position: fixed;
-      top: 0;
-      right: 0;
-      width: min(420px, 100%);
-      height: 100%;
+      right: 24px;
+      top: 120px;
+      width: min(420px, 90vw);
       background: #fff;
-      box-shadow: -8px 0 24px rgba(15, 23, 42, 0.1);
-      border-left: 1px solid #e5e7eb;
-      padding: 16px;
-      overflow-y: auto;
-      transform: translateX(100%);
-      transition: transform 0.25s ease;
-      z-index: 1000;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.15);
+      padding: 18px;
+      display: none;
+      z-index: 40;
     }
-    .slide-panel.active { transform: translateX(0); }
-    .hidden { display: none; }
+    .slide-panel.active { display: block; }
+    .slide-panel.hidden { display: none; }
+    .disclosure {
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      border-radius: 12px;
+      padding: 12px;
+      color: #7c2d12;
+      font-size: 0.95rem;
+      margin-top: 10px;
+    }
+    .app-footer { text-align: center; padding: 16px 0 24px; font-size: 0.95rem; color: var(--muted); }
 
     @media (max-width: 980px) {
       .app-layout { flex-direction: column; }
@@ -275,18 +242,20 @@
         border-bottom: 1px solid #111827;
       }
       .nav-items { grid-auto-flow: column; grid-auto-columns: minmax(120px, 1fr); }
-      header { padding: 56px 20px 32px; }
-      .btn { padding: 12px 14px; }
+      header { padding: 24px 20px 10px; }
     }
 
     @media (max-width: 680px) {
-      .shell { padding: 0 16px 60px; }
+      .shell { padding: 0 16px 50px; }
       .nav-items { grid-auto-flow: row; }
       .records-controls { flex-direction: column; align-items: flex-start; }
       .records-filters { position: static; padding: 8px 0 12px; }
       .records-filters label { min-width: 140px; }
-      .records-filters select { width: 100%; min-width: 0; }
-      .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .records-filters select,
+      .records-filters input { width: 100%; min-width: 0; }
+      .panel-row { grid-template-columns: minmax(0, 1fr); }
+      .panel-actions { flex-direction: column; align-items: stretch; }
+      .slide-panel { right: 16px; top: 100px; }
     }
   </style>
 </head>
@@ -297,8 +266,8 @@
       <nav class="nav-items">
         <a href="dashboard.html" class="nav-item" data-nav="dashboard">Dashboard</a>
         <a href="records.html" class="nav-item" data-nav="records">Scope 2 Records</a>
-        <a href="scope1.html" class="nav-item active" data-nav="scope1">Scope 1 Records</a>
-        <a href="scope3.html" class="nav-item" data-nav="scope3">Scope 3 Screening</a>
+        <a href="scope1.html" class="nav-item" data-nav="scope1">Scope 1 Records</a>
+        <a href="scope3.html" class="nav-item active" data-nav="scope3">Scope 3 Screening</a>
         <a href="insights.html" class="nav-item" data-nav="insights">Insights</a>
         <a href="exports.html" class="nav-item" data-nav="export">Export / Reports</a>
         <a href="settings.html" class="nav-item" data-nav="settings">Settings</a>
@@ -310,51 +279,40 @@
     <div class="app-content">
       <header>
         <div class="shell">
-          <h1>Scope 1 Records</h1>
-          <p class="subhead">Natural gas entries saved for reporting and exports.</p>
+          <div class="pill">Scope 3 Screening</div>
+          <h1>Scope 3 (Estimated — Spend-based)</h1>
+          <p class="subhead">Screening-level, spend-based Scope 3 estimates using EIO factors. Built for prioritization, not audits.</p>
         </div>
       </header>
 
       <div class="shell">
-        <section class="summary-block">
-          <h2 style="margin:0;">Scope 1 Snapshot</h2>
-          <div class="summary-grid">
-            <div class="summary-card">
-              <div class="label">Total Scope 1</div>
-              <div class="value" id="scope1Total">—</div>
-              <div class="unit">tCO2e</div>
-            </div>
-            <div class="summary-card">
-              <div class="label">Average per month</div>
-              <div class="value" id="scope1Avg">—</div>
-              <div class="unit">tCO2e</div>
-            </div>
-            <div class="summary-card">
-              <div class="label">Highest region</div>
-              <div class="value" id="scope1TopRegion">—</div>
-            </div>
-            <div class="summary-card">
-              <div class="label">Coverage (months with records)</div>
-              <div class="value" id="scope1Count">—</div>
-              <div class="unit">months</div>
-            </div>
+        <section>
+          <h2>Screening boundaries</h2>
+          <p class="muted">Only five categories are supported in v1. This avoids low-confidence or supplier-specific Scope 3 modeling.</p>
+          <div class="disclosure" id="scope3-disclosure">
+            Scope 3 emissions shown here are screening-level estimates calculated using spend-based environmentally extended input-output (EIO) models. Results are indicative only and subject to high uncertainty.
           </div>
-          <p class="note">Scope 1 estimates are based on user-provided fuel data. <a href="methodology.html#scope-1">See Methodology</a>.</p>
+          <p class="note" style="margin-top:10px;">Methodology: <a href="methodology.html#scope-3">See Scope 3 methodology</a>.</p>
         </section>
 
         <section>
           <div class="records-controls">
-            <h2 style="margin:0;">Saved Scope 1 records</h2>
+            <h2 style="margin:0;">Scope 3 records</h2>
             <div class="records-actions">
-              <button class="btn secondary" id="scope1-export-csv" type="button">Export CSV</button>
-              <span class="records-status" id="scope1-export-status"></span>
+              <button class="btn secondary" id="scope3-export-csv" type="button">Export CSV</button>
+              <span class="records-status" id="scope3-export-status"></span>
             </div>
           </div>
-          <div class="note">Stationary combustion — natural gas only. <a href="methodology.html#scope-1">See Methodology</a>.</div>
-          <section class="records-filters">
+          <div class="records-filters">
             <label>
               Reporting year
               <select id="filterYear">
+                <option value="">All</option>
+              </select>
+            </label>
+            <label>
+              Category
+              <select id="filterCategory">
                 <option value="">All</option>
               </select>
             </label>
@@ -371,32 +329,51 @@
               </select>
             </label>
             <div class="records-actions">
-              <button class="btn secondary" id="scope1-add" type="button">Add record</button>
-              <button class="btn secondary" id="scope1-bulk" type="button">Bulk add</button>
+              <button class="btn secondary" id="scope3-add" type="button">Add record</button>
+              <button class="btn secondary" id="scope3-bulk" type="button">Bulk add</button>
             </div>
-          </section>
-          <table class="table" aria-label="Saved Scope 1 records">
+          </div>
+          <table class="table" aria-label="Scope 3 records">
             <thead>
               <tr>
                 <th>Emissions</th>
-                <th>Details</th>
-                <th>Actions</th>
+                <th>Spend & category</th>
+                <th></th>
               </tr>
             </thead>
-            <tbody id="scope1Table"></tbody>
+            <tbody id="scope3Table">
+              <tr>
+                <td colspan="3" style="color:#4b5563;">Log in on the main page to view your records.</td>
+              </tr>
+            </tbody>
           </table>
-          <p class="note">Calculated using stationary combustion factors (tCO2e). <a href="methodology.html#scope-1">See Methodology</a>.</p>
+          <p class="note">Scope 3 is kept separate from Scope 1 and Scope 2 totals. These results are screening-level only.</p>
         </section>
       </div>
       <footer class="app-footer">
+        <!-- Trust signals in footer: methodology, support, and factor freshness -->
         <div><a href="methodology.html">Methodology</a> • <a href="mailto:hello@esgrise.com">Contact / support</a></div>
         <div>Emission factors updated as of 2024.</div>
       </footer>
     </div>
   </div>
 
-  <div id="scope1Panel" class="slide-panel hidden" aria-live="polite"></div>
+  <div id="scope3Panel" class="slide-panel hidden"></div>
 
-  <script type="module" src="./js/scope1.js"></script>
+  <script>
+    (function setActiveNav() {
+      const path = window.location.pathname;
+      document.querySelectorAll('.nav-item').forEach((link) => {
+        const href = link.getAttribute('href');
+        if (href && path.includes(href)) {
+          link.classList.add('active');
+        }
+      });
+      document.querySelectorAll('.nav-item.disabled').forEach((link) => {
+        link.addEventListener('click', (e) => e.preventDefault());
+      });
+    })();
+  </script>
+  <script type="module" src="./js/scope3.js"></script>
 </body>
 </html>

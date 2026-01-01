@@ -4,7 +4,7 @@ test.describe('Global privacy and footer copy', () => {
   test('privacy section reflects account stance', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Privacy & trust' })).toBeVisible();
-    await expect(page.getByText('Calculate without an account. Log in only to save Scope 1 or Scope 2 records.', { exact: true })).toBeVisible();
+    await expect(page.getByText('Calculate without an account. Log in only to save Scope 1, Scope 2, or Scope 3 records.', { exact: true })).toBeVisible();
   });
 
   test('footer states GHG alignment and contact', async ({ page }) => {

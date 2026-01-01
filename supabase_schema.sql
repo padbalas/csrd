@@ -94,3 +94,44 @@ create index if not exists scope2_records_user_created_idx
 
 alter table public.scope1_records
   add column if not exists site_id uuid null references public.company_sites(id) on delete restrict;
+
+create table if not exists public.scope3_records (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  company_id uuid not null references public.companies(id) on delete cascade,
+  period_year int not null,
+  spend_country text not null,
+  spend_region text not null,
+  spend_amount numeric not null check (spend_amount >= 0),
+  currency text not null,
+  category_id text not null,
+  category_label text not null,
+  vendor_name text null,
+  notes text null,
+  eio_sector text not null,
+  emission_factor_value numeric not null,
+  emission_factor_year int not null,
+  emission_factor_source text not null,
+  emission_factor_model text not null,
+  emission_factor_geo text not null,
+  emission_factor_currency text not null,
+  emissions numeric not null,
+  created_at timestamptz not null default now(),
+  constraint scope3_year_not_future check (
+    period_year <= date_part('year', now())::int
+  )
+);
+
+alter table public.scope3_records enable row level security;
+
+create policy "Scope3 records scoped to owner (select)" on public.scope3_records
+  for select using (auth.uid() = user_id);
+create policy "Scope3 records scoped to owner (insert)" on public.scope3_records
+  for insert with check (auth.uid() = user_id);
+create policy "Scope3 records scoped to owner (update)" on public.scope3_records
+  for update using (auth.uid() = user_id);
+create policy "Scope3 records scoped to owner (delete)" on public.scope3_records
+  for delete using (auth.uid() = user_id);
+
+create index if not exists scope3_records_user_created_idx
+  on public.scope3_records(user_id, created_at desc);
