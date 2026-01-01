@@ -800,19 +800,18 @@
       const marketKwh = parseFloat(marketKwhEl.value || '0');
       const marketYear = parseInt(marketYearEl.value || `${CURRENT_YEAR}`, 10);
 
-      if (!persona || !country || !month || !year || !kwh || kwh <= 0 || !region) {
-        alert('Please complete all fields to calculate.');
-        return;
-      }
-
+      const monthNumber = MONTHS.indexOf(month) + 1; // Jan=1..Dec=12
       // Validation to block future periods and distinguish current partial periods
       if (year > CURRENT_YEAR) {
         alert('Carbon emissions can only be calculated for past or current periods.');
         return;
       }
-      const monthNumber = MONTHS.indexOf(month) + 1; // Jan=1..Dec=12
       if (year === CURRENT_YEAR && monthNumber > CURRENT_MONTH) {
         alert('Future months are not supported. Please select a completed or current billing period.');
+        return;
+      }
+      if (!persona || !country || !month || !year || !kwh || kwh <= 0 || !region) {
+        alert('Please complete all fields to calculate.');
         return;
       }
 
