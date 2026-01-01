@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CarbonWise | My Records</title>
+  <title>CarbonWise | Scope 2 Records</title>
   <style>
     :root {
       --ink: #0f172a;
@@ -345,12 +345,13 @@
       <header>
         <div class="shell">
           <div class="top-row"></div>
-          <h1>My Records</h1>
+          <h1>Scope 2 Records</h1>
           <p class="subhead">Your saved emissions.</p>
         </div>
       </header>
 
       <div class="shell">
+    <p class="note" id="records-auth-note">Log in on the main page to view your records.</p>
     <section class="carbon-summary">
       <h2 style="margin:0;">Carbon Snapshot</h2>
       <div class="summary-grid">
@@ -487,6 +488,7 @@
     const exportStatus = document.getElementById('records-export-status');
     const addBtn = document.getElementById('records-add');
     const bulkBtn = document.getElementById('records-bulk');
+    const authNote = document.getElementById('records-auth-note');
     const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
     const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
 
@@ -600,7 +602,7 @@
     };
     const showMessage = (msg) => {
       if (!recordsTable) return;
-      recordsTable.innerHTML = `<tr><td colspan="7" style="color:#4b5563;">${msg}</td></tr>`;
+      recordsTable.innerHTML = `<tr><td colspan="3" style="color:#4b5563;">${msg}</td></tr>`;
     };
 
     // Initial render from any cached local data
@@ -623,9 +625,11 @@
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       if (!session) {
+        if (authNote) authNote.hidden = false;
         showMessage('Log in on the main page to view your records.');
         return;
       }
+      if (authNote) authNote.hidden = true;
       const { data, error } = await supabase
         .from('scope2_records')
         .select('id,period_year,period_month,kwh,location_based_emissions,market_based_emissions,emission_factor_source,emission_factor_year,emission_factor_value,calc_country,calc_region,market_instrument_type,covered_kwh,companies(company_name,country,region)')
