@@ -241,6 +241,7 @@
         if (saveBtn) saveBtn.disabled = true;
         return;
       }
+      const currentCountry = countryEl.value;
       if (appState.session && appState.sites.length) {
         const countries = Array.from(
           new Set(appState.sites.map((site) => site.country))
@@ -249,13 +250,19 @@
           return { value: country, label };
         });
         populateCountryOptions(countryEl, countries);
-        const selectedCountry = countryEl.value || countries[0]?.value || '';
+        const selectedCountry = countries.some((c) => c.value === currentCountry)
+          ? currentCountry
+          : (countryEl.value || countries[0]?.value || '');
         countryEl.value = selectedCountry;
         const siteMap = getSitesByCountry(appState.sites);
         const regions = (siteMap.get(selectedCountry) || []).map((site) => site.region);
         setRegionOptions(selectedCountry, regionEl, regions);
       } else {
         populateCountryOptions(countryEl, COUNTRY_OPTIONS);
+        const selectedCountry = COUNTRY_OPTIONS.some((c) => c.value === currentCountry)
+          ? currentCountry
+          : countryEl.value;
+        if (selectedCountry) countryEl.value = selectedCountry;
         setRegionOptions(countryEl.value, regionEl);
       }
       if (saveBtn) saveBtn.disabled = false;
@@ -270,6 +277,7 @@
         if (scope1SaveBtn) scope1SaveBtn.disabled = true;
         return;
       }
+      const currentCountry = scope1Country.value;
       if (appState.session && appState.sites.length) {
         const countries = Array.from(
           new Set(appState.sites.map((site) => site.country))
@@ -278,13 +286,19 @@
           return { value: country, label };
         });
         populateCountryOptions(scope1Country, countries);
-        const selectedCountry = scope1Country.value || countries[0]?.value || '';
+        const selectedCountry = countries.some((c) => c.value === currentCountry)
+          ? currentCountry
+          : (scope1Country.value || countries[0]?.value || '');
         scope1Country.value = selectedCountry;
         const siteMap = getSitesByCountry(appState.sites);
         const regions = (siteMap.get(selectedCountry) || []).map((site) => site.region);
         setRegionOptions(selectedCountry, scope1Region, regions);
       } else {
         populateCountryOptions(scope1Country, COUNTRY_OPTIONS);
+        const selectedCountry = COUNTRY_OPTIONS.some((c) => c.value === currentCountry)
+          ? currentCountry
+          : scope1Country.value;
+        if (selectedCountry) scope1Country.value = selectedCountry;
         setRegionOptions(scope1Country.value, scope1Region);
       }
       if (scope1SaveBtn) scope1SaveBtn.disabled = false;
