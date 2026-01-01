@@ -807,7 +807,9 @@
         return;
       }
       if (year === CURRENT_YEAR && monthNumber > CURRENT_MONTH) {
-        alert('Future months are not supported. Please select a completed or current billing period.');
+        setTimeout(() => {
+          alert('Future months are not supported. Please select a completed or current billing period.');
+        }, 0);
         return;
       }
       if (!persona || !country || !month || !year || !kwh || kwh <= 0 || !region) {
