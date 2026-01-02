@@ -389,12 +389,13 @@ const renderTable = (rows) => {
     tr.innerHTML = `
       <td>
         <div class="primary">${formatNumber(row.emissions || 0, 3)} tCO₂e</div>
-        <div class="secondary">${monthLabel} ${row.period_year || ''} · ${row.spend_country || '—'}${region} · ${methodLabel}</div>
+        <div class="secondary">${monthLabel} ${row.period_year || ''} · ${row.spend_country || '—'}${region}</div>
       </td>
       <td>
         <div class="primary">${row.category_label || '—'}</div>
         <div class="secondary">${spend}${vendor}</div>
       </td>
+      <td>${methodLabel}</td>
       <td class="actions">
         <button class="btn secondary" data-action="view" data-id="${row.id}">View</button>
       </td>
