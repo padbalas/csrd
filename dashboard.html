@@ -84,6 +84,7 @@
     h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 36px); letter-spacing: -0.01em; }
     p.muted { color: var(--muted); margin: 0 0 12px; }
     section { margin-top: 20px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; box-shadow: 0 12px 30px rgba(15,23,42,0.08); }
+    .dashboard-top { margin-top: 8px; }
     .controls { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; }
     label { font-weight: 600; display: block; margin-bottom: 6px; color: var(--muted); }
     select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--line); font-size: 1rem; background: #fff; }
@@ -156,15 +157,8 @@
       </nav>
     </aside>
     <div class="app-content">
-      <header>
-        <div class="shell">
-          <h1>Dashboard</h1>
-          <p class="muted">Company-wide snapshot of Scope 1 + Scope 2 emissions, with Scope 3 shown separately.</p>
-        </div>
-      </header>
-
       <div class="shell">
-        <section>
+        <section class="dashboard-top">
           <div class="controls">
             <div>
               <label for="dashboard-year">Reporting year</label>
