@@ -982,6 +982,33 @@
       </form>
     `;
 
+    const buildEditPanel = (record) => {
+      const period = `${record.period_year}-${String(record.period_month).padStart(2, '0')}`;
+      const region = `${record.calc_country || '—'}${record.calc_region ? ' / ' + record.calc_region : ''}`;
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
+          <div>
+            <div style="font-weight:700;font-size:1.05rem;">Edit Scope 2 record</div>
+            <div style="color:#4b5563;font-size:0.95rem;">${period} • ${region}</div>
+          </div>
+          <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
+        </div>
+        <form id="edit-record-form" class="panel-form">
+          <div class="panel-row single">
+            <label>
+              Electricity (kWh)
+              <input type="number" id="edit-kwh" min="1" step="any" value="${record.kwh ?? ''}" required />
+            </label>
+          </div>
+          <p class="panel-hint">Market-based details (instrument type and covered kWh) are kept as-is.</p>
+          <div class="panel-actions">
+            <button type="submit" class="btn primary">Save changes</button>
+          </div>
+          <p class="panel-status" id="edit-status"></p>
+        </form>
+      `;
+    };
+
     const openAddPanel = () => {
       openPanel(buildAddPanel());
       const form = recordPanel?.querySelector('#add-record-form');
@@ -1391,37 +1418,49 @@
         alert('Record not found.');
         return;
       }
-      const kwhInput = prompt('Update electricity (kWh):', record.kwh);
-      if (kwhInput === null) return;
-      const kwhVal = parseFloat(kwhInput);
-      if (!kwhVal || kwhVal <= 0) {
-        alert('Enter a valid kWh.');
-        return;
-      }
-      const factorVal = Number(record.emission_factor_value || 0);
-      const tonsLocation = kwhVal * factorVal;
-      const covered = Number(record.covered_kwh || 0);
-      const tonsMarket = record.market_based_emissions != null
-        ? Math.max(kwhVal - covered, 0) * factorVal
-        : null;
+      openPanel(buildEditPanel(record));
+      const form = recordPanel?.querySelector('#edit-record-form');
+      const kwhEl = recordPanel?.querySelector('#edit-kwh');
+      const statusEl = recordPanel?.querySelector('#edit-status');
+      if (!form || !kwhEl) return;
+      const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
 
-      if (supabase) {
-        const { error } = await supabase.from('scope2_records').update({
-          kwh: kwhVal,
-          location_based_emissions: tonsLocation,
-          market_based_emissions: tonsMarket,
-          covered_kwh: record.covered_kwh || null
-        }).eq('id', id);
-        if (error) {
-          alert('Save failed. Please try again.');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setStatus('');
+        const kwhVal = parseFloat(kwhEl.value);
+        if (!kwhVal || kwhVal <= 0) {
+          setStatus('Enter a valid kWh.');
           return;
         }
-      }
-      const updated = records.map((r) => String(r.id) === String(id) ? { ...r, kwh: kwhVal, location_based_emissions: tonsLocation, market_based_emissions: tonsMarket } : r);
-      if (window.saveRecords) window.saveRecords(updated);
-      if (window.renderRecords) window.renderRecords('recordsTable');
-      if (window.renderCarbonSummary) window.renderCarbonSummary();
-      if (window.renderCarbonReminders) window.renderCarbonReminders();
+        const factorVal = Number(record.emission_factor_value || 0);
+        const tonsLocation = kwhVal * factorVal;
+        const covered = Number(record.covered_kwh || 0);
+        const tonsMarket = record.market_based_emissions != null
+          ? Math.max(kwhVal - covered, 0) * factorVal
+          : null;
+
+        if (supabase) {
+          const { error } = await supabase.from('scope2_records').update({
+            kwh: kwhVal,
+            location_based_emissions: tonsLocation,
+            market_based_emissions: tonsMarket,
+            covered_kwh: record.covered_kwh || null
+          }).eq('id', id);
+          if (error) {
+            setStatus('Save failed. Please try again.');
+            return;
+          }
+        }
+        const updated = records.map((r) => String(r.id) === String(id)
+          ? { ...r, kwh: kwhVal, location_based_emissions: tonsLocation, market_based_emissions: tonsMarket }
+          : r);
+        if (window.saveRecords) window.saveRecords(updated);
+        if (window.renderRecords) window.renderRecords('recordsTable');
+        if (window.renderCarbonSummary) window.renderCarbonSummary();
+        if (window.renderCarbonReminders) window.renderCarbonReminders();
+        closePanel();
+      });
     };
 
     const attachHandlers = () => {

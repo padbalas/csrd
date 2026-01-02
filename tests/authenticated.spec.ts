@@ -80,6 +80,38 @@ test.describe('Authenticated flows', () => {
     expect(content).toMatch(/\r\n/); // CRLF line endings
   });
 
+  test('scope 1 edit uses in-panel form (no prompts)', async ({ page }) => {
+    await page.goto('/scope1.html');
+    if (isLandingPage(page.url())) {
+      test.skip(true, 'Auth state missing for scope 1 page');
+    }
+    const viewBtn = page.getByRole('button', { name: 'View' });
+    if ((await viewBtn.count()) === 0) test.skip(true, 'No Scope 1 records available to view');
+    page.on('dialog', () => {
+      throw new Error('Unexpected dialog opened');
+    });
+    await viewBtn.first().click();
+    await expect(page.locator('#scope1Panel')).toBeVisible();
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await expect(page.locator('#scope1Panel').locator('#edit-quantity')).toBeVisible();
+  });
+
+  test('scope 2 edit uses in-panel form (no prompts)', async ({ page }) => {
+    await page.goto('/records.html');
+    if (isLandingPage(page.url())) {
+      test.skip(true, 'Auth state missing for records page');
+    }
+    const viewBtn = page.getByRole('button', { name: 'View' });
+    if ((await viewBtn.count()) === 0) test.skip(true, 'No Scope 2 records available to view');
+    page.on('dialog', () => {
+      throw new Error('Unexpected dialog opened');
+    });
+    await viewBtn.first().click();
+    await expect(page.locator('#recordPanel')).toBeVisible();
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await expect(page.locator('#recordPanel').locator('#edit-kwh')).toBeVisible();
+  });
+
   test('scope 3 record panel shows edit and delete actions', async ({ page }) => {
     await page.goto('/scope3.html');
     if (isLandingPage(page.url())) {
@@ -92,6 +124,22 @@ test.describe('Authenticated flows', () => {
     await expect(panel).toBeVisible();
     await expect(panel.getByRole('button', { name: 'Edit' })).toBeVisible();
     await expect(panel.getByRole('button', { name: 'Delete' })).toBeVisible();
+  });
+
+  test('scope 3 edit uses in-panel form (no prompts)', async ({ page }) => {
+    await page.goto('/scope3.html');
+    if (isLandingPage(page.url())) {
+      test.skip(true, 'Auth state missing for scope 3 page');
+    }
+    const viewBtn = page.getByRole('button', { name: 'View' });
+    if ((await viewBtn.count()) === 0) test.skip(true, 'No Scope 3 records available to view');
+    page.on('dialog', () => {
+      throw new Error('Unexpected dialog opened');
+    });
+    await viewBtn.first().click();
+    await expect(page.locator('#scope3Panel')).toBeVisible();
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await expect(page.locator('#scope3Panel').locator('#edit-year')).toBeVisible();
   });
 
   test('exports page CSV includes disclosure line', async ({ page }) => {

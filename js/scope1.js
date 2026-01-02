@@ -608,6 +608,44 @@ const buildRecordDetails = (record) => {
   `;
 };
 
+const buildEditPanel = (record) => {
+  const period = `${record.period_year}-${String(record.period_month).padStart(2, '0')}`;
+  const location = `${record.country || '—'}${record.region ? ' / ' + record.region : ''}`;
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
+      <div>
+        <div style="font-weight:700;font-size:1.05rem;">Edit Scope 1 record</div>
+        <div style="color:#4b5563;font-size:0.95rem;">${period} • ${location}</div>
+      </div>
+      <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
+    </div>
+    <form id="edit-scope1-form" class="panel-form">
+      <div class="panel-row">
+        <label>
+          Quantity
+          <input type="number" id="edit-quantity" min="0" step="any" value="${record.quantity ?? ''}" required />
+        </label>
+        <label>
+          Unit
+          <select id="edit-unit" disabled>
+            <option value="${record.unit || ''}">${UNIT_LABELS[record.unit] || record.unit || '—'}</option>
+          </select>
+        </label>
+      </div>
+      <div class="panel-row single">
+        <label>
+          Notes (optional)
+          <input type="text" id="edit-notes" maxlength="240" value="${record.notes || ''}" />
+        </label>
+      </div>
+      <div class="panel-actions">
+        <button type="submit" class="btn primary">Save changes</button>
+      </div>
+      <p class="panel-status" id="edit-status"></p>
+    </form>
+  `;
+};
+
 const openRecordPanel = (recordId) => {
   const record = records.find((r) => String(r.id) === String(recordId));
   if (!record) return;
@@ -623,31 +661,40 @@ const openRecordPanel = (recordId) => {
 };
 
 const handleEditRecord = async (record) => {
-  const quantityInput = prompt('Update natural gas quantity:', record.quantity);
-  if (quantityInput === null) return;
-  const quantity = Number(quantityInput);
-  if (!Number.isFinite(quantity) || quantity < 0) {
-    alert('Enter a valid quantity.');
-    return;
-  }
-  const notesInput = prompt('Update notes (optional):', record.notes || '');
-  if (notesInput === null) return;
-  const factorValue = Number(record.factor_value || 0);
-  const emissions = quantity * factorValue;
-  const { error } = await supabase
-    .from('scope1_records')
-    .update({
-      quantity,
-      notes: String(notesInput || '').trim().slice(0, 240) || null,
-      emissions
-    })
-    .eq('id', record.id);
-  if (error) {
-    alert('Save failed. Please try again.');
-    return;
-  }
-  await loadData();
-  closePanel();
+  openPanel(buildEditPanel(record));
+  const form = panel?.querySelector('#edit-scope1-form');
+  const quantityEl = panel?.querySelector('#edit-quantity');
+  const notesEl = panel?.querySelector('#edit-notes');
+  const statusEl = panel?.querySelector('#edit-status');
+  if (!form || !quantityEl) return;
+
+  const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setStatus('');
+    const quantity = Number(quantityEl.value);
+    if (!Number.isFinite(quantity) || quantity < 0) {
+      setStatus('Enter a valid quantity.');
+      return;
+    }
+    const notes = String(notesEl?.value || '').trim().slice(0, 240) || null;
+    const factorValue = Number(record.factor_value || 0);
+    const emissions = quantity * factorValue;
+    const { error } = await supabase
+      .from('scope1_records')
+      .update({
+        quantity,
+        notes,
+        emissions
+      })
+      .eq('id', record.id);
+    if (error) {
+      setStatus('Save failed. Please try again.');
+      return;
+    }
+    await loadData();
+    closePanel();
+  });
 };
 
 const handleDeleteRecord = async (record) => {

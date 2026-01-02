@@ -450,6 +450,82 @@ const buildRecordDetails = (record) => {
   `;
 };
 
+const buildEditPanel = (record) => {
+  const methodLabel = record.calculation_method === 'actual' ? 'Vendor-reported actuals' : 'Spend-based (EIO)';
+  const monthLabel = record.period_month ? MONTHS[record.period_month - 1] : '';
+  const currencyLabel = record.currency || '';
+  const spendRow = record.calculation_method === 'actual'
+    ? ''
+    : `
+      <div class="panel-row">
+        <label>
+          Spend amount
+          <input type="number" id="edit-spend" min="0" step="any" value="${record.spend_amount ?? ''}" />
+        </label>
+        <label>
+          Currency
+          <select id="edit-currency" disabled>
+            <option value="${currencyLabel}">${currencyLabel || '—'}</option>
+          </select>
+        </label>
+      </div>
+    `;
+  const actualRow = record.calculation_method === 'actual'
+    ? `
+      <div class="panel-row">
+        <label>
+          Emissions (tCO2e)
+          <input type="number" id="edit-emissions" min="0" step="any" value="${record.emissions ?? ''}" />
+        </label>
+        <label>
+          Emissions source (optional)
+          <input type="text" id="edit-emissions-source" maxlength="160" value="${record.emissions_source || ''}" />
+        </label>
+      </div>
+    `
+    : '';
+
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
+      <div>
+        <div style="font-weight:700;font-size:1.05rem;">Edit Scope 3 record</div>
+        <div style="color:#4b5563;font-size:0.95rem;">${methodLabel} · ${record.category_label || '—'}</div>
+      </div>
+      <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
+    </div>
+    <form id="edit-scope3-form" class="panel-form">
+      <div class="panel-row">
+        <label>
+          Reporting year
+          <select id="edit-year" required></select>
+        </label>
+        <label>
+          Reporting month
+          <select id="edit-month" required></select>
+        </label>
+      </div>
+      ${spendRow}
+      ${actualRow}
+      <div class="panel-row single">
+        <label>
+          Vendor name (optional)
+          <input type="text" id="edit-vendor" maxlength="120" value="${record.vendor_name || ''}" />
+        </label>
+      </div>
+      <div class="panel-row single">
+        <label>
+          Notes (optional)
+          <input type="text" id="edit-notes" maxlength="240" value="${record.notes || ''}" />
+        </label>
+      </div>
+      <div class="panel-actions">
+        <button type="submit" class="btn primary">Save changes</button>
+      </div>
+      <p class="panel-status" id="edit-status"></p>
+    </form>
+  `;
+};
+
 const openRecordPanel = (recordId) => {
   const record = records.find((r) => String(r.id) === String(recordId));
   if (!record) return;
@@ -465,73 +541,94 @@ const openRecordPanel = (recordId) => {
 };
 
 const handleEditRecord = async (record) => {
-  const vendorInput = prompt('Update vendor name (optional):', record.vendor_name || '');
-  if (vendorInput === null) return;
-  const notesInput = prompt('Update notes (optional):', record.notes || '');
-  if (notesInput === null) return;
+  openPanel(buildEditPanel(record));
+  const form = panel?.querySelector('#edit-scope3-form');
+  const yearEl = panel?.querySelector('#edit-year');
+  const monthEl = panel?.querySelector('#edit-month');
+  const spendEl = panel?.querySelector('#edit-spend');
+  const emissionsEl = panel?.querySelector('#edit-emissions');
+  const emissionsSourceEl = panel?.querySelector('#edit-emissions-source');
+  const vendorEl = panel?.querySelector('#edit-vendor');
+  const notesEl = panel?.querySelector('#edit-notes');
+  const statusEl = panel?.querySelector('#edit-status');
 
-  if (record.calculation_method === 'actual') {
-    const emissionsInput = prompt('Update emissions (tCO2e):', record.emissions);
-    if (emissionsInput === null) return;
-    const emissions = Number(emissionsInput);
-    if (!Number.isFinite(emissions) || emissions < 0) {
-      alert('Enter a valid emissions value (>= 0).');
+  if (!form || !yearEl || !monthEl) return;
+  populateYears(yearEl);
+  populateMonths(monthEl);
+  yearEl.value = String(record.period_year || '');
+  monthEl.value = record.period_month ? String(record.period_month) : '';
+
+  const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setStatus('');
+    const year = parseInt(yearEl.value, 10);
+    const month = parseInt(monthEl.value, 10);
+    if (!year || !month) {
+      setStatus('Select a valid year and month.');
       return;
     }
-    const sourceInput = prompt('Update emissions source (optional):', record.emissions_source || '');
-    if (sourceInput === null) return;
-    const { error } = await supabase
-      .from('scope3_records')
-      .update({
-        emissions,
-        emissions_source: String(sourceInput || '').trim().slice(0, 160) || null,
-        vendor_name: String(vendorInput || '').trim().slice(0, 120) || null,
-        notes: String(notesInput || '').trim().slice(0, 240) || null
-      })
-      .eq('id', record.id);
-    if (error) {
-      alert('Save failed. Please try again.');
+    if (year > CURRENT_YEAR || (year === CURRENT_YEAR && month > CURRENT_MONTH)) {
+      setStatus('Future months are not allowed.');
       return;
     }
+
+    const vendor = String(vendorEl?.value || '').trim().slice(0, 120) || null;
+    const notes = String(notesEl?.value || '').trim().slice(0, 240) || null;
+
+    if (record.calculation_method === 'actual') {
+      const emissions = Number(emissionsEl?.value || '');
+      if (!Number.isFinite(emissions) || emissions < 0) {
+        setStatus('Enter a valid emissions value (tCO2e >= 0).');
+        return;
+      }
+      const emissionsSource = String(emissionsSourceEl?.value || '').trim().slice(0, 160) || null;
+      const { error } = await supabase
+        .from('scope3_records')
+        .update({
+          period_year: year,
+          period_month: month,
+          emissions,
+          emissions_source: emissionsSource,
+          vendor_name: vendor,
+          notes
+        })
+        .eq('id', record.id);
+      if (error) {
+        setStatus('Save failed. Please try again.');
+        return;
+      }
+    } else {
+      const spend = Number(spendEl?.value || '');
+      if (!Number.isFinite(spend) || spend < 0) {
+        setStatus('Enter a valid spend amount (>= 0).');
+        return;
+      }
+      const factorValue = Number(record.emission_factor_value || 0);
+      const emissions = factorValue ? spend * factorValue : spend;
+      const { error } = await supabase
+        .from('scope3_records')
+        .update({
+          period_year: year,
+          period_month: month,
+          spend_amount: spend,
+          emissions,
+          vendor_name: vendor,
+          notes
+        })
+        .eq('id', record.id);
+      if (error) {
+        setStatus('Save failed. Please try again.');
+        return;
+      }
+    }
+
     await loadData();
     panel?.classList.remove('active');
     panel?.classList.add('hidden');
     if (panel) panel.innerHTML = '';
-    return;
-  }
-
-  const spendInput = prompt('Update spend amount:', record.spend_amount);
-  if (spendInput === null) return;
-  const spend = Number(spendInput);
-  if (!Number.isFinite(spend) || spend < 0) {
-    alert('Enter a valid spend amount (>= 0).');
-    return;
-  }
-
-  const set = getFactorSet(record.spend_country || companyCountry);
-  const category = set?.categories.find((c) => c.id === record.category_id);
-  if (!set || !category) {
-    alert('Category data not found.');
-    return;
-  }
-  const emissions = spend * category.factor;
-  const { error } = await supabase
-    .from('scope3_records')
-    .update({
-      spend_amount: spend,
-      vendor_name: String(vendorInput || '').trim().slice(0, 120) || null,
-      notes: String(notesInput || '').trim().slice(0, 240) || null,
-      emissions
-    })
-    .eq('id', record.id);
-  if (error) {
-    alert('Save failed. Please try again.');
-    return;
-  }
-  await loadData();
-  panel?.classList.remove('active');
-  panel?.classList.add('hidden');
-  if (panel) panel.innerHTML = '';
+  });
 };
 
 const handleDeleteRecord = async (record) => {
