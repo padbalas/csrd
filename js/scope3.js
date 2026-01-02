@@ -55,6 +55,10 @@ const filterYear = document.getElementById('filterYear');
 const filterCategory = document.getElementById('filterCategory');
 const filterCountry = document.getElementById('filterCountry');
 const filterRegion = document.getElementById('filterRegion');
+const totalEl = document.getElementById('scope3Total');
+const avgEl = document.getElementById('scope3Avg');
+const topEl = document.getElementById('scope3TopCategory');
+const countEl = document.getElementById('scope3Count');
 
 let records = [];
 let reportingYearPreference = 'all';
@@ -215,6 +219,145 @@ const applyFilters = (rows) => {
   });
 };
 
+const renderSummary = (rows) => {
+  if (!totalEl || !avgEl || !topEl || !countEl) return;
+  if (!rows.length) {
+    totalEl.textContent = '—';
+    avgEl.textContent = '—';
+    topEl.textContent = '—';
+    countEl.textContent = '—';
+    return;
+  }
+
+  let total = 0;
+  const categories = {};
+  const months = new Set();
+
+  rows.forEach((r) => {
+    const val = Number(r.emissions || 0);
+    total += val;
+    const label = r.category_label || '—';
+    categories[label] = (categories[label] || 0) + val;
+    months.add(`${r.period_year}-${String(r.period_month).padStart(2, '0')}`);
+  });
+
+  const topEntry = Object.entries(categories).sort((a, b) => b[1] - a[1])[0];
+  totalEl.textContent = total.toFixed(3);
+  avgEl.textContent = months.size ? (total / months.size).toFixed(3) : total.toFixed(3);
+  topEl.textContent = topEntry ? `${topEntry[0]} (${topEntry[1].toFixed(3)})` : '—';
+  countEl.textContent = months.size;
+};
+
+const renderReminders = (rows) => {
+  const listEl = document.getElementById('scope3ReminderList');
+  if (!listEl) return;
+  const reminders = [];
+
+  if (!rows.length) {
+    listEl.innerHTML = '<li class="placeholder">All looks good. No reminders right now.</li>';
+    return;
+  }
+
+  const filterYearVal = filterYear?.value || '';
+  const filterCountryVal = filterCountry?.value || '';
+  const filterRegionVal = filterRegion?.value || '';
+  const filterRegionLabel = filterCountryVal && filterRegionVal
+    ? `${filterCountryVal} / ${filterRegionVal}`
+    : '';
+  const targetYear = filterYearVal
+    ? parseInt(filterYearVal, 10)
+    : reportingYearPreference === 'current'
+      ? CURRENT_YEAR
+      : reportingYearPreference === 'previous'
+        ? CURRENT_YEAR - 1
+        : null;
+
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const formatMissingRanges = (months, year, regionLabel) => {
+    const sorted = Array.from(new Set(months)).sort((a, b) => a - b);
+    let start = null;
+    let prev = null;
+    const ranges = [];
+    sorted.forEach((m) => {
+      if (start === null) {
+        start = m;
+        prev = m;
+        return;
+      }
+      if (m === prev + 1) {
+        prev = m;
+        return;
+      }
+      ranges.push([start, prev]);
+      start = m;
+      prev = m;
+    });
+    if (start !== null) ranges.push([start, prev]);
+    ranges.forEach(([s, e]) => {
+      const rangeLabel = s === e ? `${monthNames[s - 1]} ${year}` : `${monthNames[s - 1]}–${monthNames[e - 1]} ${year}`;
+      reminders.push({ type: 'missing', text: `Missing ${rangeLabel} (${regionLabel}).` });
+    });
+  };
+
+  if (targetYear) {
+    const regionsPresent = Array.from(
+      new Set(rows.map((r) => `${r.spend_country || '—'}${r.spend_region ? ' / ' + r.spend_region : ''}`))
+    ).filter(Boolean);
+    const regionsForCountry = filterCountryVal
+      ? regionsPresent.filter((label) => label.startsWith(`${filterCountryVal} / `))
+      : [];
+    const regionList = filterRegionLabel
+      ? [filterRegionLabel]
+      : filterCountryVal
+        ? regionsForCountry
+        : regionsPresent;
+    const now = new Date();
+    regionList.forEach((regionLabel) => {
+      const seen = new Set(
+        rows
+          .filter((r) => `${r.spend_country || '—'}${r.spend_region ? ' / ' + r.spend_region : ''}` === regionLabel)
+          .filter((r) => String(r.period_year) === String(targetYear))
+          .map((r) => `${r.period_year}-${String(r.period_month).padStart(2, '0')}`)
+      );
+      const maxMonth = targetYear === CURRENT_YEAR ? now.getMonth() + 1 : 12;
+      const missing = [];
+      for (let m = 1; m <= maxMonth; m += 1) {
+        const key = `${targetYear}-${String(m).padStart(2, '0')}`;
+        if (!seen.has(key)) missing.push(m);
+      }
+      if (missing.length) formatMissingRanges(missing, targetYear, regionLabel);
+    });
+  }
+
+  let total = 0;
+  const categories = {};
+  rows.forEach((r) => {
+    const val = Number(r.emissions || 0);
+    total += val;
+    const categoryLabel = r.category_label || '—';
+    categories[categoryLabel] = (categories[categoryLabel] || 0) + val;
+  });
+  if (total > 0 && Object.keys(categories).length > 1) {
+    Object.entries(categories).forEach(([category, val]) => {
+      const share = val / total;
+      if (share > 0.3) {
+        reminders.push({ type: 'category', text: `${category} contributes ${ (share * 100).toFixed(0) }% of your Scope 3 screening emissions.` });
+      }
+    });
+  }
+
+  listEl.innerHTML = '';
+  if (!reminders.length) {
+    listEl.innerHTML = '<li class="placeholder">All looks good. No reminders right now.</li>';
+    return;
+  }
+  reminders.forEach((r) => {
+    const li = document.createElement('li');
+    li.textContent = r.text;
+    listEl.appendChild(li);
+  });
+};
+
 const showMessage = (msg) => {
   if (!scope3Table) return;
   scope3Table.innerHTML = `<tr><td colspan="3" style="color:#4b5563;">${msg}</td></tr>`;
@@ -250,6 +393,8 @@ const refreshView = () => {
   populateFilters(records);
   applyDefaultFilters();
   const filtered = applyFilters(records);
+  renderSummary(filtered);
+  renderReminders(filtered);
   renderTable(filtered);
 };
 

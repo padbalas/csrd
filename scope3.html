@@ -221,6 +221,16 @@
     .records-actions { display: flex; align-items: center; gap: 8px; }
     .records-status { color: var(--muted); font-size: 0.9rem; }
     .note { color: var(--muted); font-size: 0.9rem; }
+    .summary-block { margin-top: 10px; }
+    .summary-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 12px; }
+    .summary-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; box-shadow: 0 12px 30px rgba(15,23,42,0.08); }
+    .summary-card .label { color: var(--muted); font-size: 0.95rem; }
+    .summary-card .value { font-weight: 800; font-size: 1.3rem; margin-top: 6px; }
+    .summary-card .unit { color: var(--muted); font-size: 0.9rem; }
+    .carbon-reminders { margin-top: 16px; }
+    .reminder-list { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    .reminder-list li { margin-bottom: 6px; }
+    .reminder-list .placeholder { list-style: none; padding-left: 0; }
     .records-filters .records-actions { margin-left: auto; }
     .panel-form {
       display: grid;
@@ -319,16 +329,39 @@
       </nav>
     </aside>
     <div class="app-content">
-      <header>
-        <div class="shell">
-          <div class="pill">Scope 3 Screening</div>
-          <h1>Scope 3 (Estimated — Spend-based)</h1>
-          <p class="subhead">Screening-level, spend-based Scope 3 estimates using EIO factors. Built for prioritization, not audits.</p>
-          <p class="note">Scope 3 covers value-chain emissions from suppliers and services outside your operations. This page estimates them from spend categories.</p>
-        </div>
-      </header>
-
       <div class="shell">
+        <section class="summary-block">
+          <h2 style="margin:0;">Scope 3 Carbon Snapshot</h2>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="label">Total Scope 3</div>
+              <div class="value" id="scope3Total">—</div>
+              <div class="unit">tCO2e</div>
+            </div>
+            <div class="summary-card">
+              <div class="label">Average per month</div>
+              <div class="value" id="scope3Avg">—</div>
+              <div class="unit">tCO2e</div>
+            </div>
+            <div class="summary-card">
+              <div class="label">Top category</div>
+              <div class="value" id="scope3TopCategory">—</div>
+            </div>
+            <div class="summary-card">
+              <div class="label">Coverage (months with records)</div>
+              <div class="value" id="scope3Count">—</div>
+              <div class="unit">months</div>
+            </div>
+          </div>
+          <p class="note">Screening-level estimates only; not included in Scope 1 + Scope 2 totals. <a href="methodology.html#scope-3">See Methodology</a>.</p>
+        </section>
+        <section class="carbon-reminders">
+          <h3>Insights & Reminders</h3>
+          <ul id="scope3ReminderList" class="reminder-list">
+            <li class="placeholder">Loading insights…</li>
+          </ul>
+        </section>
+
         <section>
           <h2>Screening boundaries</h2>
           <p class="muted">Only five categories are supported in v1. This avoids low-confidence or supplier-specific Scope 3 modeling.</p>
@@ -340,7 +373,7 @@
 
         <section>
           <div class="records-controls">
-            <h2 style="margin:0;">Scope 3 records</h2>
+            <h2 style="margin:0;">Saved Scope 3 records</h2>
             <div class="records-actions">
               <button class="btn secondary" id="scope3-export-csv" type="button">Export CSV</button>
               <span class="records-status" id="scope3-export-status"></span>

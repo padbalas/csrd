@@ -253,6 +253,121 @@ const renderSummary = (rows) => {
   countEl.textContent = months.size;
 };
 
+const computeReminders = (rows) => {
+  const list = [];
+  if (!rows.length) return list;
+
+  const filterYearVal = filterYear?.value || '';
+  const filterCountryVal = filterCountry?.value || '';
+  const filterRegionVal = filterRegion?.value || '';
+  const filterRegionLabel = filterCountryVal && filterRegionVal
+    ? `${filterCountryVal} / ${filterRegionVal}`
+    : '';
+  const pref = companyDefaults?.reportingYear || 'all';
+  const targetYear = filterYearVal
+    ? parseInt(filterYearVal, 10)
+    : pref === 'current'
+      ? CURRENT_YEAR
+      : pref === 'previous'
+        ? CURRENT_YEAR - 1
+        : null;
+
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const formatMissingRanges = (months, year, regionLabel) => {
+    const sorted = Array.from(new Set(months)).sort((a, b) => a - b);
+    let start = null;
+    let prev = null;
+    const ranges = [];
+    sorted.forEach((m) => {
+      if (start === null) {
+        start = m;
+        prev = m;
+        return;
+      }
+      if (m === prev + 1) {
+        prev = m;
+        return;
+      }
+      ranges.push([start, prev]);
+      start = m;
+      prev = m;
+    });
+    if (start !== null) ranges.push([start, prev]);
+    ranges.forEach(([s, e]) => {
+      const rangeLabel = s === e ? `${monthNames[s - 1]} ${year}` : `${monthNames[s - 1]}–${monthNames[e - 1]} ${year}`;
+      list.push({ type: 'missing', text: `Missing ${rangeLabel} (${regionLabel}).` });
+    });
+  };
+
+  if (targetYear) {
+    const regionsPresent = Array.from(
+      new Set(rows.map((r) => `${r.country || '—'}${r.region ? ' / ' + r.region : ''}`))
+    ).filter(Boolean);
+    const regionsForCountry = filterCountryVal
+      ? regionsPresent.filter((label) => label.startsWith(`${filterCountryVal} / `))
+      : [];
+    const regionList = filterRegionLabel
+      ? [filterRegionLabel]
+      : filterCountryVal
+        ? regionsForCountry
+        : regionsPresent;
+    const now = new Date();
+    regionList.forEach((regionLabel) => {
+      const seen = new Set(
+        rows
+          .filter((r) => `${r.country || '—'}${r.region ? ' / ' + r.region : ''}` === regionLabel)
+          .filter((r) => String(r.period_year) === String(targetYear))
+          .map((r) => `${r.period_year}-${String(r.period_month).padStart(2, '0')}`)
+      );
+      const maxMonth = targetYear === CURRENT_YEAR ? now.getMonth() + 1 : 12;
+      const missing = [];
+      for (let m = 1; m <= maxMonth; m += 1) {
+        const key = `${targetYear}-${String(m).padStart(2, '0')}`;
+        if (!seen.has(key)) missing.push(m);
+      }
+      if (missing.length) formatMissingRanges(missing, targetYear, regionLabel);
+    });
+  }
+
+  let total = 0;
+  const regions = {};
+  rows.forEach((r) => {
+    const val = Number(r.emissions || 0);
+    total += val;
+    const regionLabel = `${r.country || '—'}${r.region ? ' / ' + r.region : ''}`;
+    regions[regionLabel] = (regions[regionLabel] || 0) + val;
+  });
+  if (total > 0) {
+    Object.entries(regions).forEach(([region, val]) => {
+      const share = val / total;
+      if (share > 0.3) {
+        list.push({ type: 'region', text: `${region} contributes ${ (share * 100).toFixed(0) }% of your Scope 1 emissions.` });
+      }
+    });
+  }
+
+  return list;
+};
+
+const renderReminders = (rows) => {
+  const listEl = document.getElementById('scope1ReminderList');
+  if (!listEl) return;
+  const reminders = computeReminders(rows);
+  listEl.innerHTML = '';
+  if (!reminders.length) {
+    const li = document.createElement('li');
+    li.className = 'placeholder';
+    li.textContent = 'All looks good. No reminders right now.';
+    listEl.appendChild(li);
+    return;
+  }
+  reminders.forEach((r) => {
+    const li = document.createElement('li');
+    li.textContent = r.text;
+    listEl.appendChild(li);
+  });
+};
+
 const renderTable = (rows) => {
   if (!scope1Table) return;
   scope1Table.innerHTML = '';
@@ -285,6 +400,7 @@ const refreshView = () => {
   const filtered = applyFilters(records);
   renderTable(filtered);
   renderSummary(filtered);
+  renderReminders(filtered);
 };
 
 const setExportStatus = (msg) => { if (exportStatus) exportStatus.textContent = msg; };

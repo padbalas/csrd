@@ -196,6 +196,10 @@
     .summary-card .label { color: var(--muted); font-size: 0.95rem; }
     .summary-card .value { font-weight: 800; font-size: 1.3rem; margin-top: 6px; }
     .summary-card .unit { color: var(--muted); font-size: 0.9rem; }
+    .carbon-reminders { margin-top: 16px; }
+    .reminder-list { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    .reminder-list li { margin-bottom: 6px; }
+    .reminder-list .placeholder { list-style: none; padding-left: 0; }
     .records-controls {
       display: flex;
       align-items: center;
@@ -350,17 +354,9 @@
       </nav>
     </aside>
     <div class="app-content">
-      <header>
-        <div class="shell">
-          <h1>Scope 1 Records</h1>
-          <p class="subhead">Natural gas entries saved for reporting and exports.</p>
-          <p class="note">Scope 1 is fuel you burn on site (like natural gas boilers or heaters), not electricity or supplier emissions.</p>
-        </div>
-      </header>
-
       <div class="shell">
         <section class="summary-block">
-          <h2 style="margin:0;">Scope 1 Snapshot</h2>
+          <h2 style="margin:0;">Scope 1 Carbon Snapshot</h2>
           <div class="summary-grid">
             <div class="summary-card">
               <div class="label">Total Scope 1</div>
@@ -383,6 +379,12 @@
             </div>
           </div>
           <p class="note">Scope 1 estimates are based on user-provided fuel data. <a href="methodology.html#scope-1">See Methodology</a>.</p>
+        </section>
+        <section class="carbon-reminders">
+          <h3>Insights & Reminders</h3>
+          <ul id="scope1ReminderList" class="reminder-list">
+            <li class="placeholder">Loading insights…</li>
+          </ul>
         </section>
 
         <section>
