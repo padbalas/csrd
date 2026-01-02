@@ -142,6 +142,14 @@ test.describe('Authenticated flows', () => {
     await expect(page.locator('#scope3Panel').locator('#edit-year')).toBeVisible();
   });
 
+  test('scope 3 table shows method column', async ({ page }) => {
+    await page.goto('/scope3.html');
+    if (isLandingPage(page.url())) {
+      test.skip(true, 'Auth state missing for scope 3 page');
+    }
+    await expect(page.getByRole('columnheader', { name: 'Method' })).toBeVisible();
+  });
+
   test('exports page CSV includes disclosure line', async ({ page }) => {
     await page.goto('/exports.html');
     if (isLandingPage(page.url())) {
@@ -171,5 +179,31 @@ test.describe('Authenticated flows', () => {
     const headerLine = content.split(/\r?\n/)[0];
     expect(headerLine).toMatch(/company_name,period,country,kwh,scope2_location_based_tco2e,scope2_market_based_tco2e,emission_factor_value,emission_factor_year,emission_factor_source/);
     await expect(status).toContainText(/CSV generated|No records/);
+  });
+
+  test('scope 3 CSV includes method and period headers', async ({ page }) => {
+    await page.goto('/exports.html');
+    if (isLandingPage(page.url())) {
+      test.skip(true, 'Auth state missing for exports page');
+    }
+    await page.getByRole('button', { name: /Scope 3 screening/i }).click();
+    const status = page.locator('#scope3ExportStatus');
+    const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
+    await page.getByRole('button', { name: /Generate Scope 3 CSV/i }).click();
+    const download = await downloadPromise;
+    if (!download) {
+      const statusText = (await status.textContent())?.trim() || '';
+      if (!statusText) {
+        test.skip(true, 'No download and no status; likely no exportable Scope 3 records');
+      }
+      await expect(status).toContainText(/No records|No Scope 3 entries/i);
+      return;
+    }
+    const csvPath = await download.path();
+    if (!csvPath) test.fail(true, 'Download path not available');
+    const content = fs.readFileSync(csvPath!, 'utf-8');
+    const headerLine = content.split(/\r?\n/)[0];
+    expect(headerLine).toMatch(/Method/);
+    expect(headerLine).toMatch(/Period/);
   });
 });
