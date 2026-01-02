@@ -100,6 +100,7 @@ create table if not exists public.scope3_records (
   user_id uuid not null references auth.users(id) on delete cascade,
   company_id uuid not null references public.companies(id) on delete cascade,
   period_year int not null,
+  period_month int null,
   spend_country text not null,
   spend_region text not null,
   spend_amount numeric null check (spend_amount >= 0),
@@ -121,12 +122,16 @@ create table if not exists public.scope3_records (
   created_at timestamptz not null default now(),
   constraint scope3_year_not_future check (
     period_year <= date_part('year', now())::int
+  ),
+  constraint scope3_month_valid check (
+    period_month is null or (period_month between 1 and 12)
   )
 );
 
 alter table public.scope3_records
   add column if not exists emissions_source text null,
-  add column if not exists calculation_method text not null default 'eio';
+  add column if not exists calculation_method text not null default 'eio',
+  add column if not exists period_month int null;
 
 alter table public.scope3_records
   alter column spend_amount drop not null,
@@ -138,6 +143,19 @@ alter table public.scope3_records
   alter column emission_factor_model drop not null,
   alter column emission_factor_geo drop not null,
   alter column emission_factor_currency drop not null;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'scope3_month_valid'
+  ) then
+    alter table public.scope3_records
+      add constraint scope3_month_valid
+      check (period_month is null or (period_month between 1 and 12));
+  end if;
+end $$;
 
 alter table public.scope3_records enable row level security;
 

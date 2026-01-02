@@ -7,6 +7,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const TODAY = new Date();
 const CURRENT_YEAR = TODAY.getFullYear();
+const CURRENT_MONTH = TODAY.getMonth() + 1;
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const COUNTRY_OPTIONS = [
   { value: 'US', label: 'United States' },
   { value: 'CA', label: 'Canada' },
@@ -111,7 +113,7 @@ const loadCompanyPreference = async () => {
 const fetchRecords = async () => {
   const { data, error } = await supabase
     .from('scope3_records')
-    .select('id,period_year,spend_country,spend_region,spend_amount,currency,category_id,category_label,vendor_name,notes,eio_sector,emission_factor_value,emission_factor_year,emission_factor_source,emission_factor_model,emission_factor_geo,emission_factor_currency,emissions,emissions_source,calculation_method,created_at')
+    .select('id,period_year,period_month,spend_country,spend_region,spend_amount,currency,category_id,category_label,vendor_name,notes,eio_sector,emission_factor_value,emission_factor_year,emission_factor_source,emission_factor_model,emission_factor_geo,emission_factor_currency,emissions,emissions_source,calculation_method,created_at')
     .order('period_year', { ascending: false })
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -242,7 +244,9 @@ const renderSummary = (rows) => {
     total += val;
     const label = r.category_label || '—';
     categories[label] = (categories[label] || 0) + val;
-    months.add(`${r.period_year}-${String(r.period_month).padStart(2, '0')}`);
+    if (r.period_month) {
+      months.add(`${r.period_year}-${String(r.period_month).padStart(2, '0')}`);
+    }
   });
 
   const topEntry = Object.entries(categories).sort((a, b) => b[1] - a[1])[0];
@@ -321,6 +325,7 @@ const renderReminders = (rows) => {
         rows
           .filter((r) => `${r.spend_country || '—'}${r.spend_region ? ' / ' + r.spend_region : ''}` === regionLabel)
           .filter((r) => String(r.period_year) === String(targetYear))
+          .filter((r) => r.period_month)
           .map((r) => `${r.period_year}-${String(r.period_month).padStart(2, '0')}`)
       );
       const maxMonth = targetYear === CURRENT_YEAR ? now.getMonth() + 1 : 12;
@@ -380,12 +385,16 @@ const renderTable = (rows) => {
     const vendor = row.vendor_name ? ` · ${row.vendor_name}` : '';
     const region = row.spend_region ? ` / ${row.spend_region}` : '';
     const methodLabel = row.calculation_method === 'actual' ? 'Actuals' : 'Spend-based';
+    const monthLabel = row.period_month ? MONTHS[row.period_month - 1].slice(0, 3) : '—';
     tr.innerHTML = `
       <td>
         <div class="primary">${formatNumber(row.emissions || 0, 3)} tCO₂e</div>
-        <div class="secondary">${row.period_year || ''} · ${row.category_label || '—'} · ${row.spend_country || '—'}${region} · ${methodLabel}</div>
+        <div class="secondary">${monthLabel} ${row.period_year || ''} · ${row.spend_country || '—'}${region} · ${methodLabel}</div>
       </td>
-      <td>${spend}${vendor}</td>
+      <td>
+        <div class="primary">${row.category_label || '—'}</div>
+        <div class="secondary">${spend}${vendor}</div>
+      </td>
       <td class="actions">
         <button class="btn secondary" data-action="view" data-id="${row.id}">View</button>
       </td>
@@ -420,13 +429,14 @@ const openPanel = (html) => {
 
 const buildRecordDetails = (record) => {
   const methodLabel = record.calculation_method === 'actual' ? 'Actuals (vendor-reported)' : 'Spend-based (EIO)';
+  const monthLabel = record.period_month ? MONTHS[record.period_month - 1] : '—';
   const spend = record.spend_amount != null ? `${formatNumber(record.spend_amount || 0, 2)} ${record.currency || ''}` : '—';
   const emissionsSource = record.emissions_source || '—';
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
       <div>
         <div style="font-weight:700;font-size:1.05rem;">Record details</div>
-        <div style="color:#4b5563;font-size:0.95rem;">${record.period_year || ''} • ${record.category_label || '—'}</div>
+        <div style="color:#4b5563;font-size:0.95rem;">${monthLabel} ${record.period_year || ''} • ${record.category_label || '—'}</div>
       </div>
       <button type="button" class="btn secondary" data-close-panel style="padding:8px 10px;">×</button>
     </div>
@@ -591,6 +601,17 @@ const populateCountries = (el) => {
   });
 };
 
+const populateMonths = (el) => {
+  if (!el) return;
+  el.innerHTML = '<option value="">Select month</option>';
+  MONTHS.forEach((m, idx) => {
+    const opt = document.createElement('option');
+    opt.value = String(idx + 1);
+    opt.textContent = m;
+    el.appendChild(opt);
+  });
+};
+
 const setRegionOptions = (country, regionEl) => {
   if (!regionEl) return;
   const opts = REGION_OPTIONS[country] || [];
@@ -618,11 +639,15 @@ const buildAddPanel = () => `
         <select id="add-year" required></select>
       </label>
       <label>
-        Category
-        <select id="add-category" required></select>
+        Reporting month
+        <select id="add-month" required></select>
       </label>
     </div>
     <div class="panel-row">
+      <label>
+        Category
+        <select id="add-category" required></select>
+      </label>
       <label>
         Method
         <select id="add-method" required>
@@ -630,6 +655,8 @@ const buildAddPanel = () => `
           <option value="actual">Vendor-reported actuals</option>
         </select>
       </label>
+    </div>
+    <div class="panel-row single">
       <label>
         Vendor name (optional)
         <input type="text" id="add-vendor" maxlength="120" placeholder="Optional vendor reference" />
@@ -685,6 +712,7 @@ const openAddPanel = () => {
   openPanel(buildAddPanel());
   const form = panel?.querySelector('#add-scope3-form');
   const yearEl = panel?.querySelector('#add-year');
+  const monthEl = panel?.querySelector('#add-month');
   const categoryEl = panel?.querySelector('#add-category');
   const methodEl = panel?.querySelector('#add-method');
   const countryEl = panel?.querySelector('#add-country');
@@ -696,9 +724,10 @@ const openAddPanel = () => {
   const emissionsEl = panel?.querySelector('#add-emissions');
   const emissionsSourceEl = panel?.querySelector('#add-emissions-source');
   const statusEl = panel?.querySelector('#add-status');
-  if (!form || !yearEl || !categoryEl || !methodEl || !countryEl || !regionEl) return;
+  if (!form || !yearEl || !monthEl || !categoryEl || !methodEl || !countryEl || !regionEl) return;
 
   populateYears(yearEl);
+  populateMonths(monthEl);
   populateCategories(categoryEl);
   populateCountries(countryEl);
   if (companyCountry) countryEl.value = companyCountry;
@@ -737,6 +766,7 @@ const openAddPanel = () => {
     e.preventDefault();
     setStatus('');
     const year = parseInt(yearEl.value, 10);
+    const month = parseInt(monthEl.value, 10);
     const categoryId = categoryEl.value;
     const method = methodEl.value || 'eio';
     const spendCountry = countryEl.value;
@@ -748,12 +778,16 @@ const openAddPanel = () => {
     const emissions = parseFloat(emissionsEl?.value || '');
     const emissionsSource = String(emissionsSourceEl?.value || '').trim().slice(0, 160);
 
-    if (!year || !categoryId || !spendCountry || !spendRegion) {
-      setStatus('Complete year, category, country, and region.');
+    if (!year || !month || !categoryId || !spendCountry || !spendRegion) {
+      setStatus('Complete year, month, category, country, and region.');
       return;
     }
     if (year > CURRENT_YEAR) {
       setStatus('Future reporting years are not allowed.');
+      return;
+    }
+    if (year === CURRENT_YEAR && month > CURRENT_MONTH) {
+      setStatus('Future months are not allowed.');
       return;
     }
     factorSet = getFactorSet(spendCountry);
@@ -795,6 +829,7 @@ const openAddPanel = () => {
       user_id: session.user.id,
       company_id: companyId,
       period_year: year,
+      period_month: month,
       spend_country: spendCountry,
       spend_region: spendRegion,
       spend_amount: method === 'eio' ? spend : null,
@@ -864,11 +899,15 @@ const createBulkRow = () => {
         <select data-field="year"></select>
       </label>
       <label>
-        Category
-        <select data-field="category"></select>
+        Reporting month
+        <select data-field="month"></select>
       </label>
     </div>
     <div class="panel-row">
+      <label>
+        Category
+        <select data-field="category"></select>
+      </label>
       <label>
         Method
         <select data-field="method">
@@ -876,6 +915,8 @@ const createBulkRow = () => {
           <option value="actual">Vendor-reported actuals</option>
         </select>
       </label>
+    </div>
+    <div class="panel-row single">
       <label>
         Vendor name (optional)
         <input type="text" data-field="vendor" maxlength="120" placeholder="Optional vendor reference" />
@@ -923,13 +964,15 @@ const createBulkRow = () => {
   `;
 
   const yearEl = row.querySelector('[data-field="year"]');
+  const monthEl = row.querySelector('[data-field="month"]');
   const categoryEl = row.querySelector('[data-field="category"]');
   const methodEl = row.querySelector('[data-field="method"]');
   const countryEl = row.querySelector('[data-field="country"]');
   const regionEl = row.querySelector('[data-field="region"]');
   const currencyEl = row.querySelector('[data-field="currency"]');
-  if (yearEl && categoryEl && methodEl && countryEl && regionEl && currencyEl) {
+  if (yearEl && monthEl && categoryEl && methodEl && countryEl && regionEl && currencyEl) {
     populateYears(yearEl);
+    populateMonths(monthEl);
     populateCategories(categoryEl);
     populateCountries(countryEl);
     if (companyCountry) countryEl.value = companyCountry;
@@ -1006,6 +1049,7 @@ const openBulkPanel = () => {
 
     rows.forEach((row, idx) => {
       const year = parseInt(row.querySelector('[data-field="year"]')?.value || '0', 10);
+      const month = parseInt(row.querySelector('[data-field="month"]')?.value || '0', 10);
       const categoryId = row.querySelector('[data-field="category"]')?.value || '';
       const spendCountry = row.querySelector('[data-field="country"]')?.value || '';
       const spendRegion = row.querySelector('[data-field="region"]')?.value || '';
@@ -1017,15 +1061,19 @@ const openBulkPanel = () => {
       const emissions = parseFloat(row.querySelector('[data-field="emissions"]')?.value || '');
       const emissionsSource = String(row.querySelector('[data-field="emissionsSource"]')?.value || '').trim().slice(0, 160);
 
-      const hasAny = [year, categoryId, spendCountry, spendRegion, spend, currency, vendor, notes, emissions, emissionsSource].some((v) => v);
+      const hasAny = [year, month, categoryId, spendCountry, spendRegion, spend, currency, vendor, notes, emissions, emissionsSource].some((v) => v);
       if (!hasAny) return;
 
-      if (!year || !categoryId || !spendCountry || !spendRegion) {
-        errors.push(`Row ${idx + 1}: complete year, category, country, and region.`);
+      if (!year || !month || !categoryId || !spendCountry || !spendRegion) {
+        errors.push(`Row ${idx + 1}: complete year, month, category, country, and region.`);
         return;
       }
       if (year > CURRENT_YEAR) {
         errors.push(`Row ${idx + 1}: future reporting years are not allowed.`);
+        return;
+      }
+      if (year === CURRENT_YEAR && month > CURRENT_MONTH) {
+        errors.push(`Row ${idx + 1}: future months are not allowed.`);
         return;
       }
       const rowFactorSet = getFactorSet(spendCountry);
@@ -1059,6 +1107,7 @@ const openBulkPanel = () => {
         user_id: session.user.id,
         company_id: companyId,
         period_year: year,
+        period_month: month,
         spend_country: spendCountry,
         spend_region: spendRegion,
         spend_amount: method === 'eio' ? spend : null,
@@ -1108,6 +1157,7 @@ const toCsv = (rows) => {
   const headers = [
     'Scope',
     'Method',
+    'Period',
     'Category',
     'Spend amount',
     'Currency',
@@ -1122,6 +1172,7 @@ const toCsv = (rows) => {
   const data = rows.map((r) => ([
     'Scope 3',
     r.calculation_method === 'actual' ? 'Actuals' : 'Spend-based',
+    r.period_month ? `${r.period_year}-${String(r.period_month).padStart(2, '0')}` : `${r.period_year || ''}`,
     r.category_label || '',
     r.spend_amount ?? '',
     r.currency || '',
