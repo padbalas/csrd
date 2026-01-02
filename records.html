@@ -526,6 +526,7 @@
     const addBtn = document.getElementById('records-add');
     const bulkBtn = document.getElementById('records-bulk');
     let sites = [];
+    let sitesLoaded = false;
     let hqSite = null;
     const authNote = document.getElementById('records-auth-note');
     const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
@@ -630,7 +631,7 @@
         const enabled = new Set(getSiteCountries().map((c) => c.value));
         setDisabledOptions(el, enabled);
         if (el.value && !enabled.has(el.value)) selectFirstEnabled(el);
-      } else if (sites.length === 0) {
+      } else if (sitesLoaded) {
         setDisabledOptions(el, new Set());
       }
     };
@@ -651,8 +652,40 @@
         );
         setDisabledOptions(regionEl, enabled);
         if (regionEl.value && !enabled.has(regionEl.value)) selectFirstEnabled(regionEl);
-      } else if (sites.length === 0) {
+      } else if (sitesLoaded) {
         setDisabledOptions(regionEl, new Set());
+      }
+    };
+
+    const refreshPanelSiteSelectors = () => {
+      if (!recordPanel || !recordPanel.classList.contains('active')) return;
+      const addCountry = recordPanel.querySelector('#add-country');
+      const addRegion = recordPanel.querySelector('#add-region');
+      if (addCountry && addRegion) {
+        populateCountries(addCountry);
+        setRegionOptions(addCountry.value, addRegion);
+      }
+      recordPanel.querySelectorAll('.bulk-row').forEach((row) => {
+        const countryEl = row.querySelector('[data-field="country"]');
+        const regionEl = row.querySelector('[data-field="region"]');
+        if (countryEl && regionEl) {
+          populateCountries(countryEl);
+          setRegionOptions(countryEl.value, regionEl);
+        }
+      });
+      const addForm = recordPanel.querySelector('#add-record-form');
+      if (addForm) {
+        const submit = addForm.querySelector('button[type="submit"]');
+        if (submit) submit.disabled = !sites.length;
+        const status = recordPanel.querySelector('#add-status');
+        if (status && sites.length) status.textContent = '';
+      }
+      const bulkForm = recordPanel.querySelector('#bulk-form');
+      if (bulkForm) {
+        const submit = bulkForm.querySelector('button[type="submit"]');
+        if (submit) submit.disabled = !sites.length;
+        const status = recordPanel.querySelector('#bulk-status');
+        if (status && sites.length) status.textContent = '';
       }
     };
 
@@ -786,12 +819,14 @@
       window.companyReportingPreference = company.reporting_year_preference || 'all';
       const siteData = await ensureCompanySites(supabase, session);
       sites = siteData.sites || [];
+      sitesLoaded = true;
       hqSite = siteData.hqSite || null;
       window.companyDefaults = {
         country: hqSite?.country || '',
         region: hqSite?.region || ''
       };
       applySiteRestrictions();
+      refreshPanelSiteSelectors();
     };
 
     const isFuturePeriod = (year, month) => (
@@ -965,7 +1000,11 @@
         return;
       }
 
-      if (!sites.length) {
+      if (!sitesLoaded) {
+        const statusEl = recordPanel?.querySelector('#add-status');
+        if (statusEl) statusEl.textContent = 'Loading site list…';
+        form.querySelector('button[type="submit"]').disabled = true;
+      } else if (!sites.length) {
         const statusEl = recordPanel?.querySelector('#add-status');
         if (statusEl) statusEl.textContent = 'Add at least one site in Settings before creating records.';
         form.querySelector('button[type="submit"]').disabled = true;
@@ -1191,7 +1230,10 @@
       const statusEl = recordPanel?.querySelector('#bulk-status');
       if (!rowsEl || !addRowBtn || !form) return;
 
-      if (!sites.length) {
+      if (!sitesLoaded) {
+        if (statusEl) statusEl.textContent = 'Loading site list…';
+        form.querySelector('button[type="submit"]').disabled = true;
+      } else if (!sites.length) {
         if (statusEl) statusEl.textContent = 'Add at least one site in Settings before creating records.';
         form.querySelector('button[type="submit"]').disabled = true;
       }
