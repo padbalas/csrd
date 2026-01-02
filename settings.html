@@ -283,6 +283,7 @@
     const sitesList = document.getElementById('sites-list');
     const sitesStatus = document.getElementById('sites-status');
     const signoutBtn = document.getElementById('nav-signout');
+    const CURRENT_YEAR = new Date().getFullYear();
 
     let companyId = null;
     let session = null;
@@ -290,6 +291,13 @@
 
     const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
     const setSitesStatus = (msg) => { if (sitesStatus) sitesStatus.textContent = msg || ''; };
+    const updateReportingYearLabels = () => {
+      if (!reportingEl) return;
+      const currentOpt = reportingEl.querySelector('option[value="current"]');
+      const previousOpt = reportingEl.querySelector('option[value="previous"]');
+      if (currentOpt) currentOpt.textContent = String(CURRENT_YEAR);
+      if (previousOpt) previousOpt.textContent = String(CURRENT_YEAR - 1);
+    };
 
     const populateCountries = (el) => {
       if (!el) return;
@@ -338,6 +346,8 @@
         reportingEl.value = company.reporting_year_preference || 'all';
       }
     };
+
+    updateReportingYearLabels();
 
     const renderSites = () => {
       if (!sitesList) return;
