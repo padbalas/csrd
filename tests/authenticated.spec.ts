@@ -80,6 +80,20 @@ test.describe('Authenticated flows', () => {
     expect(content).toMatch(/\r\n/); // CRLF line endings
   });
 
+  test('scope 3 record panel shows edit and delete actions', async ({ page }) => {
+    await page.goto('/scope3.html');
+    if (isLandingPage(page.url())) {
+      test.skip(true, 'Auth state missing for scope 3 page');
+    }
+    const viewBtn = page.getByRole('button', { name: 'View' });
+    if ((await viewBtn.count()) === 0) test.skip(true, 'No Scope 3 records available to view');
+    await viewBtn.first().click();
+    const panel = page.locator('#scope3Panel');
+    await expect(panel).toBeVisible();
+    await expect(panel.getByRole('button', { name: 'Edit' })).toBeVisible();
+    await expect(panel.getByRole('button', { name: 'Delete' })).toBeVisible();
+  });
+
   test('exports page CSV includes disclosure line', async ({ page }) => {
     await page.goto('/exports.html');
     if (isLandingPage(page.url())) {

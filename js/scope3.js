@@ -219,6 +219,7 @@ const renderSummary = (rows) => {
   let total = 0;
   const categories = {};
   const months = new Set();
+  let missingMonthCount = 0;
 
   rows.forEach((r) => {
     const val = Number(r.emissions || 0);
@@ -227,6 +228,8 @@ const renderSummary = (rows) => {
     categories[label] = (categories[label] || 0) + val;
     if (r.period_month) {
       months.add(`${r.period_year}-${String(r.period_month).padStart(2, '0')}`);
+    } else {
+      missingMonthCount += 1;
     }
   });
 
@@ -234,7 +237,7 @@ const renderSummary = (rows) => {
   totalEl.textContent = total.toFixed(3);
   avgEl.textContent = months.size ? (total / months.size).toFixed(3) : total.toFixed(3);
   topEl.textContent = topEntry ? `${topEntry[0]} (${topEntry[1].toFixed(3)})` : '—';
-  countEl.textContent = months.size;
+  countEl.textContent = months.size + missingMonthCount;
 };
 
 const renderReminders = (rows) => {
@@ -262,6 +265,10 @@ const renderReminders = (rows) => {
         : null;
 
   const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const missingMonthCount = rows.filter((r) => !r.period_month).length;
+  if (missingMonthCount) {
+    reminders.push({ type: 'missing', text: `${missingMonthCount} Scope 3 records are missing a reporting month. Add a month for more accurate coverage.` });
+  }
   const formatMissingRanges = (months, year, regionLabel) => {
     const sorted = Array.from(new Set(months)).sort((a, b) => a - b);
     let start = null;
