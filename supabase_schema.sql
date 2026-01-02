@@ -102,25 +102,42 @@ create table if not exists public.scope3_records (
   period_year int not null,
   spend_country text not null,
   spend_region text not null,
-  spend_amount numeric not null check (spend_amount >= 0),
-  currency text not null,
+  spend_amount numeric null check (spend_amount >= 0),
+  currency text null,
   category_id text not null,
   category_label text not null,
   vendor_name text null,
   notes text null,
-  eio_sector text not null,
-  emission_factor_value numeric not null,
-  emission_factor_year int not null,
-  emission_factor_source text not null,
-  emission_factor_model text not null,
-  emission_factor_geo text not null,
-  emission_factor_currency text not null,
+  eio_sector text null,
+  emission_factor_value numeric null,
+  emission_factor_year int null,
+  emission_factor_source text null,
+  emission_factor_model text null,
+  emission_factor_geo text null,
+  emission_factor_currency text null,
+  emissions_source text null,
+  calculation_method text not null default 'eio',
   emissions numeric not null,
   created_at timestamptz not null default now(),
   constraint scope3_year_not_future check (
     period_year <= date_part('year', now())::int
   )
 );
+
+alter table public.scope3_records
+  add column if not exists emissions_source text null,
+  add column if not exists calculation_method text not null default 'eio';
+
+alter table public.scope3_records
+  alter column spend_amount drop not null,
+  alter column currency drop not null,
+  alter column eio_sector drop not null,
+  alter column emission_factor_value drop not null,
+  alter column emission_factor_year drop not null,
+  alter column emission_factor_source drop not null,
+  alter column emission_factor_model drop not null,
+  alter column emission_factor_geo drop not null,
+  alter column emission_factor_currency drop not null;
 
 alter table public.scope3_records enable row level security;
 
