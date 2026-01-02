@@ -190,25 +190,7 @@ const populateFilters = (rows) => {
 };
 
 const applyDefaultFilters = () => {
-  const pref = companyDefaults.reportingYear;
-  const preferredYear = pref === 'previous' ? CURRENT_YEAR - 1 : pref === 'current' ? CURRENT_YEAR : null;
-  const userSet = (el) => el?.dataset?.userSet === 'true';
-
-  if (filterYear && !filterYear.value && !userSet(filterYear)) {
-    if (preferredYear && Array.from(filterYear.options).some((opt) => opt.value === String(preferredYear))) {
-      filterYear.value = String(preferredYear);
-    } else if (Array.from(filterYear.options).some((opt) => opt.value === String(CURRENT_YEAR))) {
-      filterYear.value = String(CURRENT_YEAR);
-    }
-    filterYear.dataset.defaulted = 'true';
-  }
-
-  if (filterCountry && !filterCountry.value && companyDefaults.country && !userSet(filterCountry)) {
-    filterCountry.value = companyDefaults.country;
-  }
-  if (filterRegion && !filterRegion.value && companyDefaults.region && !userSet(filterRegion)) {
-    filterRegion.value = companyDefaults.region;
-  }
+  return;
 };
 
 const applyFilters = (rows) => {

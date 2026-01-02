@@ -186,26 +186,7 @@ const populateFilters = (rows) => {
 };
 
 const applyDefaultFilters = () => {
-  const preferredYear = reportingYearPreference === 'previous'
-    ? CURRENT_YEAR - 1
-    : reportingYearPreference === 'current'
-      ? CURRENT_YEAR
-      : null;
-  const userSet = (el) => el?.dataset?.userSet === 'true';
-  if (filterYear && !filterYear.value && !userSet(filterYear)) {
-    if (preferredYear) {
-      filterYear.value = String(preferredYear);
-    } else {
-      filterYear.value = String(CURRENT_YEAR);
-    }
-    filterYear.dataset.defaulted = 'true';
-  }
-  if (filterCountry && !filterCountry.value && companyCountry && !userSet(filterCountry)) {
-    filterCountry.value = companyCountry;
-  }
-  if (filterRegion && !filterRegion.value && companyRegion && !userSet(filterRegion)) {
-    filterRegion.value = companyRegion;
-  }
+  return;
 };
 
 const applyFilters = (rows) => {

@@ -117,32 +117,7 @@ const setSelectValue = (el, value) => {
 };
 
 const applyDefaultFilters = () => {
-  const yearEl = document.getElementById('filterYear');
-  const countryEl = document.getElementById('filterCountry');
-  const regionEl = document.getElementById('filterRegion');
-  const methodEl = document.getElementById('filterMethod');
-  const userSet = (el) => el?.dataset?.userSet === 'true';
-  const pref = typeof window !== 'undefined' ? window.companyReportingPreference : null;
-  const preferredYear = pref === 'previous' ? CURRENT_YEAR - 1 : pref === 'current' ? CURRENT_YEAR : null;
-  if (yearEl && !yearEl.value && !userSet(yearEl)) {
-    const didSet = preferredYear ? setSelectValue(yearEl, String(preferredYear)) : false;
-    if (!didSet) setSelectValue(yearEl, String(CURRENT_YEAR));
-    yearEl.dataset.defaulted = 'true';
-  } else if (yearEl && !userSet(yearEl) && yearEl.dataset.defaulted === 'true' && preferredYear) {
-    if (setSelectValue(yearEl, String(preferredYear))) {
-      yearEl.dataset.defaulted = 'true';
-    }
-  }
-  if (methodEl && !methodEl.value && !userSet(methodEl)) {
-    methodEl.value = 'location';
-  }
-  const defaults = typeof window !== 'undefined' ? window.companyDefaults : null;
-  if (countryEl && !countryEl.value && defaults?.country && !userSet(countryEl)) {
-    setSelectValue(countryEl, defaults.country);
-  }
-  if (regionEl && !regionEl.value && defaults?.region && !userSet(regionEl)) {
-    setSelectValue(regionEl, defaults.region);
-  }
+  return;
 };
 
 const renderRecords = (containerId) => {
