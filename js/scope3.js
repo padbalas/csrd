@@ -726,6 +726,9 @@ const openAddPanel = () => {
       const show = el.getAttribute('data-method') === method;
       el.style.display = show ? '' : 'none';
     });
+    if (spendEl) spendEl.required = method === 'eio';
+    if (currencyEl) currencyEl.required = method === 'eio';
+    if (emissionsEl) emissionsEl.required = method === 'actual';
   };
   toggleMethodFields();
   methodEl.addEventListener('change', toggleMethodFields);
