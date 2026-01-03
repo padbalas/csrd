@@ -59,6 +59,8 @@ const filterMethod = document.getElementById('filterMethod');
 const filterCountry = document.getElementById('filterCountry');
 const filterRegion = document.getElementById('filterRegion');
 const totalEl = document.getElementById('scope3Total');
+const actualsTotalEl = document.getElementById('scope3ActualsTotal');
+const spendTotalEl = document.getElementById('scope3SpendTotal');
 const avgEl = document.getElementById('scope3Avg');
 const topEl = document.getElementById('scope3TopCategory');
 const countEl = document.getElementById('scope3Count');
@@ -207,9 +209,11 @@ const applyFilters = (rows) => {
 };
 
 const renderSummary = (rows) => {
-  if (!totalEl || !avgEl || !topEl || !countEl) return;
+  if (!totalEl || !avgEl || !topEl || !countEl || !actualsTotalEl || !spendTotalEl) return;
   if (!rows.length) {
     totalEl.textContent = '—';
+    actualsTotalEl.textContent = '—';
+    spendTotalEl.textContent = '—';
     avgEl.textContent = '—';
     topEl.textContent = '—';
     countEl.textContent = '—';
@@ -217,6 +221,8 @@ const renderSummary = (rows) => {
   }
 
   let total = 0;
+  let actualsTotal = 0;
+  let spendTotal = 0;
   const categories = {};
   const months = new Set();
   let missingMonthCount = 0;
@@ -224,6 +230,11 @@ const renderSummary = (rows) => {
   rows.forEach((r) => {
     const val = Number(r.emissions || 0);
     total += val;
+    if ((r.calculation_method || 'eio') === 'actual') {
+      actualsTotal += val;
+    } else {
+      spendTotal += val;
+    }
     const label = r.category_label || '—';
     categories[label] = (categories[label] || 0) + val;
     if (r.period_month) {
@@ -235,6 +246,8 @@ const renderSummary = (rows) => {
 
   const topEntry = Object.entries(categories).sort((a, b) => b[1] - a[1])[0];
   totalEl.textContent = total.toFixed(3);
+  actualsTotalEl.textContent = actualsTotal.toFixed(3);
+  spendTotalEl.textContent = spendTotal.toFixed(3);
   avgEl.textContent = months.size ? (total / months.size).toFixed(3) : total.toFixed(3);
   topEl.textContent = topEntry ? `${topEntry[0]} (${topEntry[1].toFixed(3)})` : '—';
   countEl.textContent = months.size + missingMonthCount;

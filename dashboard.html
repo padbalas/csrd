@@ -147,7 +147,7 @@
         <a href="dashboard.html" class="nav-item active" data-nav="dashboard">Dashboard</a>
         <a href="scope1.html" class="nav-item" data-nav="scope1">Scope 1 Records</a>
         <a href="records.html" class="nav-item" data-nav="records">Scope 2 Records</a>
-        <a href="scope3.html" class="nav-item" data-nav="scope3">Scope 3 Screening</a>
+        <a href="scope3.html" class="nav-item" data-nav="scope3">Scope 3 Records</a>
         <a href="insights.html" class="nav-item" data-nav="insights">Insights</a>
         <a href="exports.html" class="nav-item" data-nav="export">Export / Reports</a>
         <a href="settings.html" class="nav-item" data-nav="settings">Settings</a>
@@ -179,10 +179,10 @@
         </section>
 
         <section class="hero-card">
-          <div class="metric-label">Total company carbon (Scope 1 + Scope 2)</div>
+          <div class="metric-label">Total company carbon (Scope 1 + Scope 2 + Scope 3 actuals)</div>
           <div class="hero-value" id="total-carbon">—</div>
           <div class="metric-label" id="total-note">Select a year to see combined monthly trend.</div>
-          <div class="metric-label">Scope 3 screening is shown separately and not included in this total.</div>
+          <div class="metric-label">Scope 3 spend-based screening is shown separately and not included in this total.</div>
         </section>
 
         <section>
@@ -196,8 +196,13 @@
               <div class="metric-value" id="scope2-total">—</div>
             </div>
             <div class="metric-card">
+              <div class="metric-label">Scope 3 actuals total</div>
+              <div class="metric-value" id="scope3-actuals-total">—</div>
+              <div class="metric-note">Vendor-reported actuals included in combined totals.</div>
+            </div>
+            <div class="metric-card">
               <div class="metric-label">Scope 3 screening total</div>
-              <div class="metric-value" id="scope3-total">—</div>
+              <div class="metric-value" id="scope3-screening-total">—</div>
               <div class="metric-note">Spend-based EIO only; not included in combined totals.</div>
             </div>
             <div class="metric-card">

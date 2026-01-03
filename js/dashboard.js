@@ -13,7 +13,8 @@ const totalCarbonEl = document.getElementById('total-carbon');
 const totalNoteEl = document.getElementById('total-note');
 const scope1TotalEl = document.getElementById('scope1-total');
 const scope2TotalEl = document.getElementById('scope2-total');
-const scope3TotalEl = document.getElementById('scope3-total');
+const scope3ActualsTotalEl = document.getElementById('scope3-actuals-total');
+const scope3ScreeningTotalEl = document.getElementById('scope3-screening-total');
 const coverageEl = document.getElementById('coverage-months');
 const topSiteEl = document.getElementById('top-site');
 const trendPath = document.getElementById('trend-path');
@@ -86,7 +87,7 @@ const fetchScope1 = async (year, siteId) => {
 const fetchScope3 = async (year) => {
   let query = supabase
     .from('scope3_records')
-    .select('period_year,emissions')
+    .select('period_year,period_month,emissions,calculation_method')
     .order('period_year', { ascending: false })
     .order('created_at', { ascending: false });
   if (year) query = query.eq('period_year', Number(year));
@@ -104,7 +105,7 @@ const getScope2Value = (record, basis) => {
   return Number(record.location_based_emissions || 0);
 };
 
-const renderTrend = (scope1, scope2, basis, year) => {
+const renderTrend = (scope1, scope2, scope3Actuals, basis, year) => {
   if (!trendPath || !trendEmpty) return;
   if (!year) {
     trendPath.setAttribute('d', '');
@@ -120,7 +121,10 @@ const renderTrend = (scope1, scope2, basis, year) => {
     const scope2Total = scope2
       .filter((r) => r.period_month === month)
       .reduce((sum, r) => sum + getScope2Value(r, basis), 0);
-    return scope1Total + scope2Total;
+    const scope3Total = scope3Actuals
+      .filter((r) => r.period_month === month)
+      .reduce((sum, r) => sum + Number(r.emissions || 0), 0);
+    return scope1Total + scope2Total + scope3Total;
   });
   const max = Math.max(...totals, 0);
   if (max === 0) {
@@ -140,13 +144,19 @@ const renderTrend = (scope1, scope2, basis, year) => {
 const renderMetrics = (scope1, scope2, scope3, basis, year, sites, selectedSiteId) => {
   const scope1Total = scope1.reduce((sum, r) => sum + Number(r.emissions || 0), 0);
   const scope2Total = scope2.reduce((sum, r) => sum + getScope2Value(r, basis), 0);
-  const scope3Total = scope3.reduce((sum, r) => sum + Number(r.emissions || 0), 0);
-  const total = scope1Total + scope2Total;
+  const scope3ActualsTotal = scope3
+    .filter((r) => (r.calculation_method || 'eio') === 'actual')
+    .reduce((sum, r) => sum + Number(r.emissions || 0), 0);
+  const scope3ScreeningTotal = scope3
+    .filter((r) => (r.calculation_method || 'eio') !== 'actual')
+    .reduce((sum, r) => sum + Number(r.emissions || 0), 0);
+  const total = scope1Total + scope2Total + scope3ActualsTotal;
 
   if (totalCarbonEl) totalCarbonEl.textContent = `${formatNumber(total, 2)} tCO₂e`;
   if (scope1TotalEl) scope1TotalEl.textContent = `${formatNumber(scope1Total, 2)} tCO₂e`;
   if (scope2TotalEl) scope2TotalEl.textContent = `${formatNumber(scope2Total, 2)} tCO₂e`;
-  if (scope3TotalEl) scope3TotalEl.textContent = `${formatNumber(scope3Total, 2)} tCO₂e`;
+  if (scope3ActualsTotalEl) scope3ActualsTotalEl.textContent = `${formatNumber(scope3ActualsTotal, 2)} tCO₂e`;
+  if (scope3ScreeningTotalEl) scope3ScreeningTotalEl.textContent = `${formatNumber(scope3ScreeningTotal, 2)} tCO₂e`;
   if (totalNoteEl) {
     totalNoteEl.textContent = year
       ? `Totals for ${year} • ${basis === 'market' ? 'Market-based Scope 2' : 'Location-based Scope 2'}`
@@ -156,6 +166,9 @@ const renderMetrics = (scope1, scope2, scope3, basis, year, sites, selectedSiteI
   const coverageMonths = new Set();
   scope1.forEach((r) => coverageMonths.add(`${r.period_year}-${r.period_month}`));
   scope2.forEach((r) => coverageMonths.add(`${r.period_year}-${r.period_month}`));
+  scope3
+    .filter((r) => (r.calculation_method || 'eio') === 'actual' && r.period_month)
+    .forEach((r) => coverageMonths.add(`${r.period_year}-${r.period_month}`));
   if (coverageEl) coverageEl.textContent = coverageMonths.size ? String(coverageMonths.size) : '—';
 
   if (topSiteEl) {
@@ -231,7 +244,8 @@ const renderDashboard = async (sites) => {
     fetchScope3(year)
   ]);
   renderMetrics(scope1, scope2, scope3, basis, year, sites, siteId);
-  renderTrend(scope1, scope2, basis, year);
+  const scope3Actuals = scope3.filter((r) => (r.calculation_method || 'eio') === 'actual');
+  renderTrend(scope1, scope2, scope3Actuals, basis, year);
 };
 
 const init = async () => {
