@@ -196,9 +196,9 @@
     // Records now live on records.html; keep a no-op to avoid undefined references.
     const refreshRecordsFromRemote = () => {};
 
-    const redirectToRecords = () => {
-      if (!window.location.pathname.endsWith('records.html')) {
-        window.location.href = 'records.html';
+    const redirectToDashboard = () => {
+      if (!window.location.pathname.endsWith('dashboard.html')) {
+        window.location.href = 'dashboard.html';
       }
     };
 
@@ -494,8 +494,8 @@
             refreshScope1Entries();
           }
           // Redirect only on new sign-in events to avoid bouncing when intentionally visiting the calculator
-          if (_event === 'SIGNED_IN' && !window.location.pathname.endsWith('records.html')) {
-            redirectToRecords();
+          if (_event === 'SIGNED_IN' && !window.location.pathname.endsWith('dashboard.html')) {
+            redirectToDashboard();
           }
         }
       });
