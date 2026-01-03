@@ -186,7 +186,7 @@ test.describe('Authenticated flows', () => {
     if (isLandingPage(page.url())) {
       test.skip(true, 'Auth state missing for exports page');
     }
-    await page.getByRole('button', { name: /Scope 3 screening/i }).click();
+    await page.locator('button[data-tab-target="scope3"]').click();
     const status = page.locator('#scope3ExportStatus');
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
     await page.getByRole('button', { name: /Generate Scope 3 CSV/i }).click();

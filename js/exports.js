@@ -131,7 +131,7 @@ const fetchScope1Records = async (year = '') => {
 const fetchScope3Records = async (year = '') => {
   let query = supabase
     .from('scope3_records')
-    .select('period_year,spend_amount,currency,category_label,eio_sector,emission_factor_value,emission_factor_year,emission_factor_source,emissions')
+    .select('period_year,period_month,spend_amount,currency,category_label,eio_sector,emission_factor_value,emission_factor_year,emission_factor_source,emissions,emissions_source,calculation_method')
     .order('period_year', { ascending: false })
     .order('created_at', { ascending: false });
   if (year) {
@@ -232,6 +232,8 @@ const toScope1Csv = (entries) => {
 const toScope3Csv = (entries) => {
   const headers = [
     'Scope',
+    'Method',
+    'Period',
     'Category',
     'Spend amount',
     'Currency',
@@ -239,21 +241,31 @@ const toScope3Csv = (entries) => {
     'Emission factor value',
     'Factor year',
     'Factor source',
+    'Emissions source',
     'Emissions (tCO2e)',
     'Disclosure text'
   ];
-  const rows = entries.map((entry) => ([
-    'Scope 3',
-    entry.category_label || '',
-    entry.spend_amount ?? '',
-    entry.currency || '',
-    entry.eio_sector || '',
-    entry.emission_factor_value ?? '',
-    entry.emission_factor_year ?? '',
-    entry.emission_factor_source ?? '',
-    entry.emissions ?? '',
-    SCOPE3_DISCLOSURE
-  ]));
+  const rows = entries.map((entry) => {
+    const period = entry.period_month
+      ? `${entry.period_year}-${String(entry.period_month).padStart(2, '0')}`
+      : `${entry.period_year || ''}`;
+    const method = entry.calculation_method === 'actual' ? 'Actuals' : 'Spend-based';
+    return [
+      'Scope 3',
+      method,
+      period,
+      entry.category_label || '',
+      entry.spend_amount ?? '',
+      entry.currency || '',
+      entry.eio_sector || '',
+      entry.emission_factor_value ?? '',
+      entry.emission_factor_year ?? '',
+      entry.emission_factor_source ?? '',
+      entry.emissions_source ?? '',
+      entry.emissions ?? '',
+      SCOPE3_DISCLOSURE
+    ];
+  });
   return [headers, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\r\n');
 };
 
