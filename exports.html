@@ -183,7 +183,7 @@
         <div class="tab-header">
           <button type="button" class="tab-button active" data-tab-target="scope2">Scope 2 electricity</button>
           <button type="button" class="tab-button" data-tab-target="scope1">Scope 1 natural gas</button>
-          <button type="button" class="tab-button" data-tab-target="scope3">Scope 3 screening</button>
+          <button type="button" class="tab-button" data-tab-target="scope3">Scope 3 records</button>
         </div>
 
         <div class="tab-panel active" data-tab="scope2">
@@ -250,8 +250,8 @@
         <div class="tab-panel" data-tab="scope3">
           <section class="card stack">
             <div>
-              <h2 style="margin:0 0 6px;">Scope 3 (Estimated — Spend-based)</h2>
-              <p class="muted">Screening-level, spend-based Scope 3 estimates using EIO factors only.</p>
+              <h2 style="margin:0 0 6px;">Scope 3 (Actuals + Spend-based)</h2>
+              <p class="muted">Vendor-reported actuals plus spend-based screening for gaps.</p>
             </div>
             <div>
               <label for="scope3ExportYear">Reporting year</label>
@@ -263,7 +263,7 @@
               <button class="btn primary" id="exportScope3Csv">Generate Scope 3 CSV</button>
               <span class="status" id="scope3ExportStatus"></span>
             </div>
-            <p class="note">Scope 3 emissions shown here are screening-level estimates calculated using spend-based environmentally extended input-output (EIO) models. Results are indicative only and subject to high uncertainty.</p>
+            <p class="note">Scope 3 includes vendor-reported actuals and spend-based EIO screening; screening results are high-uncertainty.</p>
             <p class="note">Methodology: <a href="methodology.html#scope-3">See Scope 3 methodology</a>.</p>
           </section>
           <section class="card" style="margin-top:14px;">

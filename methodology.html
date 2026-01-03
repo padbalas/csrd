@@ -29,13 +29,13 @@
   <div class="shell">
     <header class="card">
       <h1>Methodology & Disclosures</h1>
-      <p class="muted">How CarbonWise calculates Scope 2 electricity emissions (tCO₂e), Scope 1 stationary combustion estimates, and Scope 3 screening-level spend-based estimates.</p>
+      <p class="muted">How CarbonWise calculates Scope 2 electricity emissions (tCO₂e), Scope 1 stationary combustion estimates, and Scope 3 vendor-reported actuals plus spend-based screening estimates.</p>
     </header>
 
     <!-- Scope coverage clarity -->
     <section>
       <h2>Scope Covered</h2>
-      <p>CarbonWise supports Scope 2 emissions from purchased electricity, Scope 1 emissions from stationary natural gas combustion, and Scope 3 screening-level estimates using spend-based EIO models. Each scope has its own inputs, factors, and disclosures.</p>
+      <p>CarbonWise supports Scope 2 emissions from purchased electricity, Scope 1 emissions from stationary natural gas combustion, and Scope 3 records via vendor-reported actuals or spend-based EIO screening. Each scope has its own inputs, factors, and disclosures.</p>
     </section>
 
     <section id="scope-2">
@@ -70,9 +70,21 @@
     </section>
 
     <section id="scope-3">
-      <h2>Scope 3 Methodology (EIO-Only)</h2>
+      <h2>Scope 3 Methodology (Actuals + Spend-based)</h2>
+
+      <h3>Scope 3 Actuals (Vendor-reported)</h3>
+      <p><strong>What this represents</strong></p>
+      <p class="muted">Vendor-reported emissions for your usage (e.g., cloud provider carbon reports). These values come directly from suppliers and are not recalculated by CarbonWise.</p>
+      <p><strong>Inputs</strong></p>
+      <p class="muted">Reporting period (month/year), category, vendor name (optional), and the vendor-reported emissions (tCO₂e). Optional source reference can be stored for traceability.</p>
+      <p><strong>Calculation</strong></p>
+      <p class="muted">CarbonWise stores the provided emissions value and includes it in totals and exports without applying EIO factors.</p>
+      <p><strong>Limitations</strong></p>
+      <p class="muted">Accuracy depends on supplier methodology and boundary alignment. CarbonWise does not verify supplier claims.</p>
+
+      <h3>Scope 3 Spend-based Screening (EIO)</h3>
       <p><strong>What spend-based EIO modeling is</strong></p>
-      <p class="muted">Scope 3 v1 uses environmentally extended input-output (EIO) models to estimate emissions from spend. Spend in each category is multiplied by a national-average EIO factor expressed as tCO₂e per currency unit.</p>
+      <p class="muted">Spend-based screening uses environmentally extended input-output (EIO) models to estimate emissions from spend. Spend in each category is multiplied by a national-average EIO factor expressed as tCO₂e per currency unit.</p>
       <p><strong>Supported categories (v1)</strong></p>
       <p class="muted">Purchased Goods & Services (General), Professional Services, Software & Cloud Services, Marketing & Advertising Services, and Logistics & Shipping (Upstream, spend-based only).</p>
       <p class="muted">CarbonWise intentionally limits Scope 3 v1 to a small set of high-confidence categories to prioritize clarity and defensibility over broad but uncertain coverage.</p>
@@ -82,7 +94,7 @@
       <p class="muted">Early screening, directional insights, and prioritization for deeper analysis.</p>
       <p><strong>Inappropriate use cases</strong></p>
       <p class="muted">Audits, supplier claims, product-level LCAs, or public-facing assertions of supplier performance.</p>
-      <p class="muted">Scope 3 emissions shown here are screening-level estimates calculated using spend-based environmentally extended input-output (EIO) models. Results are indicative only and subject to high uncertainty.</p>
+      <p class="muted">Spend-based Scope 3 emissions shown here are screening-level estimates calculated using EIO models. Results are indicative only and subject to high uncertainty.</p>
     </section>
 
     <section>
