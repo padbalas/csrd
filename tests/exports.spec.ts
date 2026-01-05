@@ -6,7 +6,7 @@ test('exports page redirects or requires auth', async ({ page }) => {
   await page.waitForURL(/exports\.html|index\.html|\/$/, { timeout: 10000 });
   await page.waitForFunction(() => {
     const exportHeading = document.querySelector('h1')?.textContent || '';
-    return /Export \\/ Reports/i.test(exportHeading) || /CarbonWise/i.test(exportHeading);
+    return exportHeading.includes('Export / Reports') || exportHeading.includes('CarbonWise');
   });
   const exportHeading = page.getByRole('heading', { name: /Export \/ Reports/i });
   const hasExportHeading = (await exportHeading.count()) > 0;
