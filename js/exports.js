@@ -79,7 +79,7 @@ const formatTierLabel = (tier) => {
 
 const updateNavBrand = (company, tier) => {
   if (!navBrand) return;
-  const name = company?.company_name || 'CarbonWise';
+  const name = company?.company_name || 'Your Company';
   const badge = tier ? ` (${formatTierLabel(tier)})` : '';
   navBrand.textContent = `${name}${badge}`;
 };
