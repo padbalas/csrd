@@ -104,6 +104,15 @@
     .site-actions { display: flex; gap: 8px; align-items: center; }
     .site-hq { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
     .site-hq input { width: auto; }
+    .plan-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .plan-tile { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #f8fafc; display: grid; gap: 8px; }
+    .plan-title { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+    .plan-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; background: rgba(34,197,94,0.18); color: #166534; font-weight: 700; }
+    .plan-price { font-size: 1.1rem; font-weight: 700; }
+    .plan-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 0.9rem; }
+    .plan-list li { margin-bottom: 4px; }
+    .plan-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .plan-status { font-size: 0.9rem; color: var(--muted); }
     .app-footer { text-align: center; padding: 16px 0 24px; font-size: 0.95rem; color: var(--muted); }
 
     @media (max-width: 980px) {
@@ -132,6 +141,7 @@
       .row { grid-template-columns: minmax(0, 1fr); }
       .actions { flex-direction: column; align-items: stretch; }
       .actions .btn { width: 100%; }
+      .plan-grid { grid-template-columns: minmax(0, 1fr); }
       .status { min-height: 0; }
     }
   </style>
@@ -181,6 +191,46 @@
               <span class="status" id="settings-status"></span>
             </div>
           </form>
+        </section>
+
+        <section class="card stack">
+          <div>
+            <h2>Subscription</h2>
+            <p class="muted">Choose the plan that matches your reporting scope. Upgrades unlock instantly after Stripe confirms payment.</p>
+          </div>
+          <div class="plan-grid">
+            <div class="plan-tile">
+              <div class="plan-title">
+                <span>CarbonWise Core</span>
+                <span class="plan-badge" id="plan-core-badge" style="display:none;">Current</span>
+              </div>
+              <div class="plan-price">Scope 1 + Scope 2</div>
+              <ul class="plan-list">
+                <li>Single site (HQ only)</li>
+                <li>Unlimited Scope 1 & 2 records</li>
+                <li>Exports and basic insights</li>
+              </ul>
+              <div class="plan-actions">
+                <button class="btn primary" id="upgrade-core" type="button">Upgrade to Core</button>
+              </div>
+            </div>
+            <div class="plan-tile">
+              <div class="plan-title">
+                <span>CarbonWise Complete</span>
+                <span class="plan-badge" id="plan-complete-badge" style="display:none;">Current</span>
+              </div>
+              <div class="plan-price">Scope 1 + 2 + 3</div>
+              <ul class="plan-list">
+                <li>Unlimited sites + records</li>
+                <li>Scope 3 screening and actuals</li>
+                <li>Full insights + exports</li>
+              </ul>
+              <div class="plan-actions">
+                <button class="btn primary" id="upgrade-complete" type="button">Upgrade to Complete</button>
+              </div>
+            </div>
+          </div>
+          <div class="plan-status" id="subscription-status"></div>
         </section>
 
         <section class="card stack">
@@ -237,6 +287,7 @@
     const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
     const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const FUNCTIONS_BASE_URL = SUPABASE_URL.replace('.supabase.co', '.functions.supabase.co');
 
     const COUNTRY_OPTIONS = [
       { value: 'US', label: 'United States' },
@@ -284,15 +335,28 @@
     const siteRegion = document.getElementById('site-region');
     const sitesList = document.getElementById('sites-list');
     const sitesStatus = document.getElementById('sites-status');
+    const subscriptionStatus = document.getElementById('subscription-status');
+    const upgradeCoreBtn = document.getElementById('upgrade-core');
+    const upgradeCompleteBtn = document.getElementById('upgrade-complete');
+    const coreBadge = document.getElementById('plan-core-badge');
+    const completeBadge = document.getElementById('plan-complete-badge');
     const signoutBtn = document.getElementById('nav-signout');
     const CURRENT_YEAR = new Date().getFullYear();
 
     let companyId = null;
     let session = null;
     let sites = [];
+    let entitlements = null;
 
     const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
     const setSitesStatus = (msg) => { if (sitesStatus) sitesStatus.textContent = msg || ''; };
+    const setSubscriptionStatus = (msg) => { if (subscriptionStatus) subscriptionStatus.textContent = msg || ''; };
+    const checkoutParam = new URLSearchParams(window.location.search).get('checkout');
+    if (checkoutParam === 'success') {
+      setSubscriptionStatus('Checkout complete. Your plan will unlock once Stripe confirms payment.');
+    } else if (checkoutParam === 'cancel') {
+      setSubscriptionStatus('Checkout canceled. You can restart anytime.');
+    }
     const updateReportingYearLabels = () => {
       if (!reportingEl) return;
       const currentOpt = reportingEl.querySelector('option[value="current"]');
@@ -346,6 +410,71 @@
       nameEl.value = company.company_name || '';
       if (reportingEl) {
         reportingEl.value = company.reporting_year_preference || 'all';
+      }
+    };
+
+    const loadEntitlements = async () => {
+      if (!companyId) return null;
+      const { data, error } = await supabase
+        .from('entitlements')
+        .select('tier,allow_scope3,allow_exports,allow_insights,max_sites')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      if (error) return null;
+      return data || null;
+    };
+
+    const updatePlanUi = () => {
+      const tier = entitlements?.tier || 'free';
+      if (coreBadge) coreBadge.style.display = tier === 'core' ? 'inline-flex' : 'none';
+      if (completeBadge) completeBadge.style.display = tier === 'complete' ? 'inline-flex' : 'none';
+      if (upgradeCoreBtn) upgradeCoreBtn.disabled = tier === 'core' || tier === 'complete';
+      if (upgradeCompleteBtn) upgradeCompleteBtn.disabled = tier === 'complete';
+      if (tier === 'free') {
+        setSubscriptionStatus('Free plan active. Upgrade to unlock higher limits.');
+      } else if (tier === 'core') {
+        setSubscriptionStatus('Core plan active. Upgrade to Complete for Scope 3 and multi-site access.');
+      } else if (tier === 'complete') {
+        setSubscriptionStatus('Complete plan active. All features unlocked.');
+      }
+    };
+
+    const updateSiteGate = () => {
+      if (!siteForm) return;
+      const maxSites = entitlements?.max_sites ?? null;
+      const limitReached = maxSites !== null && sites.length >= maxSites;
+      siteForm.querySelectorAll('select,button').forEach((el) => {
+        el.disabled = limitReached;
+      });
+      if (limitReached) {
+        setSitesStatus('Upgrade to CarbonWise Complete to add more sites.');
+      }
+    };
+
+    const createCheckoutSession = async (tier) => {
+      if (!session) return;
+      setSubscriptionStatus('Opening Stripe Checkout...');
+      try {
+        const response = await fetch(`${FUNCTIONS_BASE_URL}/create-checkout-session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            tier,
+            success_url: `${window.location.origin}/settings.html?checkout=success`,
+            cancel_url: `${window.location.origin}/settings.html?checkout=cancel`,
+          }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload?.url) {
+          throw new Error(payload?.error || 'Stripe session failed');
+        }
+        window.location.href = payload.url;
+      } catch (err) {
+        console.warn('Checkout session failed', err);
+        setSubscriptionStatus('Could not start checkout. Please try again.');
       }
     };
 
@@ -550,12 +679,22 @@
       session = await requireAuth();
       if (!session) return;
       await loadCompany();
+      entitlements = await loadEntitlements();
+      updatePlanUi();
       const siteData = await ensureCompanySites(supabase, session);
       companyId = siteData.companyId || companyId;
       sites = siteData.sites || [];
       renderSites();
+      updateSiteGate();
       siteCountry.addEventListener('change', () => setRegionOptions(siteCountry.value, siteRegion));
     })();
+
+    if (upgradeCoreBtn) {
+      upgradeCoreBtn.addEventListener('click', () => createCheckoutSession('core'));
+    }
+    if (upgradeCompleteBtn) {
+      upgradeCompleteBtn.addEventListener('click', () => createCheckoutSession('complete'));
+    }
 
     if (signoutBtn) {
       signoutBtn.addEventListener('click', async () => {

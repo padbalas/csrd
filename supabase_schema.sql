@@ -170,3 +170,47 @@ create policy "Scope3 records scoped to owner (delete)" on public.scope3_records
 
 create index if not exists scope3_records_user_created_idx
   on public.scope3_records(user_id, created_at desc);
+
+-- Subscription state and entitlements (Stripe-backed)
+create table if not exists public.subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  stripe_customer_id text not null,
+  stripe_subscription_id text not null,
+  status text not null,
+  tier text not null,
+  current_period_end timestamptz null,
+  updated_at timestamptz not null default now(),
+  constraint subscriptions_tier_valid check (tier in ('free', 'core', 'complete'))
+);
+
+create unique index if not exists subscriptions_unique_stripe_sub
+  on public.subscriptions(stripe_subscription_id);
+create index if not exists subscriptions_company_idx
+  on public.subscriptions(company_id);
+
+alter table public.subscriptions enable row level security;
+
+create policy "Subscriptions scoped to owner (select)" on public.subscriptions
+  for select using (auth.uid() = user_id);
+
+create table if not exists public.entitlements (
+  company_id uuid primary key references public.companies(id) on delete cascade,
+  tier text not null,
+  max_scope1_records int null,
+  max_scope2_records int null,
+  allow_scope3 boolean not null default false,
+  allow_exports boolean not null default false,
+  allow_insights boolean not null default false,
+  max_sites int null,
+  updated_at timestamptz not null default now(),
+  constraint entitlements_tier_valid check (tier in ('free', 'core', 'complete'))
+);
+
+alter table public.entitlements enable row level security;
+
+create policy "Entitlements scoped to owner (select)" on public.entitlements
+  for select using (
+    auth.uid() = (select user_id from public.companies where id = company_id)
+  );
