@@ -104,6 +104,15 @@
     .status { font-size: 0.95rem; color: var(--muted); min-height: 20px; }
     .empty { color: var(--muted); font-size: 0.95rem; padding: 8px 0; }
     .note { color: var(--muted); font-size: 0.9rem; }
+    .lock-banner {
+      background: #fff4e5;
+      border: 1px solid #f0c987;
+      color: #92400e;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .tab-button.locked { opacity: 0.6; cursor: default; }
     .app-footer { text-align: center; padding: 16px 0 24px; font-size: 0.95rem; color: var(--muted); }
     .tab-header {
       display: flex;
@@ -191,6 +200,9 @@
     <div class="app-content">
       <div class="shell stack">
         <h1 class="page-title">Insights</h1>
+        <div class="lock-banner" id="scope3-insights-lock" hidden>
+          Upgrade to CarbonWise Complete to unlock Scope 3 insights.
+        </div>
         <div class="tab-header">
           <button type="button" class="tab-button active" data-tab-target="scope2">Scope 2 electricity</button>
           <button type="button" class="tab-button" data-tab-target="scope1">Scope 1 natural gas</button>
@@ -376,8 +388,14 @@
     const statusEl = document.getElementById('insightStatus');
     const tabButtons = Array.from(document.querySelectorAll('[data-tab-target]'));
     const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
+    const scope3LockBanner = document.getElementById('scope3-insights-lock');
+    const scope3TabButton = document.querySelector('[data-tab-target=\"scope3\"]');
+    const scope3NavLink = document.querySelector('.nav-item[data-nav=\"scope3\"]');
 
     const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+
+    let entitlements = null;
+    let scope3Locked = false;
 
     const loadRecords = () => {
       try {
@@ -407,6 +425,53 @@
       return data.session;
     };
 
+    const getCompanyId = async (session) => {
+      if (!session) return null;
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (error) return null;
+      return data?.[0]?.id || null;
+    };
+
+    const loadEntitlements = async (session) => {
+      const companyId = await getCompanyId(session);
+      if (!companyId) return null;
+      const { data, error } = await supabase
+        .from('entitlements')
+        .select('tier,allow_scope3')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      if (error) return null;
+      return data || null;
+    };
+
+    const updateScope3Nav = () => {
+      if (!scope3NavLink) return;
+      if (entitlements?.allow_scope3) {
+        scope3NavLink.classList.remove('disabled');
+        scope3NavLink.removeAttribute('aria-disabled');
+        scope3NavLink.title = '';
+      } else {
+        scope3NavLink.classList.add('disabled');
+        scope3NavLink.setAttribute('aria-disabled', 'true');
+        scope3NavLink.title = 'Upgrade to CarbonWise Complete to unlock Scope 3.';
+      }
+    };
+
+    const applyScope3Gate = () => {
+      scope3Locked = !entitlements?.allow_scope3;
+      if (scope3LockBanner) scope3LockBanner.hidden = !scope3Locked;
+      if (scope3TabButton) scope3TabButton.classList.toggle('locked', scope3Locked);
+      if (scope3Locked) {
+        scope3Records = [];
+        renderScope3([]);
+      }
+    };
+
     const fetchRecords = async () => {
       const { data, error } = await supabase
         .from('scope2_records')
@@ -428,6 +493,7 @@
     };
 
     const fetchScope3Records = async () => {
+      if (scope3Locked) return [];
       const { data, error } = await supabase
         .from('scope3_records')
         .select('period_year,spend_country,spend_region,category_label,emissions')
@@ -746,6 +812,9 @@
       setStatus('Checking access…');
       const session = await requireAuth();
       if (!session) return;
+      entitlements = await loadEntitlements(session);
+      updateScope3Nav();
+      applyScope3Gate();
       try {
         const [records, scope1RecordsData, scope3RecordsData] = await Promise.all([fetchRecords(), fetchScope1Records(), fetchScope3Records()]);
         await loadCompanyPreference();
@@ -782,6 +851,10 @@
     const initTabs = () => {
       if (!tabButtons.length || !tabPanels.length) return;
       const setActive = (tab) => {
+        if (scope3Locked && tab === 'scope3') {
+          setStatus('Upgrade to CarbonWise Complete to view Scope 3 insights.');
+          return;
+        }
         tabButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tabTarget === tab));
         tabPanels.forEach((panel) => panel.classList.toggle('active', panel.dataset.tab === tab));
       };

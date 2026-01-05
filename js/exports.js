@@ -24,6 +24,11 @@ const scope1StatusEl = document.getElementById('scope1ExportStatus');
 const scope3YearSelect = document.getElementById('scope3ExportYear');
 const scope3ExportBtn = document.getElementById('exportScope3Csv');
 const scope3StatusEl = document.getElementById('scope3ExportStatus');
+const scope3LockNote = document.getElementById('scope3ExportLock');
+const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
+
+let entitlements = null;
+let scope3Locked = false;
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -63,6 +68,55 @@ const requireAuth = async () => {
     return null;
   }
   return data.session;
+};
+
+const getCompanyId = async (session) => {
+  if (!session) return null;
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: true })
+    .limit(1);
+  if (error) return null;
+  return data?.[0]?.id || null;
+};
+
+const loadEntitlements = async (session) => {
+  const companyId = await getCompanyId(session);
+  if (!companyId) return null;
+  const { data, error } = await supabase
+    .from('entitlements')
+    .select('tier,allow_scope3')
+    .eq('company_id', companyId)
+    .maybeSingle();
+  if (error) return null;
+  return data || null;
+};
+
+const updateScope3Nav = () => {
+  if (!scope3NavLink) return;
+  if (entitlements?.allow_scope3) {
+    scope3NavLink.classList.remove('disabled');
+    scope3NavLink.removeAttribute('aria-disabled');
+    scope3NavLink.title = '';
+  } else {
+    scope3NavLink.classList.add('disabled');
+    scope3NavLink.setAttribute('aria-disabled', 'true');
+    scope3NavLink.title = 'Upgrade to CarbonWise Complete to unlock Scope 3.';
+  }
+};
+
+const applyScope3Gate = () => {
+  scope3Locked = !entitlements?.allow_scope3;
+  if (scope3ExportBtn) scope3ExportBtn.disabled = scope3Locked;
+  if (scope3YearSelect) scope3YearSelect.disabled = scope3Locked;
+  if (scope3LockNote) scope3LockNote.style.display = scope3Locked ? 'block' : 'none';
+  if (scope3Locked) {
+    setScope3Status('Upgrade to CarbonWise Complete to export Scope 3 data.');
+  } else {
+    setScope3Status('');
+  }
 };
 
 const fetchCompany = async () => {
@@ -326,6 +380,9 @@ const init = async () => {
   setStatus('Checking access…');
   const session = await requireAuth();
   if (!session) return;
+  entitlements = await loadEntitlements(session);
+  updateScope3Nav();
+  applyScope3Gate();
   const [company, records] = await Promise.all([fetchCompany(), fetchRecords('')]);
   if (companyNameEl) {
     if (company) companyNameEl.textContent = `${company.company_name} (${company.country || ''}${company.region ? ' / ' + company.region : ''})`;
@@ -344,7 +401,7 @@ const init = async () => {
     populateScope1Years([]);
   }
   try {
-    const scope3Records = await fetchScope3Records('');
+    const scope3Records = scope3Locked ? [] : await fetchScope3Records('');
     populateScope3Years(scope3Records);
   } catch (err) {
     console.warn('Scope 3 records load failed', err);
@@ -403,6 +460,10 @@ const init = async () => {
 
   if (scope3ExportBtn) {
     scope3ExportBtn.addEventListener('click', async () => {
+      if (scope3Locked) {
+        setScope3Status('Upgrade to CarbonWise Complete to export Scope 3 data.');
+        return;
+      }
       setScope3Loading(true);
       setScope3Status('Generating Scope 3 CSV…');
       try {
