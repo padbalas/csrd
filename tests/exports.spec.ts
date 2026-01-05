@@ -4,14 +4,16 @@ import fs from 'fs';
 test('exports page redirects or requires auth', async ({ page }) => {
   await page.goto('/exports.html');
   await page.waitForURL(/exports\.html|index\.html|\/$/, { timeout: 10000 });
-  await page.waitForFunction(() => {
-    const exportHeading = document.querySelector('h1')?.textContent || '';
-    return exportHeading.includes('Export / Reports') || exportHeading.includes('CarbonWise');
-  });
   const exportHeading = page.getByRole('heading', { name: /Export \/ Reports/i });
-  const hasExportHeading = (await exportHeading.count()) > 0;
-
-  if (hasExportHeading) {
+  const landingHeading = page.getByRole('heading', { name: /CarbonWise/i });
+  const headingReady = await Promise.race([
+    exportHeading.waitFor({ state: 'visible', timeout: 8000 }).then(() => 'export').catch(() => null),
+    landingHeading.waitFor({ state: 'visible', timeout: 8000 }).then(() => 'landing').catch(() => null)
+  ]);
+  if (!headingReady) {
+    throw new Error('No visible heading after auth guard.');
+  }
+  if (headingReady === 'export') {
     await expect(exportHeading).toBeVisible();
     await expect(page.getByRole('link', { name: 'My Records' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Generate PDF/i })).toBeDisabled();
@@ -38,5 +40,5 @@ test('exports page redirects or requires auth', async ({ page }) => {
     return;
   }
 
-  await expect(page.getByRole('heading', { name: /CarbonWise/i })).toBeVisible();
+  await expect(landingHeading).toBeVisible();
 });
