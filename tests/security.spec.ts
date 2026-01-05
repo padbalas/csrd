@@ -124,6 +124,7 @@ test.describe('Entitlement gates (UI)', () => {
       await expect(page.getByRole('button', { name: 'Add record' })).toBeDisabled();
       await expect(page.getByRole('button', { name: 'Bulk add' })).toBeDisabled();
       await expect(page.getByRole('button', { name: /Export CSV/i })).toBeDisabled();
+      await expect(page.getByRole('button', { name: 'View' })).toHaveCount(0);
     } else {
       test.skip(true, 'Scope 3 not locked for this account');
     }
