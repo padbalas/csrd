@@ -36,7 +36,10 @@ test.describe('Mutating flows (opt-in)', () => {
     // After save we expect to land on records page with new row
     const navigated = await page.waitForURL(/records\.html/, { timeout: 15000 }).then(() => true).catch(() => false);
     if (!navigated) test.skip(true, 'Save did not redirect to records');
-    await page.waitForTimeout(2000);
+    await page.waitForFunction((marker) => {
+      const records = window.loadRecords ? window.loadRecords() : [];
+      return records.some((r) => String(r.kwh) === String(marker));
+    }, String(kwh));
     const newId = await page.evaluate((marker) => {
       const records = window.loadRecords ? window.loadRecords() : [];
       const hit = records.find((r) => String(r.kwh) === String(marker));
@@ -50,7 +53,10 @@ test.describe('Mutating flows (opt-in)', () => {
     }, newId);
     page.on('dialog', (dialog) => dialog.accept().catch(() => {}));
     await page.getByRole('button', { name: 'Delete' }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForFunction((id) => {
+      const records = window.loadRecords ? window.loadRecords() : [];
+      return !records.some((r) => String(r.id) === String(id));
+    }, newId);
     const stillExists = await page.evaluate((id) => {
       const records = window.loadRecords ? window.loadRecords() : [];
       return records.some((r) => String(r.id) === String(id));
@@ -67,7 +73,10 @@ test.describe('Mutating flows (opt-in)', () => {
     await viewBtn.first().click();
     const editBtn = page.getByRole('button', { name: 'Edit' });
     await editBtn.click();
-    await page.waitForTimeout(1500);
+    await page.waitForFunction((expected) => {
+      const records = window.loadRecords ? window.loadRecords() : [];
+      return Number(records[0]?.kwh) === expected;
+    }, newKwh);
     const updated = await page.evaluate(() => {
       const records = window.loadRecords ? window.loadRecords() : [];
       return records[0]?.kwh;
@@ -99,7 +108,10 @@ test.describe('Mutating flows (opt-in)', () => {
     }
     const navigatedMarket = await page.waitForURL(/records\.html/, { timeout: 15000 }).then(() => true).catch(() => false);
     if (!navigatedMarket) test.skip(true, 'Save did not redirect to records');
-    await page.waitForTimeout(2000);
+    await page.waitForFunction((marker) => {
+      const records = window.loadRecords ? window.loadRecords() : [];
+      return records.some((r) => String(r.kwh) === String(marker));
+    }, String(kwh));
 
     // Verify in records slide-out
     await page.getByRole('button', { name: 'View' }).first().click();
@@ -109,7 +121,10 @@ test.describe('Mutating flows (opt-in)', () => {
     // Delete to clean up
     page.on('dialog', (dialog) => dialog.accept().catch(() => {}));
     await page.getByRole('button', { name: 'Delete' }).click();
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => {
+      const panel = document.querySelector('#recordPanel');
+      return !panel || panel.classList.contains('hidden');
+    });
   });
 
   test('PDF button remains disabled (placeholder)', async ({ page }) => {
@@ -149,8 +164,12 @@ test.describe('Mutating flows (opt-in)', () => {
 
     await page.getByRole('button', { name: 'Save rows' }).click();
     await expect(page.locator('#recordPanel')).toHaveClass(/hidden/);
-
-    await page.waitForTimeout(1500);
+    await page.waitForFunction((initial) => {
+      const el = document.querySelector('#recordCount');
+      if (!el) return false;
+      const val = Number((el.textContent || '').trim()) || 0;
+      return val >= Math.max(initial, 10);
+    }, initialCount);
     const finalCountText = await page.locator('#recordCount').textContent();
     const finalCount = Number(finalCountText || '0') || 0;
     expect(finalCount).toBeGreaterThanOrEqual(Math.max(initialCount, 10));
@@ -167,12 +186,12 @@ test.describe('Mutating flows (opt-in)', () => {
       const headerSignout = page.locator('#header-signout');
       if (await recordsSignout.isVisible()) {
         await recordsSignout.click();
-        await page.waitForTimeout(1000);
+        await page.waitForURL(/index\.html|\/$/, { timeout: 10000 });
         return;
       }
       if (await headerSignout.isVisible()) {
         await headerSignout.click();
-        await page.waitForTimeout(1000);
+        await page.waitForURL(/index\.html|\/$/, { timeout: 10000 });
       }
     };
 
@@ -195,7 +214,10 @@ test.describe('Mutating flows (opt-in)', () => {
     }
     const navigatedPrimary = await page.waitForURL(/records\.html/, { timeout: 15000 }).then(() => true).catch(() => false);
     if (!navigatedPrimary) test.skip(true, 'Save did not redirect to records');
-    await page.waitForTimeout(2000);
+    await page.waitForFunction((marker) => {
+      const records = window.loadRecords ? window.loadRecords() : [];
+      return records.some((r) => String(r.kwh) === String(marker));
+    }, markerKwh);
     const markerId = await page.evaluate((marker) => {
       const records = window.loadRecords ? window.loadRecords() : [];
       const hit = records.find((r) => String(r.kwh) === String(marker));
@@ -213,7 +235,6 @@ test.describe('Mutating flows (opt-in)', () => {
     await page.locator('#auth-password').fill(secondaryPassword!);
     await page.locator('#auth-submit').click();
     await page.waitForURL(/records\.html/);
-    await page.waitForTimeout(2000);
 
     // Assert marker record is not visible for secondary user
     await expect(page.locator('body')).not.toContainText(markerKwh);

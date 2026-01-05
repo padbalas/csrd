@@ -74,6 +74,10 @@ test.describe('Requirements coverage', () => {
         test.skip(true, 'Set RUN_MUTATION_TESTS=true to enable data mutations');
       }
       await page.goto('/settings.html');
+      const addBtn = page.getByRole('button', { name: /Add site/i });
+      if (await addBtn.isDisabled()) {
+        test.skip(true, 'Site add disabled by plan entitlements');
+      }
       const siteLabels = await page.locator('#sites-list .site-label').allTextContents();
       const hadSites = siteLabels.length > 0;
       const existingPairs = new Set(siteLabels.map((label) => label.trim()));
@@ -101,7 +105,7 @@ test.describe('Requirements coverage', () => {
 
       await countrySelect.selectOption(chosenCountry);
       await regionSelect.selectOption(chosenRegion);
-      await page.getByRole('button', { name: /Add site/i }).click();
+      await addBtn.click();
       await expect(page.locator('#sites-status')).toContainText(/Site added/i);
 
       const targetLabel = `${chosenCountry} / ${chosenRegion}`;
@@ -179,6 +183,44 @@ test.describe('Requirements coverage', () => {
       await page.goto('/insights.html');
       const scope1Tab = page.getByRole('button', { name: /Scope 1/i });
       await expect(scope1Tab).toBeVisible();
+    });
+
+    test('settings checkout success shows status', async ({ page }) => {
+      await page.goto('/settings.html?checkout=success');
+      if (isLandingPage(page.url())) {
+        test.skip(true, 'Auth state missing for settings page');
+      }
+      await expect(page.locator('#subscription-status')).toContainText(/Checkout complete/i);
+    });
+
+    test('scope 2 limit message disables add when present', async ({ page }) => {
+      await page.goto('/records.html');
+      if (isLandingPage(page.url())) {
+        test.skip(true, 'Auth state missing for records page');
+      }
+      const limitStatus = page.locator('#scope2-limit-status');
+      const text = ((await limitStatus.textContent()) || '').trim();
+      if (text) {
+        await expect(limitStatus).toContainText(/Free plan limit/i);
+        await expect(page.getByRole('button', { name: 'Add record' })).toBeDisabled();
+      } else {
+        test.skip(true, 'Limit message not present for this account');
+      }
+    });
+
+    test('scope 1 limit message disables add when present', async ({ page }) => {
+      await page.goto('/scope1.html');
+      if (isLandingPage(page.url())) {
+        test.skip(true, 'Auth state missing for scope 1 page');
+      }
+      const limitStatus = page.locator('#scope1-limit-status');
+      const text = ((await limitStatus.textContent()) || '').trim();
+      if (text) {
+        await expect(limitStatus).toContainText(/Free plan limit/i);
+        await expect(page.getByRole('button', { name: 'Add record' })).toBeDisabled();
+      } else {
+        test.skip(true, 'Limit message not present for this account');
+      }
     });
   });
 });

@@ -6,7 +6,7 @@ test.describe('Records page (unauthenticated)', () => {
   });
 
   test('redirects or blocks access when unauthenticated', async ({ page }) => {
-    await page.waitForTimeout(1500);
+    await page.waitForURL(/records\.html|index\.html/, { timeout: 10000 });
     const url = page.url();
     if (url.includes('records.html')) {
       await expect(
@@ -83,12 +83,18 @@ test.describe('Records page (authenticated behaviors)', () => {
 
     const initialSummary = await page.locator('#totalEmissions').textContent();
     await methodFilter.selectOption('market');
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => {
+      const el = document.querySelector('#totalEmissions');
+      return !!el && (el.textContent || '').trim().length > 0;
+    });
     const afterSummary = await page.locator('#totalEmissions').textContent();
     // If data changes, values may differ; if not, allow equality
     expect(afterSummary).not.toBeNull();
     await methodFilter.selectOption('location');
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => {
+      const el = document.querySelector('#totalEmissions');
+      return !!el && (el.textContent || '').trim().length > 0;
+    });
     const finalSummary = await page.locator('#totalEmissions').textContent();
     expect(finalSummary).not.toBeNull();
     // Reminders list should render

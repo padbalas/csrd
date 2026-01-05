@@ -20,6 +20,17 @@ test.describe('Authenticated flows', () => {
     await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
   });
 
+  test('dashboard shows scope totals and screening note', async ({ page }) => {
+    await page.goto('/dashboard.html');
+    if (isLandingPage(page.url())) {
+      test.skip(true, 'Auth state missing for dashboard page');
+    }
+    await expect(page.getByText(/Total company carbon/i)).toBeVisible();
+    await expect(page.getByText(/Scope 3 spend-based screening is shown separately/i)).toBeVisible();
+    await expect(page.getByText(/Scope 3 actuals total/i)).toBeVisible();
+    await expect(page.getByText(/Scope 3 screening total/i)).toBeVisible();
+  });
+
   test('exports page accessible and CSV action enabled', async ({ page }) => {
     await page.goto('/exports.html');
     if (isLandingPage(page.url())) {
@@ -28,6 +39,13 @@ test.describe('Authenticated flows', () => {
     await expect(page.getByRole('heading', { name: /Export \/ Reports/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /Generate CSV/i })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Generate PDF' })).toBeDisabled();
+    const scope3Btn = page.getByRole('button', { name: /Generate Scope 3 CSV/i });
+    if (await scope3Btn.count()) {
+      const locked = await scope3Btn.isDisabled();
+      if (locked) {
+        await expect(page.locator('#scope3ExportLock')).toBeVisible();
+      }
+    }
   });
 
   test('insights page renders key sections', async ({ page }) => {
@@ -43,6 +61,20 @@ test.describe('Authenticated flows', () => {
     await expect(page.getByRole('heading', { name: /Monthly trend/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Regional contribution/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Data coverage/i })).toBeVisible();
+    const scope3Locked = await page.locator('#scope3-insights-lock').isVisible().catch(() => false);
+    if (scope3Locked) {
+      await expect(page.locator('#scope3-insights-lock')).toContainText(/Upgrade to CarbonWise Complete/i);
+    }
+  });
+
+  test('settings shows subscription upgrade options', async ({ page }) => {
+    await page.goto('/settings.html');
+    if (isLandingPage(page.url())) {
+      test.skip(true, 'Auth state missing for settings page');
+    }
+    await expect(page.getByRole('heading', { name: /Subscription/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Upgrade to Core/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Upgrade to Complete/i })).toBeVisible();
   });
 
   test('records list supports viewing details and filtered CSV export with disclosure', async ({ page }) => {
@@ -117,6 +149,12 @@ test.describe('Authenticated flows', () => {
     if (isLandingPage(page.url())) {
       test.skip(true, 'Auth state missing for scope 3 page');
     }
+    const lockBanner = page.locator('#scope3-lock-banner');
+    if (await lockBanner.isVisible().catch(() => false)) {
+      await expect(lockBanner).toContainText(/Upgrade to CarbonWise Complete/i);
+      await expect(page.locator('.nav-item[data-nav="scope3"]')).toHaveClass(/disabled/);
+      test.skip(true, 'Scope 3 locked for current plan');
+    }
     const viewBtn = page.getByRole('button', { name: 'View' });
     if ((await viewBtn.count()) === 0) test.skip(true, 'No Scope 3 records available to view');
     await viewBtn.first().click();
@@ -130,6 +168,11 @@ test.describe('Authenticated flows', () => {
     await page.goto('/scope3.html');
     if (isLandingPage(page.url())) {
       test.skip(true, 'Auth state missing for scope 3 page');
+    }
+    const lockBanner = page.locator('#scope3-lock-banner');
+    if (await lockBanner.isVisible().catch(() => false)) {
+      await expect(lockBanner).toContainText(/Upgrade to CarbonWise Complete/i);
+      test.skip(true, 'Scope 3 locked for current plan');
     }
     const viewBtn = page.getByRole('button', { name: 'View' });
     if ((await viewBtn.count()) === 0) test.skip(true, 'No Scope 3 records available to view');
@@ -188,6 +231,11 @@ test.describe('Authenticated flows', () => {
     }
     await page.locator('button[data-tab-target="scope3"]').click();
     const status = page.locator('#scope3ExportStatus');
+    if (await page.getByRole('button', { name: /Generate Scope 3 CSV/i }).isDisabled()) {
+      await expect(page.locator('#scope3ExportLock')).toBeVisible();
+      await expect(status).toContainText(/Upgrade to CarbonWise Complete/i);
+      return;
+    }
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
     await page.getByRole('button', { name: /Generate Scope 3 CSV/i }).click();
     const download = await downloadPromise;

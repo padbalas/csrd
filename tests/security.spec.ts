@@ -14,9 +14,19 @@ test('client uses anon key placeholders, not service role', async ({ page }) => 
 test('app pages avoid service role key leakage', async ({ page }) => {
   for (const path of ['/records.html', '/exports.html']) {
     await page.goto(path);
-    await page.waitForTimeout(500);
+    await page.waitForURL(/records\.html|exports\.html|index\.html/, { timeout: 10000 });
     const content = await page.content();
     expect(content.toLowerCase()).not.toContain('service_role');
+  }
+});
+
+test('app pages do not expose Stripe secrets', async ({ page }) => {
+  for (const path of ['/', '/records.html', '/exports.html', '/insights.html', '/settings.html']) {
+    await page.goto(path);
+    await page.waitForURL(/index\.html|records\.html|exports\.html|insights\.html|settings\.html|\/$/, { timeout: 10000 });
+    const content = await page.content();
+    expect(content).not.toMatch(/whsec_[a-zA-Z0-9]+/);
+    expect(content).not.toMatch(/sk_(live|test)_[a-zA-Z0-9]+/);
   }
 });
 
@@ -60,7 +70,7 @@ test.describe('Session expiry handling', () => {
   test('expired storage state forces re-auth on protected pages', async ({ page }) => {
     // Start from records with valid auth to warm state
     await page.goto('/records.html');
-    await page.waitForTimeout(1000);
+    await page.waitForURL(/records\.html|index\.html/, { timeout: 10000 });
 
     // Corrupt storage state to simulate expiry
     await page.context().storageState({ path: 'auth-state.json' });
@@ -69,7 +79,7 @@ test.describe('Session expiry handling', () => {
 
     // Reload records page and expect redirect or sign-in prompt
     await page.goto('/records.html');
-    await page.waitForTimeout(1500);
+    await page.waitForURL(/records\.html|index\.html/, { timeout: 10000 });
     const url = page.url();
     if (url.includes('records.html')) {
       await expect(page.getByText(/Log in on the main page to view your records|Log in to view history|No records match these filters|No records found/i)).toBeVisible();
@@ -92,6 +102,29 @@ test.describe('Input sanitization (UI escapes)', () => {
     await expect(page.locator('#auth-modal img[src="x"]')).toHaveCount(0);
     const html = await page.locator('#auth-modal').innerHTML();
     expect(html || '').not.toContain(payload); // payload not rendered/escaped
+  });
+});
+
+test.describe('Entitlement gates (UI)', () => {
+  const hasAuth = !!process.env.CW_EMAIL && !!process.env.CW_PASSWORD;
+
+  test.skip(!hasAuth, 'Requires CW_EMAIL/CW_PASSWORD to verify gated UI with auth');
+  test.use({ storageState: 'tests/../auth-state.json' });
+
+  test('scope 3 locked state disables actions when present', async ({ page }) => {
+    await page.goto('/scope3.html');
+    await page.waitForURL(/scope3\.html|index\.html/, { timeout: 10000 });
+    if (page.url().includes('index.html')) {
+      test.skip(true, 'Auth state missing for scope 3 page');
+    }
+    const lockBanner = page.locator('#scope3-lock-banner');
+    if (await lockBanner.isVisible().catch(() => false)) {
+      await expect(page.getByRole('button', { name: 'Add record' })).toBeDisabled();
+      await expect(page.getByRole('button', { name: 'Bulk add' })).toBeDisabled();
+      await expect(page.getByRole('button', { name: /Export CSV/i })).toBeDisabled();
+    } else {
+      test.skip(true, 'Scope 3 not locked for this account');
+    }
   });
 });
 

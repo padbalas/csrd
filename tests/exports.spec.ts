@@ -3,8 +3,7 @@ import fs from 'fs';
 
 test('exports page redirects or requires auth', async ({ page }) => {
   await page.goto('/exports.html');
-  // Allow time for client-side auth guard to run
-  await page.waitForTimeout(2000);
+  await page.waitForURL(/exports\.html|index\.html/, { timeout: 10000 });
   const currentUrl = page.url();
 
   if (currentUrl.includes('exports.html')) {
