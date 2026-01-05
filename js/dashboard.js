@@ -21,6 +21,7 @@ const trendPath = document.getElementById('trend-path');
 const trendEmpty = document.getElementById('trend-empty');
 const signoutBtn = document.getElementById('nav-signout');
 const navBrand = document.querySelector('.nav-brand');
+const mobileBrand = document.querySelector('.mobile-brand');
 
 const formatNumber = (n, digits = 2) =>
   Number(n).toLocaleString(undefined, {
@@ -56,10 +57,11 @@ const formatTierLabel = (tier) => {
 };
 
 const updateNavBrand = (companyName, tier) => {
-  if (!navBrand) return;
   const name = companyName || 'Your Company';
   const badge = tier ? ` (${formatTierLabel(tier)})` : '';
-  navBrand.textContent = `${name}${badge}`;
+  const label = `${name}${badge}`;
+  if (navBrand) navBrand.textContent = label;
+  if (mobileBrand) mobileBrand.textContent = label;
 };
 
 const getCompanyId = async (session) => {

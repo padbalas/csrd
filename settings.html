@@ -343,6 +343,7 @@
     const signoutBtn = document.getElementById('nav-signout');
     const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
     const navBrand = document.querySelector('.nav-brand');
+    const mobileBrand = document.querySelector('.mobile-brand');
     const CURRENT_YEAR = new Date().getFullYear();
 
     let companyId = null;
@@ -373,10 +374,11 @@
     };
 
     const updateNavBrand = (companyName, tier) => {
-      if (!navBrand) return;
       const name = companyName || 'Your Company';
       const badge = tier ? ` (${formatTierLabel(tier)})` : '';
-      navBrand.textContent = `${name}${badge}`;
+      const label = `${name}${badge}`;
+      if (navBrand) navBrand.textContent = label;
+      if (mobileBrand) mobileBrand.textContent = label;
     };
     const updateReportingYearLabels = () => {
       if (!reportingEl) return;

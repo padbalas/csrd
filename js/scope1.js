@@ -66,6 +66,7 @@ const panel = document.getElementById('scope1Panel');
 const signoutBtn = document.getElementById('nav-signout');
 const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
 const navBrand = document.querySelector('.nav-brand');
+const mobileBrand = document.querySelector('.mobile-brand');
 
 const filterYear = document.getElementById('filterYear');
 const filterCountry = document.getElementById('filterCountry');
@@ -129,10 +130,11 @@ const formatTierLabel = (tier) => {
 };
 
 const updateNavBrand = (companyName, tier) => {
-  if (!navBrand) return;
   const name = companyName || 'Your Company';
   const badge = tier ? ` (${formatTierLabel(tier)})` : '';
-  navBrand.textContent = `${name}${badge}`;
+  const label = `${name}${badge}`;
+  if (navBrand) navBrand.textContent = label;
+  if (mobileBrand) mobileBrand.textContent = label;
 };
 
 const normalizeKey = (str) => (str || '').trim().toUpperCase();

@@ -27,6 +27,7 @@ const scope3StatusEl = document.getElementById('scope3ExportStatus');
 const scope3LockNote = document.getElementById('scope3ExportLock');
 const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
 const navBrand = document.querySelector('.nav-brand');
+const mobileBrand = document.querySelector('.mobile-brand');
 
 let entitlements = null;
 let scope3Locked = false;
@@ -78,10 +79,11 @@ const formatTierLabel = (tier) => {
 };
 
 const updateNavBrand = (company, tier) => {
-  if (!navBrand) return;
   const name = company?.company_name || 'Your Company';
   const badge = tier ? ` (${formatTierLabel(tier)})` : '';
-  navBrand.textContent = `${name}${badge}`;
+  const label = `${name}${badge}`;
+  if (navBrand) navBrand.textContent = label;
+  if (mobileBrand) mobileBrand.textContent = label;
 };
 
 const getCompanyId = async (session) => {

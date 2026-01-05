@@ -56,6 +56,7 @@ const signoutBtn = document.getElementById('nav-signout');
 const lockBanner = document.getElementById('scope3-lock-banner');
 const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
 const navBrand = document.querySelector('.nav-brand');
+const mobileBrand = document.querySelector('.mobile-brand');
 const filterYear = document.getElementById('filterYear');
 const filterCategory = document.getElementById('filterCategory');
 const filterMethod = document.getElementById('filterMethod');
@@ -90,10 +91,11 @@ const formatTierLabel = (tier) => {
 };
 
 const updateNavBrand = (companyName, tier) => {
-  if (!navBrand) return;
   const name = companyName || 'Your Company';
   const badge = tier ? ` (${formatTierLabel(tier)})` : '';
-  navBrand.textContent = `${name}${badge}`;
+  const label = `${name}${badge}`;
+  if (navBrand) navBrand.textContent = label;
+  if (mobileBrand) mobileBrand.textContent = label;
 };
 
 const requireAuth = async () => {

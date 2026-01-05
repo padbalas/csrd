@@ -392,6 +392,7 @@
     const scope3TabButton = document.querySelector('[data-tab-target=\"scope3\"]');
     const scope3NavLink = document.querySelector('.nav-item[data-nav=\"scope3\"]');
     const navBrand = document.querySelector('.nav-brand');
+    const mobileBrand = document.querySelector('.mobile-brand');
 
     const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
 
@@ -404,10 +405,11 @@
     };
 
     const updateNavBrand = (companyName, tier) => {
-      if (!navBrand) return;
       const name = companyName || 'Your Company';
       const badge = tier ? ` (${formatTierLabel(tier)})` : '';
-      navBrand.textContent = `${name}${badge}`;
+      const label = `${name}${badge}`;
+      if (navBrand) navBrand.textContent = label;
+      if (mobileBrand) mobileBrand.textContent = label;
     };
 
     const loadRecords = () => {
