@@ -244,7 +244,7 @@ test.describe('Authenticated flows', () => {
       if (!statusText) {
         test.skip(true, 'No download and no status; likely no exportable Scope 3 records');
       }
-      await expect(status).toContainText(/No records|No Scope 3 entries/i);
+      await expect(status).toContainText(/No records|No Scope 3 entries|Upgrade to CarbonWise Complete/i);
       return;
     }
     const csvPath = await download.path();

@@ -6,6 +6,11 @@ test('exports page redirects or requires auth', async ({ page }) => {
   await page.waitForURL(/exports\.html|index\.html/, { timeout: 10000 });
   const currentUrl = page.url();
 
+  if (currentUrl.includes('index.html')) {
+    await expect(page.getByRole('heading', { name: /CarbonWise/i })).toBeVisible();
+    return;
+  }
+
   if (currentUrl.includes('exports.html')) {
     await expect(page.getByRole('heading', { name: /Export \/ Reports/i })).toBeVisible();
     await expect(page.getByRole('link', { name: 'My Records' })).toBeVisible();

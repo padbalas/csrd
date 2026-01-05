@@ -24,6 +24,7 @@ test('app pages do not expose Stripe secrets', async ({ page }) => {
   for (const path of ['/', '/records.html', '/exports.html', '/insights.html', '/settings.html']) {
     await page.goto(path);
     await page.waitForURL(/index\.html|records\.html|exports\.html|insights\.html|settings\.html|\/$/, { timeout: 10000 });
+    await page.waitForLoadState('domcontentloaded');
     const content = await page.content();
     expect(content).not.toMatch(/whsec_[a-zA-Z0-9]+/);
     expect(content).not.toMatch(/sk_(live|test)_[a-zA-Z0-9]+/);
