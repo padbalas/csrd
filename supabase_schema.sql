@@ -37,8 +37,19 @@ alter table public.company_sites enable row level security;
 
 create policy "Company sites scoped to owner (select)" on public.company_sites
   for select using (auth.uid() = (select user_id from public.companies where id = company_id));
+drop policy if exists "Company sites scoped to owner (insert)" on public.company_sites;
 create policy "Company sites scoped to owner (insert)" on public.company_sites
-  for insert with check (auth.uid() = (select user_id from public.companies where id = company_id));
+  for insert with check (
+    auth.uid() = (select user_id from public.companies where id = company_id)
+    and (
+      select count(*)
+      from public.company_sites s
+      where s.company_id = company_id
+    ) < coalesce(
+      (select e.max_sites from public.entitlements e where e.company_id = company_id),
+      1
+    )
+  );
 create policy "Company sites scoped to owner (update)" on public.company_sites
   for update using (auth.uid() = (select user_id from public.companies where id = company_id));
 create policy "Company sites scoped to owner (delete)" on public.company_sites
@@ -77,8 +88,19 @@ alter table public.scope2_records enable row level security;
 
 create policy "Scope2 records scoped to owner (select)" on public.scope2_records
   for select using (auth.uid() = user_id);
+drop policy if exists "Scope2 records scoped to owner (insert)" on public.scope2_records;
 create policy "Scope2 records scoped to owner (insert)" on public.scope2_records
-  for insert with check (auth.uid() = user_id);
+  for insert with check (
+    auth.uid() = user_id
+    and (
+      select count(*)
+      from public.scope2_records r
+      where r.user_id = auth.uid() and r.company_id = company_id
+    ) < coalesce(
+      (select e.max_scope2_records from public.entitlements e where e.company_id = company_id),
+      5
+    )
+  );
 create policy "Scope2 records scoped to owner (update)" on public.scope2_records
   for update using (auth.uid() = user_id);
 create policy "Scope2 records scoped to owner (delete)" on public.scope2_records
@@ -94,6 +116,32 @@ create index if not exists scope2_records_user_created_idx
 
 alter table public.scope1_records
   add column if not exists site_id uuid null references public.company_sites(id) on delete restrict;
+
+alter table public.scope1_records enable row level security;
+
+drop policy if exists "Scope1 records scoped to owner (select)" on public.scope1_records;
+drop policy if exists "Scope1 records scoped to owner (insert)" on public.scope1_records;
+drop policy if exists "Scope1 records scoped to owner (update)" on public.scope1_records;
+drop policy if exists "Scope1 records scoped to owner (delete)" on public.scope1_records;
+
+create policy "Scope1 records scoped to owner (select)" on public.scope1_records
+  for select using (auth.uid() = user_id);
+create policy "Scope1 records scoped to owner (insert)" on public.scope1_records
+  for insert with check (
+    auth.uid() = user_id
+    and (
+      select count(*)
+      from public.scope1_records r
+      where r.user_id = auth.uid() and r.company_id = company_id
+    ) < coalesce(
+      (select e.max_scope1_records from public.entitlements e where e.company_id = company_id),
+      5
+    )
+  );
+create policy "Scope1 records scoped to owner (update)" on public.scope1_records
+  for update using (auth.uid() = user_id);
+create policy "Scope1 records scoped to owner (delete)" on public.scope1_records
+  for delete using (auth.uid() = user_id);
 
 create table if not exists public.scope3_records (
   id uuid primary key default gen_random_uuid(),
@@ -161,12 +209,33 @@ alter table public.scope3_records enable row level security;
 
 create policy "Scope3 records scoped to owner (select)" on public.scope3_records
   for select using (auth.uid() = user_id);
+drop policy if exists "Scope3 records scoped to owner (insert)" on public.scope3_records;
+drop policy if exists "Scope3 records scoped to owner (update)" on public.scope3_records;
+drop policy if exists "Scope3 records scoped to owner (delete)" on public.scope3_records;
 create policy "Scope3 records scoped to owner (insert)" on public.scope3_records
-  for insert with check (auth.uid() = user_id);
+  for insert with check (
+    auth.uid() = user_id
+    and coalesce(
+      (select e.allow_scope3 from public.entitlements e where e.company_id = company_id),
+      false
+    )
+  );
 create policy "Scope3 records scoped to owner (update)" on public.scope3_records
-  for update using (auth.uid() = user_id);
+  for update using (
+    auth.uid() = user_id
+    and coalesce(
+      (select e.allow_scope3 from public.entitlements e where e.company_id = company_id),
+      false
+    )
+  );
 create policy "Scope3 records scoped to owner (delete)" on public.scope3_records
-  for delete using (auth.uid() = user_id);
+  for delete using (
+    auth.uid() = user_id
+    and coalesce(
+      (select e.allow_scope3 from public.entitlements e where e.company_id = company_id),
+      false
+    )
+  );
 
 create index if not exists scope3_records_user_created_idx
   on public.scope3_records(user_id, created_at desc);
