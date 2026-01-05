@@ -20,6 +20,7 @@ const topSiteEl = document.getElementById('top-site');
 const trendPath = document.getElementById('trend-path');
 const trendEmpty = document.getElementById('trend-empty');
 const signoutBtn = document.getElementById('nav-signout');
+const navBrand = document.querySelector('.nav-brand');
 
 const formatNumber = (n, digits = 2) =>
   Number(n).toLocaleString(undefined, {
@@ -48,14 +49,53 @@ const requireAuth = async () => {
   return data.session;
 };
 
+const formatTierLabel = (tier) => {
+  if (!tier) return '';
+  const label = tier === 'core' ? 'Core' : tier === 'complete' ? 'Complete' : 'Free';
+  return label;
+};
+
+const updateNavBrand = (companyName, tier) => {
+  if (!navBrand) return;
+  const name = companyName || 'CarbonWise';
+  const badge = tier ? ` (${formatTierLabel(tier)})` : '';
+  navBrand.textContent = `${name}${badge}`;
+};
+
+const getCompanyId = async (session) => {
+  if (!session) return null;
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: true })
+    .limit(1);
+  if (error) return null;
+  return data?.[0]?.id || null;
+};
+
+const fetchEntitlements = async (session) => {
+  const companyId = await getCompanyId(session);
+  if (!companyId) return null;
+  const { data, error } = await supabase
+    .from('entitlements')
+    .select('tier')
+    .eq('company_id', companyId)
+    .maybeSingle();
+  if (error) return null;
+  return data || null;
+};
+
 const fetchCompanyPreference = async () => {
   const { data, error } = await supabase
     .from('companies')
-    .select('reporting_year_preference')
+    .select('company_name,reporting_year_preference')
     .order('created_at', { ascending: true })
     .limit(1);
   if (error || !data || !data.length) return 'all';
-  return data[0].reporting_year_preference || 'all';
+  const company = data[0];
+  updateNavBrand(company.company_name || '', entitlements?.tier);
+  return company.reporting_year_preference || 'all';
 };
 
 const fetchScope2 = async (year, siteId) => {
@@ -248,9 +288,13 @@ const renderDashboard = async (sites) => {
   renderTrend(scope1, scope2, scope3Actuals, basis, year);
 };
 
+let entitlements = null;
+
 const init = async () => {
   const session = await requireAuth();
   if (!session) return;
+  entitlements = await fetchEntitlements(session);
+  updateNavBrand('', entitlements?.tier);
   const siteData = await ensureCompanySites(supabase, session);
   const sites = siteData.sites || [];
   populateSites(sites);

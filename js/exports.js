@@ -26,6 +26,7 @@ const scope3ExportBtn = document.getElementById('exportScope3Csv');
 const scope3StatusEl = document.getElementById('scope3ExportStatus');
 const scope3LockNote = document.getElementById('scope3ExportLock');
 const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
+const navBrand = document.querySelector('.nav-brand');
 
 let entitlements = null;
 let scope3Locked = false;
@@ -70,6 +71,19 @@ const requireAuth = async () => {
   return data.session;
 };
 
+const formatTierLabel = (tier) => {
+  if (!tier) return '';
+  const label = tier === 'core' ? 'Core' : tier === 'complete' ? 'Complete' : 'Free';
+  return label;
+};
+
+const updateNavBrand = (company, tier) => {
+  if (!navBrand) return;
+  const name = company?.company_name || 'CarbonWise';
+  const badge = tier ? ` (${formatTierLabel(tier)})` : '';
+  navBrand.textContent = `${name}${badge}`;
+};
+
 const getCompanyId = async (session) => {
   if (!session) return null;
   const { data, error } = await supabase
@@ -112,11 +126,7 @@ const applyScope3Gate = () => {
   if (scope3ExportBtn) scope3ExportBtn.disabled = scope3Locked;
   if (scope3YearSelect) scope3YearSelect.disabled = scope3Locked;
   if (scope3LockNote) scope3LockNote.style.display = scope3Locked ? 'block' : 'none';
-  if (scope3Locked) {
-    setScope3Status('Upgrade to CarbonWise Complete to export Scope 3 data.');
-  } else {
-    setScope3Status('');
-  }
+  setScope3Status('');
 };
 
 const fetchCompany = async () => {
@@ -384,6 +394,7 @@ const init = async () => {
   updateScope3Nav();
   applyScope3Gate();
   const [company, records] = await Promise.all([fetchCompany(), fetchRecords('')]);
+  updateNavBrand(company, entitlements?.tier);
   if (companyNameEl) {
     if (company) companyNameEl.textContent = `${company.company_name} (${company.country || ''}${company.region ? ' / ' + company.region : ''})`;
     else companyNameEl.textContent = 'Company not set';
@@ -461,7 +472,7 @@ const init = async () => {
   if (scope3ExportBtn) {
     scope3ExportBtn.addEventListener('click', async () => {
       if (scope3Locked) {
-        setScope3Status('Upgrade to CarbonWise Complete to export Scope 3 data.');
+        setScope3Status('');
         return;
       }
       setScope3Loading(true);

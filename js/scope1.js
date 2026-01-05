@@ -65,6 +65,7 @@ const limitStatus = document.getElementById('scope1-limit-status');
 const panel = document.getElementById('scope1Panel');
 const signoutBtn = document.getElementById('nav-signout');
 const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
+const navBrand = document.querySelector('.nav-brand');
 
 const filterYear = document.getElementById('filterYear');
 const filterCountry = document.getElementById('filterCountry');
@@ -121,6 +122,19 @@ const formatNumber = (n, digits = 2) => Number(n).toLocaleString(undefined, {
   minimumFractionDigits: digits
 });
 
+const formatTierLabel = (tier) => {
+  if (!tier) return '';
+  const label = tier === 'core' ? 'Core' : tier === 'complete' ? 'Complete' : 'Free';
+  return label;
+};
+
+const updateNavBrand = (companyName, tier) => {
+  if (!navBrand) return;
+  const name = companyName || 'CarbonWise';
+  const badge = tier ? ` (${formatTierLabel(tier)})` : '';
+  navBrand.textContent = `${name}${badge}`;
+};
+
 const normalizeKey = (str) => (str || '').trim().toUpperCase();
 
 const requireAuth = async () => {
@@ -159,7 +173,7 @@ const loadEntitlements = async (session) => {
 const loadCompanyDefaults = async (session) => {
   const { data, error } = await supabase
     .from('companies')
-    .select('reporting_year_preference')
+    .select('company_name,reporting_year_preference')
     .order('created_at', { ascending: true })
     .limit(1);
   if (error || !data || !data.length) return;
@@ -171,6 +185,7 @@ const loadCompanyDefaults = async (session) => {
     region: siteData.hqSite?.region || '',
     reportingYear: company.reporting_year_preference || 'all'
   };
+  updateNavBrand(company.company_name || '', entitlements?.tier);
 };
 
 const fetchRecords = async () => {
@@ -1166,6 +1181,7 @@ const loadData = async () => {
   if (!session) return;
   entitlements = await loadEntitlements(session);
   updateScope3Nav();
+  updateNavBrand('', entitlements?.tier);
   await loadCompanyDefaults(session);
   await loadData();
   supabase.auth.onAuthStateChange((_event) => {

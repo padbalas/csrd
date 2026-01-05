@@ -391,11 +391,24 @@
     const scope3LockBanner = document.getElementById('scope3-insights-lock');
     const scope3TabButton = document.querySelector('[data-tab-target=\"scope3\"]');
     const scope3NavLink = document.querySelector('.nav-item[data-nav=\"scope3\"]');
+    const navBrand = document.querySelector('.nav-brand');
 
     const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
 
     let entitlements = null;
     let scope3Locked = false;
+
+    const formatTierLabel = (tier) => {
+      if (!tier) return '';
+      return tier === 'core' ? 'Core' : tier === 'complete' ? 'Complete' : 'Free';
+    };
+
+    const updateNavBrand = (companyName, tier) => {
+      if (!navBrand) return;
+      const name = companyName || 'CarbonWise';
+      const badge = tier ? ` (${formatTierLabel(tier)})` : '';
+      navBrand.textContent = `${name}${badge}`;
+    };
 
     const loadRecords = () => {
       try {
@@ -541,12 +554,13 @@
     const loadCompanyPreference = async () => {
       const { data, error } = await supabase
         .from('companies')
-        .select('reporting_year_preference')
+        .select('company_name,reporting_year_preference')
         .order('created_at', { ascending: true })
         .limit(1);
       if (error || !data || !data.length) return;
       const pref = data[0]?.reporting_year_preference || null;
       preferredYear = pref === 'previous' ? CURRENT_YEAR - 1 : pref === 'current' ? CURRENT_YEAR : null;
+      updateNavBrand(data[0]?.company_name || '', entitlements?.tier);
     };
 
     const renderTrend = (records, elements) => {
@@ -815,6 +829,7 @@
       entitlements = await loadEntitlements(session);
       updateScope3Nav();
       applyScope3Gate();
+      updateNavBrand('', entitlements?.tier);
       try {
         const [records, scope1RecordsData, scope3RecordsData] = await Promise.all([fetchRecords(), fetchScope1Records(), fetchScope3Records()]);
         await loadCompanyPreference();

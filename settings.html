@@ -342,6 +342,7 @@
     const completeBadge = document.getElementById('plan-complete-badge');
     const signoutBtn = document.getElementById('nav-signout');
     const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
+    const navBrand = document.querySelector('.nav-brand');
     const CURRENT_YEAR = new Date().getFullYear();
 
     let companyId = null;
@@ -364,6 +365,18 @@
       updatePlanUi();
       updateScope3Nav();
       updateSiteGate();
+    };
+
+    const formatTierLabel = (tier) => {
+      if (!tier) return '';
+      return tier === 'core' ? 'Core' : tier === 'complete' ? 'Complete' : 'Free';
+    };
+
+    const updateNavBrand = (companyName, tier) => {
+      if (!navBrand) return;
+      const name = companyName || 'CarbonWise';
+      const badge = tier ? ` (${formatTierLabel(tier)})` : '';
+      navBrand.textContent = `${name}${badge}`;
     };
     const updateReportingYearLabels = () => {
       if (!reportingEl) return;
@@ -419,6 +432,7 @@
       if (reportingEl) {
         reportingEl.value = company.reporting_year_preference || 'all';
       }
+      updateNavBrand(company.company_name || '', entitlements?.tier);
     };
 
     const loadEntitlements = async () => {
@@ -701,6 +715,7 @@
       if (!session) return;
       await loadCompany();
       await refreshEntitlements();
+      updateNavBrand(nameEl.value || '', entitlements?.tier);
       const siteData = await ensureCompanySites(supabase, session);
       companyId = siteData.companyId || companyId;
       sites = siteData.sites || [];

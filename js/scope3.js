@@ -55,6 +55,7 @@ const panel = document.getElementById('scope3Panel');
 const signoutBtn = document.getElementById('nav-signout');
 const lockBanner = document.getElementById('scope3-lock-banner');
 const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
+const navBrand = document.querySelector('.nav-brand');
 const filterYear = document.getElementById('filterYear');
 const filterCategory = document.getElementById('filterCategory');
 const filterMethod = document.getElementById('filterMethod');
@@ -81,6 +82,19 @@ const formatNumber = (n, digits = 2) => Number(n).toLocaleString(undefined, {
   maximumFractionDigits: digits,
   minimumFractionDigits: digits
 });
+
+const formatTierLabel = (tier) => {
+  if (!tier) return '';
+  const label = tier === 'core' ? 'Core' : tier === 'complete' ? 'Complete' : 'Free';
+  return label;
+};
+
+const updateNavBrand = (companyName, tier) => {
+  if (!navBrand) return;
+  const name = companyName || 'CarbonWise';
+  const badge = tier ? ` (${formatTierLabel(tier)})` : '';
+  navBrand.textContent = `${name}${badge}`;
+};
 
 const requireAuth = async () => {
   const { data } = await supabase.auth.getSession();
@@ -146,7 +160,7 @@ const applyScope3Gate = () => {
 const loadCompanyPreference = async () => {
   const { data, error } = await supabase
     .from('companies')
-    .select('reporting_year_preference,country,region')
+    .select('company_name,reporting_year_preference,country,region')
     .order('created_at', { ascending: true })
     .limit(1);
   if (error || !data || !data.length) return;
@@ -154,6 +168,7 @@ const loadCompanyPreference = async () => {
   companyCountry = data[0].country || '';
   companyRegion = data[0].region || '';
   factorSet = SCOPE3_FACTOR_SETS[companyCountry] || null;
+  updateNavBrand(data[0].company_name || '', entitlements?.tier);
 };
 
 const fetchRecords = async () => {
@@ -1429,6 +1444,7 @@ const loadData = async () => {
   entitlements = await loadEntitlements(session);
   updateScope3Nav();
   applyScope3Gate();
+  updateNavBrand('', entitlements?.tier);
   await loadCompanyPreference();
   await loadData();
   supabase.auth.onAuthStateChange((_event) => {

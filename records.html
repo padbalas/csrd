@@ -533,6 +533,7 @@
     let entitlements = null;
     const authNote = document.getElementById('records-auth-note');
     const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
+    const navBrand = document.querySelector('.nav-brand');
 
     const PLAN_LIMIT_MESSAGE = 'Free plan limit reached (5 records). Upgrade to add more.';
     const isPlanLimitError = (error) => {
@@ -826,6 +827,18 @@
       return data || null;
     };
 
+    const formatTierLabel = (tier) => {
+      if (!tier) return '';
+      return tier === 'core' ? 'Core' : tier === 'complete' ? 'Complete' : 'Free';
+    };
+
+    const updateNavBrand = (companyName, tier) => {
+      if (!navBrand) return;
+      const name = companyName || 'CarbonWise';
+      const badge = tier ? ` (${formatTierLabel(tier)})` : '';
+      navBrand.textContent = `${name}${badge}`;
+    };
+
     const updateScope3Nav = () => {
       if (!scope3NavLink) return;
       if (entitlements?.allow_scope3) {
@@ -858,7 +871,7 @@
       if (!supabase) return;
       const { data, error } = await supabase
         .from('companies')
-        .select('reporting_year_preference')
+        .select('company_name,reporting_year_preference')
         .order('created_at', { ascending: true })
         .limit(1);
       if (error || !data || !data.length) return;
@@ -872,6 +885,7 @@
         country: hqSite?.country || '',
         region: hqSite?.region || ''
       };
+      updateNavBrand(company.company_name || '', entitlements?.tier);
       applyRecordGate();
       refreshPanelSiteSelectors();
     };
@@ -1566,10 +1580,12 @@
         if (session) {
           entitlements = await loadEntitlements(session);
           updateScope3Nav();
+          updateNavBrand('', entitlements?.tier);
           await loadCompanyPreference(session);
         } else {
           entitlements = null;
           updateScope3Nav();
+          updateNavBrand('', '');
         }
         applyRecordGate();
         if (window.renderRecords) window.renderRecords('recordsTable');
