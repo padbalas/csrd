@@ -57,6 +57,7 @@ const lockBanner = document.getElementById('scope3-lock-banner');
 const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
 const navBrand = document.querySelector('.nav-brand');
 const mobileBrand = document.querySelector('.mobile-brand');
+const BRAND_CACHE_KEY = 'cw_brand_label';
 const filterYear = document.getElementById('filterYear');
 const filterCategory = document.getElementById('filterCategory');
 const filterMethod = document.getElementById('filterMethod');
@@ -90,13 +91,39 @@ const formatTierLabel = (tier) => {
   return label;
 };
 
+const setBrandLabel = (label) => {
+  if (navBrand) navBrand.textContent = label;
+  if (mobileBrand) mobileBrand.textContent = label;
+};
+
+const getCachedBrandLabel = () => {
+  try {
+    return localStorage.getItem(BRAND_CACHE_KEY);
+  } catch (err) {
+    return null;
+  }
+};
+
+const cacheBrandLabel = (label) => {
+  try {
+    localStorage.setItem(BRAND_CACHE_KEY, label);
+  } catch (err) {
+    // Ignore storage failures (privacy mode or restricted storage).
+  }
+};
+
 const updateNavBrand = (companyName, tier) => {
   const name = companyName || 'Your Company';
   const badge = tier ? ` (${formatTierLabel(tier)})` : '';
   const label = `${name}${badge}`;
-  if (navBrand) navBrand.textContent = label;
-  if (mobileBrand) mobileBrand.textContent = label;
+  setBrandLabel(label);
+  cacheBrandLabel(label);
 };
+
+const cachedBrand = getCachedBrandLabel();
+if (cachedBrand) {
+  setBrandLabel(cachedBrand);
+}
 
 const requireAuth = async () => {
   const { data } = await supabase.auth.getSession();
