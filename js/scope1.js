@@ -61,8 +61,10 @@ const exportBtn = document.getElementById('scope1-export-csv');
 const exportStatus = document.getElementById('scope1-export-status');
 const addBtn = document.getElementById('scope1-add');
 const bulkBtn = document.getElementById('scope1-bulk');
+const limitStatus = document.getElementById('scope1-limit-status');
 const panel = document.getElementById('scope1Panel');
 const signoutBtn = document.getElementById('nav-signout');
+const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
 
 const filterYear = document.getElementById('filterYear');
 const filterCountry = document.getElementById('filterCountry');
@@ -76,11 +78,33 @@ const countEl = document.getElementById('scope1Count');
 let records = [];
 let companyDefaults = { country: '', region: '', reportingYear: 'all' };
 let sites = [];
+let entitlements = null;
 
-const applySiteRestrictions = () => {
+const updateScope3Nav = () => {
+  if (!scope3NavLink) return;
+  if (entitlements?.allow_scope3) {
+    scope3NavLink.classList.remove('disabled');
+    scope3NavLink.removeAttribute('aria-disabled');
+    scope3NavLink.title = '';
+  } else {
+    scope3NavLink.classList.add('disabled');
+    scope3NavLink.setAttribute('aria-disabled', 'true');
+    scope3NavLink.title = 'Upgrade to CarbonWise Complete to unlock Scope 3.';
+  }
+};
+
+const applyRecordGate = () => {
   const hasSites = sites.length > 0;
-  if (addBtn) addBtn.disabled = !hasSites;
-  if (bulkBtn) bulkBtn.disabled = !hasSites;
+  const maxRecords = entitlements?.max_scope1_records ?? null;
+  const limitReached = maxRecords !== null && records.length >= maxRecords;
+  const disabled = !hasSites || limitReached;
+  if (addBtn) addBtn.disabled = disabled;
+  if (bulkBtn) bulkBtn.disabled = disabled;
+  if (limitStatus) {
+    limitStatus.textContent = limitReached
+      ? 'Free plan limit reached (5 records). Upgrade to add more.'
+      : '';
+  }
 };
 
 const formatNumber = (n, digits = 2) => Number(n).toLocaleString(undefined, {
@@ -109,6 +133,18 @@ const getCompanyId = async (session) => {
     .limit(1);
   if (error) return null;
   return data?.[0]?.id || null;
+};
+
+const loadEntitlements = async (session) => {
+  const companyId = await getCompanyId(session);
+  if (!companyId) return null;
+  const { data, error } = await supabase
+    .from('entitlements')
+    .select('tier,max_scope1_records,allow_scope3')
+    .eq('company_id', companyId)
+    .maybeSingle();
+  if (error) return null;
+  return data || null;
 };
 
 const loadCompanyDefaults = async (session) => {
@@ -1112,14 +1148,16 @@ const loadData = async () => {
     records = [];
   }
   refreshView();
+  applyRecordGate();
 };
 
 (async () => {
   attachHandlers();
   const session = await requireAuth();
   if (!session) return;
+  entitlements = await loadEntitlements(session);
+  updateScope3Nav();
   await loadCompanyDefaults(session);
-  applySiteRestrictions();
   await loadData();
   supabase.auth.onAuthStateChange((_event) => {
     if (_event === 'SIGNED_OUT') {

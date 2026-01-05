@@ -471,6 +471,7 @@
         <div class="records-actions">
           <button class="btn secondary" id="records-add" type="button">Add record</button>
           <button class="btn secondary" id="records-bulk" type="button">Bulk add</button>
+          <span class="records-status" id="scope2-limit-status"></span>
         </div>
       </section>
       <table class="table" aria-label="Saved records">
@@ -525,10 +526,13 @@
     const exportStatus = document.getElementById('records-export-status');
     const addBtn = document.getElementById('records-add');
     const bulkBtn = document.getElementById('records-bulk');
+    const limitStatus = document.getElementById('scope2-limit-status');
     let sites = [];
     let sitesLoaded = false;
     let hqSite = null;
+    let entitlements = null;
     const authNote = document.getElementById('records-auth-note');
+    const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
     const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
     const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
 
@@ -757,6 +761,7 @@
       if (window.renderRecords) window.renderRecords('recordsTable');
       if (window.renderCarbonSummary) window.renderCarbonSummary();
       if (window.renderCarbonReminders) window.renderCarbonReminders();
+      applyRecordGate();
       if (!data || !data.length) {
         showMessage('No records found. Add a record to include it in calculations and exports.');
       }
@@ -801,10 +806,44 @@
       return data?.[0]?.id || null;
     };
 
-    const applySiteRestrictions = () => {
+    const loadEntitlements = async (session) => {
+      const companyId = await getCompanyId(session);
+      if (!companyId) return null;
+      const { data, error } = await supabase
+        .from('entitlements')
+        .select('tier,max_scope2_records,allow_scope3')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      if (error) return null;
+      return data || null;
+    };
+
+    const updateScope3Nav = () => {
+      if (!scope3NavLink) return;
+      if (entitlements?.allow_scope3) {
+        scope3NavLink.classList.remove('disabled');
+        scope3NavLink.removeAttribute('aria-disabled');
+        scope3NavLink.title = '';
+      } else {
+        scope3NavLink.classList.add('disabled');
+        scope3NavLink.setAttribute('aria-disabled', 'true');
+        scope3NavLink.title = 'Upgrade to CarbonWise Complete to unlock Scope 3.';
+      }
+    };
+
+    const applyRecordGate = () => {
       const hasSites = sites.length > 0;
-      if (addBtn) addBtn.disabled = !hasSites;
-      if (bulkBtn) bulkBtn.disabled = !hasSites;
+      const maxRecords = entitlements?.max_scope2_records ?? null;
+      const currentRecords = window.loadRecords ? window.loadRecords() : [];
+      const limitReached = maxRecords !== null && currentRecords.length >= maxRecords;
+      const disabled = !hasSites || limitReached;
+      if (addBtn) addBtn.disabled = disabled;
+      if (bulkBtn) bulkBtn.disabled = disabled;
+      if (limitStatus) {
+        limitStatus.textContent = limitReached
+          ? 'Free plan limit reached (5 records). Upgrade to add more.'
+          : '';
+      }
     };
 
     const loadCompanyPreference = async (session) => {
@@ -825,7 +864,7 @@
         country: hqSite?.country || '',
         region: hqSite?.region || ''
       };
-      applySiteRestrictions();
+      applyRecordGate();
       refreshPanelSiteSelectors();
     };
 
@@ -1516,7 +1555,15 @@
       if (supabase) {
         await refreshRecords();
         const session = await getSession();
-        if (session) await loadCompanyPreference(session);
+        if (session) {
+          entitlements = await loadEntitlements(session);
+          updateScope3Nav();
+          await loadCompanyPreference(session);
+        } else {
+          entitlements = null;
+          updateScope3Nav();
+        }
+        applyRecordGate();
         if (window.renderRecords) window.renderRecords('recordsTable');
         if (window.renderCarbonSummary) window.renderCarbonSummary();
         if (window.renderCarbonReminders) window.renderCarbonReminders();
@@ -1524,12 +1571,17 @@
           if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED' || _event === 'SIGNED_OUT') {
             await refreshRecords();
             if (session) {
+              entitlements = await loadEntitlements(session);
+              updateScope3Nav();
               await loadCompanyPreference(session);
             } else {
               sites = [];
               hqSite = null;
-              applySiteRestrictions();
+              entitlements = null;
+              updateScope3Nav();
+              applyRecordGate();
             }
+            applyRecordGate();
             if (window.renderRecords) window.renderRecords('recordsTable');
             if (window.renderCarbonSummary) window.renderCarbonSummary();
             if (window.renderCarbonReminders) window.renderCarbonReminders();

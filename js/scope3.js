@@ -53,6 +53,8 @@ const addBtn = document.getElementById('scope3-add');
 const bulkBtn = document.getElementById('scope3-bulk');
 const panel = document.getElementById('scope3Panel');
 const signoutBtn = document.getElementById('nav-signout');
+const lockBanner = document.getElementById('scope3-lock-banner');
+const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
 const filterYear = document.getElementById('filterYear');
 const filterCategory = document.getElementById('filterCategory');
 const filterMethod = document.getElementById('filterMethod');
@@ -70,6 +72,8 @@ let reportingYearPreference = 'all';
 let factorSet = null;
 let companyCountry = '';
 let companyRegion = '';
+let entitlements = null;
+let scope3Locked = false;
 
 const getFactorSet = (countryCode) => SCOPE3_FACTOR_SETS[countryCode] || null;
 
@@ -97,6 +101,46 @@ const getCompanyId = async (session) => {
     .limit(1);
   if (error) return null;
   return data?.[0]?.id || null;
+};
+
+const loadEntitlements = async (session) => {
+  const companyId = await getCompanyId(session);
+  if (!companyId) return null;
+  const { data, error } = await supabase
+    .from('entitlements')
+    .select('tier,allow_scope3')
+    .eq('company_id', companyId)
+    .maybeSingle();
+  if (error) return null;
+  return data || null;
+};
+
+const updateScope3Nav = () => {
+  if (!scope3NavLink) return;
+  if (entitlements?.allow_scope3) {
+    scope3NavLink.classList.remove('disabled');
+    scope3NavLink.removeAttribute('aria-disabled');
+    scope3NavLink.title = '';
+  } else {
+    scope3NavLink.classList.add('disabled');
+    scope3NavLink.setAttribute('aria-disabled', 'true');
+    scope3NavLink.title = 'Upgrade to CarbonWise Complete to unlock Scope 3.';
+  }
+};
+
+const applyScope3Gate = () => {
+  scope3Locked = !entitlements?.allow_scope3;
+  if (lockBanner) {
+    lockBanner.hidden = !scope3Locked;
+  }
+  if (addBtn) addBtn.disabled = scope3Locked;
+  if (bulkBtn) bulkBtn.disabled = scope3Locked;
+  if (exportBtn) exportBtn.disabled = scope3Locked;
+  if (scope3Locked && exportStatus) {
+    exportStatus.textContent = 'Upgrade to CarbonWise Complete to export Scope 3 data.';
+  } else if (exportStatus) {
+    exportStatus.textContent = '';
+  }
 };
 
 const loadCompanyPreference = async () => {
@@ -434,6 +478,14 @@ const buildRecordDetails = (record) => {
   const monthLabel = record.period_month ? MONTHS[record.period_month - 1] : '—';
   const spend = record.spend_amount != null ? `${formatNumber(record.spend_amount || 0, 2)} ${record.currency || ''}` : '—';
   const emissionsSource = record.emissions_source || '—';
+  const actionRow = scope3Locked
+    ? '<p class="note" style="margin:8px 0 0;">Read-only on your current plan. Upgrade to CarbonWise Complete to edit or delete.</p>'
+    : `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <button class="btn secondary" data-panel-edit="${record.id}" style="padding:10px 12px;">Edit</button>
+        <button class="btn secondary" data-panel-delete="${record.id}" style="padding:10px 12px;">Delete</button>
+      </div>
+    `;
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
       <div>
@@ -455,10 +507,7 @@ const buildRecordDetails = (record) => {
       <div><strong>Factor source</strong><br>${record.emission_factor_source ? `${record.emission_factor_source} • ${record.emission_factor_year}` : '—'}</div>
       <div><strong>Model / geography</strong><br>${record.emission_factor_model ? `${record.emission_factor_model} • ${record.emission_factor_geo}` : '—'}</div>
       <p style="color:#4b5563;font-size:0.95rem;margin:8px 0 0;">${SCOPE3_DISCLOSURE}</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
-        <button class="btn secondary" data-panel-edit="${record.id}" style="padding:10px 12px;">Edit</button>
-        <button class="btn secondary" data-panel-delete="${record.id}" style="padding:10px 12px;">Delete</button>
-      </div>
+      ${actionRow}
     </div>
   `;
 };
@@ -554,6 +603,7 @@ const openRecordPanel = (recordId) => {
 };
 
 const handleEditRecord = async (record) => {
+  if (scope3Locked) return;
   openPanel(buildEditPanel(record));
   const form = panel?.querySelector('#edit-scope3-form');
   const yearEl = panel?.querySelector('#edit-year');
@@ -645,6 +695,7 @@ const handleEditRecord = async (record) => {
 };
 
 const handleDeleteRecord = async (record) => {
+  if (scope3Locked) return;
   const confirmDelete = confirm('Delete this record?');
   if (!confirmDelete) return;
   const { error } = await supabase.from('scope3_records').delete().eq('id', record.id);
@@ -808,6 +859,10 @@ const buildAddPanel = () => `
 `;
 
 const openAddPanel = () => {
+  if (scope3Locked) {
+    if (exportStatus) exportStatus.textContent = 'Upgrade to CarbonWise Complete to add Scope 3 records.';
+    return;
+  }
   openPanel(buildAddPanel());
   const form = panel?.querySelector('#add-scope3-form');
   const yearEl = panel?.querySelector('#add-year');
@@ -1106,6 +1161,10 @@ const createBulkRow = () => {
 };
 
 const openBulkPanel = () => {
+  if (scope3Locked) {
+    if (exportStatus) exportStatus.textContent = 'Upgrade to CarbonWise Complete to add Scope 3 records.';
+    return;
+  }
   openPanel(buildBulkPanel());
   const rowsEl = panel?.querySelector('#bulk-rows');
   const addRowBtn = panel?.querySelector('#bulk-add-row');
@@ -1300,6 +1359,10 @@ const downloadCsv = (csv, filename) => {
 
 const exportFiltered = () => {
   if (!exportBtn) return;
+  if (scope3Locked) {
+    if (exportStatus) exportStatus.textContent = 'Upgrade to CarbonWise Complete to export Scope 3 data.';
+    return;
+  }
   exportBtn.disabled = true;
   if (exportStatus) exportStatus.textContent = 'Preparing export...';
   try {
@@ -1363,6 +1426,9 @@ const loadData = async () => {
   attachHandlers();
   const session = await requireAuth();
   if (!session) return;
+  entitlements = await loadEntitlements(session);
+  updateScope3Nav();
+  applyScope3Gate();
   await loadCompanyPreference();
   await loadData();
   supabase.auth.onAuthStateChange((_event) => {

@@ -341,6 +341,7 @@
     const coreBadge = document.getElementById('plan-core-badge');
     const completeBadge = document.getElementById('plan-complete-badge');
     const signoutBtn = document.getElementById('nav-signout');
+    const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
     const CURRENT_YEAR = new Date().getFullYear();
 
     let companyId = null;
@@ -436,6 +437,19 @@
         setSubscriptionStatus('Core plan active. Upgrade to Complete for Scope 3 and multi-site access.');
       } else if (tier === 'complete') {
         setSubscriptionStatus('Complete plan active. All features unlocked.');
+      }
+    };
+
+    const updateScope3Nav = () => {
+      if (!scope3NavLink) return;
+      if (entitlements?.allow_scope3) {
+        scope3NavLink.classList.remove('disabled');
+        scope3NavLink.removeAttribute('aria-disabled');
+        scope3NavLink.title = '';
+      } else {
+        scope3NavLink.classList.add('disabled');
+        scope3NavLink.setAttribute('aria-disabled', 'true');
+        scope3NavLink.title = 'Upgrade to CarbonWise Complete to unlock Scope 3.';
       }
     };
 
@@ -681,6 +695,7 @@
       await loadCompany();
       entitlements = await loadEntitlements();
       updatePlanUi();
+      updateScope3Nav();
       const siteData = await ensureCompanySites(supabase, session);
       companyId = siteData.companyId || companyId;
       sites = siteData.sites || [];

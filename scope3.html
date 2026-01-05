@@ -220,6 +220,15 @@
     }
     .records-actions { display: flex; align-items: center; gap: 8px; }
     .records-status { color: var(--muted); font-size: 0.9rem; }
+    .lock-banner {
+      background: #fff4e5;
+      border: 1px solid #f0c987;
+      color: #92400e;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
     .note { color: var(--muted); font-size: 0.9rem; }
     .summary-block { margin-top: 10px; }
     .summary-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 12px; }
@@ -331,6 +340,9 @@
     </aside>
     <div class="app-content">
       <div class="shell">
+        <div class="lock-banner" id="scope3-lock-banner" hidden>
+          Upgrade to CarbonWise Complete to unlock Scope 3 records.
+        </div>
         <section class="summary-block">
           <h2 style="margin:0;">Scope 3 Carbon Snapshot</h2>
           <div class="summary-grid">
