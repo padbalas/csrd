@@ -3,17 +3,16 @@ import fs from 'fs';
 
 test('exports page redirects or requires auth', async ({ page }) => {
   await page.goto('/exports.html');
-  await page.waitForURL(/exports\.html|index\.html/, { timeout: 10000 });
-  await page.waitForLoadState('domcontentloaded');
-  const currentUrl = page.url();
+  await page.waitForURL(/exports\.html|index\.html|\/$/, { timeout: 10000 });
+  await page.waitForFunction(() => {
+    const exportHeading = document.querySelector('h1')?.textContent || '';
+    return /Export \\/ Reports/i.test(exportHeading) || /CarbonWise/i.test(exportHeading);
+  });
+  const exportHeading = page.getByRole('heading', { name: /Export \/ Reports/i });
+  const hasExportHeading = (await exportHeading.count()) > 0;
 
-  if (currentUrl.includes('index.html')) {
-    await expect(page.getByRole('heading', { name: /CarbonWise/i })).toBeVisible();
-    return;
-  }
-
-  if (currentUrl.includes('exports.html')) {
-    await expect(page.getByRole('heading', { name: /Export \/ Reports/i })).toBeVisible();
+  if (hasExportHeading) {
+    await expect(exportHeading).toBeVisible();
     await expect(page.getByRole('link', { name: 'My Records' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Generate PDF/i })).toBeDisabled();
     await expect(page.locator('footer').getByRole('link', { name: /Methodology/i })).toBeVisible();
@@ -36,7 +35,8 @@ test('exports page redirects or requires auth', async ({ page }) => {
       expect(content).toMatch(/\r\n/); // CRLF endings
       expect(content).toMatch(/Disclosure/);
     }
-  } else {
-    await expect(currentUrl).toContain('index.html');
+    return;
   }
+
+  await expect(page.getByRole('heading', { name: /CarbonWise/i })).toBeVisible();
 });

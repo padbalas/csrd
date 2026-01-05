@@ -15,7 +15,8 @@ test('app pages avoid service role key leakage', async ({ page }) => {
   for (const path of ['/records.html', '/exports.html']) {
     await page.goto(path);
     await page.waitForURL(/records\.html|exports\.html|index\.html/, { timeout: 10000 });
-    const content = await page.content();
+    await page.waitForFunction(() => document.readyState === 'complete');
+    const content = await page.evaluate(() => document.documentElement.outerHTML);
     expect(content.toLowerCase()).not.toContain('service_role');
   }
 });
