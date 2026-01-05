@@ -4,6 +4,7 @@ import fs from 'fs';
 test('exports page redirects or requires auth', async ({ page }) => {
   await page.goto('/exports.html');
   await page.waitForURL(/exports\.html|index\.html/, { timeout: 10000 });
+  await page.waitForLoadState('domcontentloaded');
   const currentUrl = page.url();
 
   if (currentUrl.includes('index.html')) {
