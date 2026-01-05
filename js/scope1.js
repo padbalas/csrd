@@ -80,6 +80,15 @@ let companyDefaults = { country: '', region: '', reportingYear: 'all' };
 let sites = [];
 let entitlements = null;
 
+const PLAN_LIMIT_MESSAGE = 'Free plan limit reached (5 records). Upgrade to add more.';
+
+const isPlanLimitError = (error) => {
+  const message = `${error?.message || ''}`.toLowerCase();
+  return message.includes('row-level security')
+    || message.includes('permission denied')
+    || message.includes('policy');
+};
+
 const updateScope3Nav = () => {
   if (!scope3NavLink) return;
   if (entitlements?.allow_scope3) {
@@ -896,7 +905,7 @@ const openAddPanel = () => {
       .upsert([payload], { onConflict: 'user_id,company_id,period_year,period_month,country,region' });
     if (error) {
       console.warn('Scope 1 save failed', error);
-      setStatus('Save failed. Please try again.');
+      setStatus(isPlanLimitError(error) ? PLAN_LIMIT_MESSAGE : 'Save failed. Please try again.');
       return;
     }
     await loadData();
@@ -1100,7 +1109,7 @@ const openBulkPanel = () => {
       .upsert(payloads, { onConflict: 'user_id,company_id,period_year,period_month,country,region' });
     if (error) {
       console.warn('Scope 1 bulk add failed', error);
-      setStatus('Save failed. Please try again.');
+      setStatus(isPlanLimitError(error) ? PLAN_LIMIT_MESSAGE : 'Save failed. Please try again.');
       return;
     }
     await loadData();

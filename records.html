@@ -533,6 +533,14 @@
     let entitlements = null;
     const authNote = document.getElementById('records-auth-note');
     const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
+
+    const PLAN_LIMIT_MESSAGE = 'Free plan limit reached (5 records). Upgrade to add more.';
+    const isPlanLimitError = (error) => {
+      const message = `${error?.message || ''}`.toLowerCase();
+      return message.includes('row-level security')
+        || message.includes('permission denied')
+        || message.includes('policy');
+    };
     const SUPABASE_URL = window.SUPABASE_URL || 'https://yyzyyjxmoggrmqsgrlxc.supabase.co';
     const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5enl5anhtb2dncm1xc2dybHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMTQ4MzMsImV4cCI6MjA4MTY5MDgzM30.BhnHmz9ADB52B_VcMdzvdyFiPvZFj_Q-jfjRqeAoQM4';
 
@@ -1184,7 +1192,7 @@
             .upsert([payload], { onConflict: 'user_id,company_id,period_year,period_month,calc_country,calc_region' });
           if (error) {
             console.warn('Add record failed', error);
-            setStatus('Save failed. Please try again.');
+            setStatus(isPlanLimitError(error) ? PLAN_LIMIT_MESSAGE : 'Save failed. Please try again.');
             return;
           }
           await refreshRecords();
@@ -1421,7 +1429,7 @@
             .upsert(payloads, { onConflict: 'user_id,company_id,period_year,period_month,calc_country,calc_region' });
           if (error) {
             console.warn('Bulk add failed', error);
-            setStatus('Save failed. Please try again.');
+            setStatus(isPlanLimitError(error) ? PLAN_LIMIT_MESSAGE : 'Save failed. Please try again.');
             return;
           }
           await refreshRecords();

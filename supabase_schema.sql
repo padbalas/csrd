@@ -207,8 +207,15 @@ end $$;
 
 alter table public.scope3_records enable row level security;
 
+drop policy if exists "Scope3 records scoped to owner (select)" on public.scope3_records;
 create policy "Scope3 records scoped to owner (select)" on public.scope3_records
-  for select using (auth.uid() = user_id);
+  for select using (
+    auth.uid() = user_id
+    and coalesce(
+      (select e.allow_scope3 from public.entitlements e where e.company_id = company_id),
+      false
+    )
+  );
 drop policy if exists "Scope3 records scoped to owner (insert)" on public.scope3_records;
 drop policy if exists "Scope3 records scoped to owner (update)" on public.scope3_records;
 drop policy if exists "Scope3 records scoped to owner (delete)" on public.scope3_records;
