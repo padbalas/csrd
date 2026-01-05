@@ -358,6 +358,13 @@
     } else if (checkoutParam === 'cancel') {
       setSubscriptionStatus('Checkout canceled. You can restart anytime.');
     }
+
+    const refreshEntitlements = async () => {
+      entitlements = await loadEntitlements();
+      updatePlanUi();
+      updateScope3Nav();
+      updateSiteGate();
+    };
     const updateReportingYearLabels = () => {
       if (!reportingEl) return;
       const currentOpt = reportingEl.querySelector('option[value="current"]');
@@ -693,15 +700,27 @@
       session = await requireAuth();
       if (!session) return;
       await loadCompany();
-      entitlements = await loadEntitlements();
-      updatePlanUi();
-      updateScope3Nav();
+      await refreshEntitlements();
       const siteData = await ensureCompanySites(supabase, session);
       companyId = siteData.companyId || companyId;
       sites = siteData.sites || [];
       renderSites();
       updateSiteGate();
       siteCountry.addEventListener('change', () => setRegionOptions(siteCountry.value, siteRegion));
+      if (checkoutParam === 'success') {
+        let attempts = 0;
+        const poll = setInterval(async () => {
+          attempts += 1;
+          await refreshEntitlements();
+          if (entitlements?.tier && entitlements.tier !== 'free') {
+            setSubscriptionStatus('Subscription updated. You are now on a paid plan.');
+            clearInterval(poll);
+          } else if (attempts >= 6) {
+            setSubscriptionStatus('We are still waiting on Stripe confirmation. Refresh in a minute if this persists.');
+            clearInterval(poll);
+          }
+        }, 5000);
+      }
     })();
 
     if (upgradeCoreBtn) {
