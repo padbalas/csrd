@@ -137,8 +137,20 @@
       border-color: #cbd5e1;
       box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
     }
+    .tab-button.locked {
+      opacity: 0.6;
+      cursor: default;
+    }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
+    .lock-banner {
+      background: #fff4e5;
+      border: 1px solid #f0c987;
+      color: #92400e;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
 
     @media (max-width: 980px) {
       .app-layout { flex-direction: column; }
@@ -195,6 +207,9 @@
     <div class="app-content">
       <div class="shell">
         <h1 class="page-title">Export / Reports</h1>
+        <div class="lock-banner" id="scope3-exports-lock" hidden>
+          Upgrade to CarbonWise Complete to unlock Scope 3 exports.
+        </div>
         <div class="tab-header">
           <button type="button" class="tab-button active" data-tab-target="scope2">Scope 2 electricity</button>
           <button type="button" class="tab-button" data-tab-target="scope1">Scope 1 natural gas</button>

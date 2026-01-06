@@ -25,12 +25,15 @@ const scope3YearSelect = document.getElementById('scope3ExportYear');
 const scope3ExportBtn = document.getElementById('exportScope3Csv');
 const scope3StatusEl = document.getElementById('scope3ExportStatus');
 const scope3LockNote = document.getElementById('scope3ExportLock');
+const scope3LockBanner = document.getElementById('scope3-exports-lock');
+const scope3TabButton = document.querySelector('[data-tab-target="scope3"]');
 const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
 const navBrand = document.querySelector('.nav-brand');
 const mobileBrand = document.querySelector('.mobile-brand');
 
 let entitlements = null;
 let scope3Locked = false;
+let setActiveTab = null;
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -144,10 +147,18 @@ const updateScope3Nav = () => {
 
 const applyScope3Gate = () => {
   scope3Locked = !entitlements?.allow_scope3;
+  if (scope3LockBanner) scope3LockBanner.hidden = !scope3Locked;
+  if (scope3TabButton) {
+    scope3TabButton.classList.toggle('locked', scope3Locked);
+    scope3TabButton.disabled = scope3Locked;
+  }
   if (scope3ExportBtn) scope3ExportBtn.disabled = scope3Locked;
   if (scope3YearSelect) scope3YearSelect.disabled = scope3Locked;
   if (scope3LockNote) scope3LockNote.style.display = scope3Locked ? 'block' : 'none';
   setScope3Status('');
+  if (scope3Locked && scope3TabButton?.classList.contains('active') && setActiveTab) {
+    setActiveTab('scope2');
+  }
 };
 
 const fetchCompany = async () => {
@@ -384,9 +395,13 @@ const initTabs = () => {
   const panels = Array.from(document.querySelectorAll('.tab-panel'));
   if (!buttons.length || !panels.length) return;
   const setActive = (tab) => {
+    if (tab === 'scope3' && scope3Locked) {
+      tab = 'scope2';
+    }
     buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tabTarget === tab));
     panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.tab === tab));
   };
+  setActiveTab = setActive;
   const syncWithHash = () => {
     const hash = window.location.hash;
     if (hash === '#scope1') {
@@ -398,6 +413,7 @@ const initTabs = () => {
   buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tabTarget;
+      if (tab === 'scope3' && scope3Locked) return;
       setActive(tab);
     });
   });
