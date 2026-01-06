@@ -74,6 +74,9 @@
       z-index: 40;
     }
     .mobile-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       color: #e5e7eb;
       text-decoration: none;
       font-weight: 700;
@@ -142,7 +145,9 @@
       display: none;
     }
     .nav-brand {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       padding: 6px 10px;
       background: #e0f2f1;
       color: #0f766e;
@@ -151,6 +156,16 @@
       font-size: 0.9rem;
       margin-bottom: 16px;
       text-decoration: none;
+    }
+    .brand-name { font-weight: 700; }
+    .brand-badge {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.18);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: #166534;
+      font-size: 0.72rem;
+      font-weight: 700;
     }
     .btn {
       display: inline-flex;
@@ -366,12 +381,12 @@
 <body>
   <div class="app-layout">
     <div class="mobile-topbar">
-      <a class="mobile-brand" href="index.html">CarbonWise</a>
+      <a class="mobile-brand" href="index.html" aria-label="Company"></a>
       <button class="mobile-menu-btn" id="mobile-nav-toggle" type="button">Menu</button>
     </div>
     <div class="mobile-overlay" id="mobile-nav-overlay"></div>
     <aside class="side-nav">
-      <a class="nav-brand" href="index.html">CarbonWise</a>
+      <a class="nav-brand" href="index.html" aria-label="Company"></a>
       <nav class="nav-items">
         <a href="dashboard.html" class="nav-item" data-nav="dashboard">Dashboard</a>
         <a href="scope1.html" class="nav-item" data-nav="scope1">Scope 1 Records</a>
@@ -535,7 +550,6 @@
     const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
     const navBrand = document.querySelector('.nav-brand');
     const mobileBrand = document.querySelector('.mobile-brand');
-    const BRAND_CACHE_KEY = 'cw_brand_label';
 
     const PLAN_LIMIT_MESSAGE = 'Free plan limit reached (5 records). Upgrade to add more.';
     const isPlanLimitError = (error) => {
@@ -834,39 +848,31 @@
       return tier === 'core' ? 'Core' : tier === 'complete' ? 'Complete' : 'Free';
     };
 
-    const setBrandLabel = (label) => {
-      if (navBrand) navBrand.textContent = label;
-      if (mobileBrand) mobileBrand.textContent = label;
-    };
-
-    const getCachedBrandLabel = () => {
-      try {
-        return localStorage.getItem(BRAND_CACHE_KEY);
-      } catch (err) {
-        return null;
-      }
-    };
-
-    const cacheBrandLabel = (label) => {
-      try {
-        localStorage.setItem(BRAND_CACHE_KEY, label);
-      } catch (err) {
-        // Ignore storage failures (privacy mode or restricted storage).
-      }
+    const setBrandLabel = (companyName, tier) => {
+      const badge = tier ? formatTierLabel(tier) : '';
+      const apply = (el) => {
+        if (!el) return;
+        el.textContent = '';
+        if (companyName) {
+          const nameEl = document.createElement('span');
+          nameEl.className = 'brand-name';
+          nameEl.textContent = companyName;
+          el.appendChild(nameEl);
+        }
+        if (badge) {
+          const badgeEl = document.createElement('span');
+          badgeEl.className = 'brand-badge';
+          badgeEl.textContent = badge;
+          el.appendChild(badgeEl);
+        }
+      };
+      apply(navBrand);
+      apply(mobileBrand);
     };
 
     const updateNavBrand = (companyName, tier) => {
-      const name = companyName || 'Your Company';
-      const badge = tier ? ` (${formatTierLabel(tier)})` : '';
-      const label = `${name}${badge}`;
-      setBrandLabel(label);
-      cacheBrandLabel(label);
+      setBrandLabel(companyName || '', tier);
     };
-
-    const cachedBrand = getCachedBrandLabel();
-    if (cachedBrand) {
-      setBrandLabel(cachedBrand);
-    }
 
     const updateScope3Nav = () => {
       if (!scope3NavLink) return;

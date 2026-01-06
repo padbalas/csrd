@@ -67,7 +67,6 @@ const signoutBtn = document.getElementById('nav-signout');
 const scope3NavLink = document.querySelector('.nav-item[data-nav="scope3"]');
 const navBrand = document.querySelector('.nav-brand');
 const mobileBrand = document.querySelector('.mobile-brand');
-const BRAND_CACHE_KEY = 'cw_brand_label';
 
 const filterYear = document.getElementById('filterYear');
 const filterCountry = document.getElementById('filterCountry');
@@ -130,39 +129,31 @@ const formatTierLabel = (tier) => {
   return label;
 };
 
-const setBrandLabel = (label) => {
-  if (navBrand) navBrand.textContent = label;
-  if (mobileBrand) mobileBrand.textContent = label;
-};
-
-const getCachedBrandLabel = () => {
-  try {
-    return localStorage.getItem(BRAND_CACHE_KEY);
-  } catch (err) {
-    return null;
-  }
-};
-
-const cacheBrandLabel = (label) => {
-  try {
-    localStorage.setItem(BRAND_CACHE_KEY, label);
-  } catch (err) {
-    // Ignore storage failures (privacy mode or restricted storage).
-  }
+const setBrandLabel = (companyName, tier) => {
+  const badge = tier ? formatTierLabel(tier) : '';
+  const apply = (el) => {
+    if (!el) return;
+    el.textContent = '';
+    if (companyName) {
+      const nameEl = document.createElement('span');
+      nameEl.className = 'brand-name';
+      nameEl.textContent = companyName;
+      el.appendChild(nameEl);
+    }
+    if (badge) {
+      const badgeEl = document.createElement('span');
+      badgeEl.className = 'brand-badge';
+      badgeEl.textContent = badge;
+      el.appendChild(badgeEl);
+    }
+  };
+  apply(navBrand);
+  apply(mobileBrand);
 };
 
 const updateNavBrand = (companyName, tier) => {
-  const name = companyName || 'Your Company';
-  const badge = tier ? ` (${formatTierLabel(tier)})` : '';
-  const label = `${name}${badge}`;
-  setBrandLabel(label);
-  cacheBrandLabel(label);
+  setBrandLabel(companyName || '', tier);
 };
-
-const cachedBrand = getCachedBrandLabel();
-if (cachedBrand) {
-  setBrandLabel(cachedBrand);
-}
 
 const normalizeKey = (str) => (str || '').trim().toUpperCase();
 
