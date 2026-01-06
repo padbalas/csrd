@@ -51,13 +51,14 @@ const requireAuth = async () => {
 };
 
 const formatTierLabel = (tier) => {
-  if (!tier) return '';
-  const label = tier === 'core' ? 'Core' : tier === 'complete' ? 'Complete' : 'Free';
-  return label;
+  const normalized = (tier || '').toLowerCase();
+  if (normalized === 'core') return 'Core';
+  if (normalized === 'complete') return 'Complete';
+  return 'Free';
 };
 
 const setBrandLabel = (companyName, tier) => {
-  const badge = tier ? formatTierLabel(tier) : '';
+  const badge = companyName ? formatTierLabel(tier) : '';
   const apply = (el) => {
     if (!el) return;
     el.textContent = '';
