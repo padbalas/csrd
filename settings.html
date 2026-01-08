@@ -106,6 +106,13 @@
     .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 14px; border-radius: 12px; border: 1px solid transparent; font-weight: 700; text-decoration: none; cursor: pointer; color: inherit; }
     .btn.primary { background: #22c55e; color: #0f172a; }
     .btn.secondary { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+    .btn:disabled { opacity: 0.65; cursor: not-allowed; }
+    .btn.primary:disabled,
+    .btn.secondary:disabled {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #94a3b8;
+    }
     .btn.match-records { padding: 14px 18px; }
     .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .actions.align-right { justify-content: flex-end; }
@@ -245,6 +252,9 @@
               </div>
             </div>
           </div>
+          <div class="actions" style="margin-top: 6px;">
+            <button class="btn secondary" id="manage-subscription" type="button">Manage subscription</button>
+          </div>
           <div class="plan-status" id="subscription-status"></div>
         </section>
 
@@ -353,6 +363,7 @@
     const subscriptionStatus = document.getElementById('subscription-status');
     const upgradeCoreBtn = document.getElementById('upgrade-core');
     const upgradeCompleteBtn = document.getElementById('upgrade-complete');
+    const manageSubscriptionBtn = document.getElementById('manage-subscription');
     const coreBadge = document.getElementById('plan-core-badge');
     const completeBadge = document.getElementById('plan-complete-badge');
     const signoutBtn = document.getElementById('nav-signout');
@@ -489,6 +500,7 @@
       if (completeBadge) completeBadge.style.display = tier === 'complete' ? 'inline-flex' : 'none';
       if (upgradeCoreBtn) upgradeCoreBtn.disabled = tier === 'core' || tier === 'complete';
       if (upgradeCompleteBtn) upgradeCompleteBtn.disabled = tier === 'complete';
+      if (manageSubscriptionBtn) manageSubscriptionBtn.disabled = tier === 'free';
       if (tier === 'free') {
         setSubscriptionStatus('Free plan active. Upgrade to unlock higher limits.');
       } else if (tier === 'core') {
@@ -547,6 +559,31 @@
       } catch (err) {
         console.warn('Checkout session failed', err);
         setSubscriptionStatus('Could not start checkout. Please try again.');
+      }
+    };
+
+    const createPortalSession = async () => {
+      if (!session) return;
+      setSubscriptionStatus('Opening subscription management…');
+      try {
+        const response = await fetch(`${FUNCTIONS_BASE_URL}/create-portal-session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            return_url: `${window.location.origin}/settings.html`,
+          }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload?.url) {
+          throw new Error(payload?.error || 'Portal session failed');
+        }
+        window.location.href = payload.url;
+      } catch (err) {
+        console.warn('Portal session failed', err);
+        setSubscriptionStatus('Could not open subscription management. Please try again.');
       }
     };
 
@@ -780,6 +817,9 @@
     }
     if (upgradeCompleteBtn) {
       upgradeCompleteBtn.addEventListener('click', () => createCheckoutSession('complete'));
+    }
+    if (manageSubscriptionBtn) {
+      manageSubscriptionBtn.addEventListener('click', createPortalSession);
     }
 
     if (signoutBtn) {
