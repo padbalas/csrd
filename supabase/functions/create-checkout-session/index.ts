@@ -5,7 +5,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') || '';
 const PRICE_CORE_IDS = (Deno.env.get('PRICE_CORE_IDS') || '').split(',').map((id) => id.trim()).filter(Boolean);
 const PRICE_COMPLETE_IDS = (Deno.env.get('PRICE_COMPLETE_IDS') || '').split(',').map((id) => id.trim()).filter(Boolean);
 
-const SUPABASE_API_KEY = SUPABASE_ANON_KEY || SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_API_KEY = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
 const STRIPE_API_BASE = 'https://api.stripe.com/v1';
 
 const corsHeaders = (origin: string | null) => ({
