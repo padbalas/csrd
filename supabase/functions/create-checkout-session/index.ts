@@ -61,6 +61,19 @@ const getPriceId = (tier: string) => {
   return '';
 };
 
+const getStripeCustomerId = async (token: string, companyId: string) => {
+  const url = `${SUPABASE_URL}/rest/v1/subscriptions` +
+    `?select=stripe_customer_id&company_id=eq.${companyId}` +
+    `&stripe_customer_id=is.not.null&order=updated_at.desc&limit=1`;
+  const data = await fetchJson(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: SUPABASE_API_KEY,
+    },
+  });
+  return data?.[0]?.stripe_customer_id || null;
+};
+
 const createCheckoutSession = async (params: {
   userId: string;
   email: string;
@@ -68,13 +81,18 @@ const createCheckoutSession = async (params: {
   priceId: string;
   successUrl: string;
   cancelUrl: string;
+  customerId?: string | null;
 }) => {
   const body = new URLSearchParams();
   body.set('mode', 'subscription');
   body.set('success_url', params.successUrl);
   body.set('cancel_url', params.cancelUrl);
   body.set('client_reference_id', params.userId);
-  body.set('customer_email', params.email);
+  if (params.customerId) {
+    body.set('customer', params.customerId);
+  } else {
+    body.set('customer_email', params.email);
+  }
   body.set('line_items[0][price]', params.priceId);
   body.set('line_items[0][quantity]', '1');
   body.set('metadata[company_id]', params.companyId);
@@ -143,6 +161,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Company not found for user' }, 400, origin);
     }
 
+    const customerId = await getStripeCustomerId(token, companyId);
     const session = await createCheckoutSession({
       userId,
       email,
@@ -150,6 +169,7 @@ Deno.serve(async (req) => {
       priceId,
       successUrl,
       cancelUrl,
+      customerId,
     });
 
     return jsonResponse({ url: session.url }, 200, origin);

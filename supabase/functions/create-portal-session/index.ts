@@ -54,7 +54,9 @@ const getCompanyId = async (token: string, userId: string) => {
 };
 
 const getStripeCustomerId = async (token: string, companyId: string) => {
-  const url = `${SUPABASE_URL}/rest/v1/subscriptions?select=stripe_customer_id&company_id=eq.${companyId}&limit=1`;
+  const url = `${SUPABASE_URL}/rest/v1/subscriptions` +
+    `?select=stripe_customer_id&company_id=eq.${companyId}` +
+    `&stripe_customer_id=is.not.null&order=updated_at.desc&limit=1`;
   const data = await fetchJson(url, {
     headers: {
       Authorization: `Bearer ${token}`,
