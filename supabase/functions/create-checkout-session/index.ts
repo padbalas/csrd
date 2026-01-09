@@ -204,7 +204,9 @@ Deno.serve(async (req) => {
     }
 
     const latestSubscription = await getLatestSubscription(token, companyId);
-    if (latestSubscription?.stripe_subscription_id) {
+    const status = (latestSubscription?.status || '').toLowerCase();
+    const canUpdate = status && status !== 'canceled' && status !== 'incomplete_expired';
+    if (latestSubscription?.stripe_subscription_id && canUpdate) {
       await updateStripeSubscription(latestSubscription.stripe_subscription_id, priceId);
       return jsonResponse({ updated: true }, 200, origin);
     }
