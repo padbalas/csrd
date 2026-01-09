@@ -55,6 +55,19 @@ const getCompanyId = async (token: string, userId: string) => {
   return data?.[0]?.id || null;
 };
 
+const getLatestSubscription = async (token: string, companyId: string) => {
+  const url = `${SUPABASE_URL}/rest/v1/subscriptions` +
+    `?select=stripe_subscription_id,stripe_customer_id,status,tier,updated_at` +
+    `&company_id=eq.${companyId}&order=updated_at.desc&limit=1`;
+  const data = await fetchJson(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: SUPABASE_API_KEY,
+    },
+  });
+  return data?.[0] || null;
+};
+
 const getPriceId = (tier: string) => {
   if (tier === 'core') return PRICE_CORE_IDS[0] || '';
   if (tier === 'complete') return PRICE_COMPLETE_IDS[0] || '';
@@ -101,6 +114,35 @@ const createCheckoutSession = async (params: {
   body.set('subscription_data[metadata][user_id]', params.userId);
 
   return await fetchJson(`${STRIPE_API_BASE}/checkout/sessions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  });
+};
+
+const fetchStripeSubscription = async (subscriptionId: string) => {
+  return await fetchJson(`${STRIPE_API_BASE}/subscriptions/${subscriptionId}`, {
+    headers: {
+      Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
+    },
+  });
+};
+
+const updateStripeSubscription = async (subscriptionId: string, priceId: string) => {
+  const subscription = await fetchStripeSubscription(subscriptionId);
+  const itemId = subscription?.items?.data?.[0]?.id || '';
+  if (!itemId) {
+    throw new Error('Subscription item unavailable');
+  }
+  const body = new URLSearchParams();
+  body.set('items[0][id]', itemId);
+  body.set('items[0][price]', priceId);
+  body.set('cancel_at_period_end', 'false');
+  body.set('proration_behavior', 'create_prorations');
+  return await fetchJson(`${STRIPE_API_BASE}/subscriptions/${subscriptionId}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
@@ -161,7 +203,13 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Company not found for user' }, 400, origin);
     }
 
-    const customerId = await getStripeCustomerId(token, companyId);
+    const latestSubscription = await getLatestSubscription(token, companyId);
+    if (latestSubscription?.stripe_subscription_id) {
+      await updateStripeSubscription(latestSubscription.stripe_subscription_id, priceId);
+      return jsonResponse({ updated: true }, 200, origin);
+    }
+
+    const customerId = latestSubscription?.stripe_customer_id || await getStripeCustomerId(token, companyId);
     const session = await createCheckoutSession({
       userId,
       email,

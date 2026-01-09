@@ -552,10 +552,19 @@
           }),
         });
         const payload = await response.json();
-        if (!response.ok || !payload?.url) {
+        if (!response.ok) {
           throw new Error(payload?.error || 'Stripe session failed');
         }
-        window.location.href = payload.url;
+        if (payload?.url) {
+          window.location.href = payload.url;
+          return;
+        }
+        if (payload?.updated) {
+          setSubscriptionStatus('Plan updated. Syncing entitlements…');
+          await refreshEntitlements();
+          return;
+        }
+        throw new Error('Stripe session failed');
       } catch (err) {
         console.warn('Checkout session failed', err);
         setSubscriptionStatus('Could not start checkout. Please try again.');
