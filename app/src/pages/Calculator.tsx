@@ -458,7 +458,7 @@ const Calculator = () => {
     }
     setScope2SaveStatus('Saved.');
     setScope2Saving(false);
-    window.location.href = '/app/records';
+    window.location.href = '/records';
   };
 
   const handleScope1Save = async () => {
@@ -532,7 +532,7 @@ const Calculator = () => {
     }
     setScope1SaveStatus('Scope 1 record saved.');
     setScope1Saving(false);
-    window.location.href = '/app/scope/scope1';
+    window.location.href = '/scope/scope1';
   };
 
   return (

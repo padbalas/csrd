@@ -20,7 +20,7 @@ const Landing = () => {
                     className="btn secondary"
                     onClick={() => {
                       void signOut();
-                      window.location.assign('/app/?signedOut=1');
+                      window.location.assign('/?signedOut=1');
                     }}
                   >
                     Log out

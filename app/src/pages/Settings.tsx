@@ -253,8 +253,8 @@ const Settings = () => {
         },
         body: JSON.stringify({
           tier,
-          success_url: `${window.location.origin}/app/settings?checkout=success`,
-          cancel_url: `${window.location.origin}/app/settings?checkout=cancel`,
+          success_url: `${window.location.origin}/settings?checkout=success`,
+          cancel_url: `${window.location.origin}/settings?checkout=cancel`,
         }),
       });
       const payload = await response.json();
@@ -286,7 +286,7 @@ const Settings = () => {
           Authorization: `Bearer ${sessionToken}`,
         },
         body: JSON.stringify({
-          return_url: `${window.location.origin}/app/settings`,
+          return_url: `${window.location.origin}/settings`,
         }),
       });
       const payload = await response.json();

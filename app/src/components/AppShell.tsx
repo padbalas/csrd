@@ -48,7 +48,7 @@ const AppShell = () => {
   const handleSignOut = () => {
     setNavOpen(false);
     void signOut();
-    window.location.assign('/app/?signedOut=1');
+    window.location.assign('/?signedOut=1');
   };
 
   const debugInfo = useMemo(() => {

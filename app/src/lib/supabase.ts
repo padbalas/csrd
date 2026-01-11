@@ -20,7 +20,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 export const requireSession = async () => {
   const { data } = await supabase.auth.getSession();
   if (!data?.session) {
-    window.location.href = '/app/';
+    window.location.href = '/';
     return null;
   }
   return data.session;

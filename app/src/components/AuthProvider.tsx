@@ -185,8 +185,8 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const redirectToDashboardIfLanding = () => {
     const normalizedPath = window.location.pathname.replace(/\/+$/, '');
-    if (normalizedPath === '/app') {
-      window.location.assign(`${window.location.origin}/app/dashboard`);
+    if (normalizedPath === '') {
+      window.location.assign(`${window.location.origin}/dashboard`);
     }
   };
 
@@ -262,7 +262,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
     setCompany(null);
     if (typeof window !== 'undefined') {
-      window.location.assign('/app/?signedOut=1');
+      window.location.assign('/?signedOut=1');
     }
   };
 
@@ -301,7 +301,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     }));
     const { error } = await supabase.auth.signInWithOtp({
       email: signinEmail,
-      options: { emailRedirectTo: `${window.location.origin}/app/` },
+      options: { emailRedirectTo: `${window.location.origin}/` },
     });
     if (error) {
       setStatus((prev) => ({
@@ -368,7 +368,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     setStatus((prev) => ({ ...prev, reset: 'Sending reset link...' }));
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${window.location.origin}/app/`,
+      redirectTo: `${window.location.origin}/`,
     });
     if (error) {
       setStatus((prev) => ({ ...prev, reset: 'Could not send reset link. Please try again.' }));
