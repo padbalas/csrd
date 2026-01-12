@@ -12,10 +12,10 @@ import {
   buildSiteLabel,
   fetchCompany,
   fetchCompanySites,
-  requireSession,
   supabase,
   type CompanySite,
 } from '../lib/supabase';
+import { useAuth } from '../components/AuthProvider';
 
 type Scope1Row = {
   period_year: number | null;
@@ -77,6 +77,7 @@ const Dashboard = () => {
     computeDerived,
     records,
   } = useCarbonStore();
+  const { session } = useAuth();
   const [ready, setReady] = useState(false);
   const [sites, setSites] = useState<CompanySite[]>([]);
   const [yearOptions, setYearOptions] = useState<number[]>([]);
@@ -276,8 +277,11 @@ const Dashboard = () => {
 
   useEffect(() => {
     const init = async () => {
-      const session = await requireSession();
-      if (!session) return;
+      if (!session?.user?.id) {
+        setReady(false);
+        setStatus('Checking access...');
+        return;
+      }
       const company = await fetchCompany(session.user.id);
       if (company?.id) {
         setOrganization(company.id);
@@ -290,7 +294,7 @@ const Dashboard = () => {
       setStatus('');
     };
     init();
-  }, [setOrganization]);
+  }, [setOrganization, session?.user?.id]);
 
   useEffect(() => {
     if (!ready) return;
